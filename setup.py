@@ -10,7 +10,6 @@ setup(name='functionaliseMOF',
       url='https://github.com/meiirbek-islamov/functionaliseMOF.git',
       packages=find_packages(include=['functionaliseMOF']),
       install_requires=[
-          'numpy',
-          'matplotlib'
+          'ase'
       ],
 )

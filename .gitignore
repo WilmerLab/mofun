@@ -1,0 +1,15 @@
+__pycache__
+.pytest_cache
+*.pyc
+.ipynb_checkpoints/
+*.o*
+dist/
+build/
+MANIFEST
+*.cache
+*.png
+*.ipynb
+*.blend
+*.npy
+.DS_Store
+*.egg-info
