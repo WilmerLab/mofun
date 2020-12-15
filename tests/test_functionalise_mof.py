@@ -17,7 +17,7 @@ def test_find_pattern_in_structure__find_all_carbons_in_octane():
     match_indices, match_atoms = find_pattern_in_structure(structure, pattern)
     assert len(match_atoms) == 8
     for pattern_found in match_atoms:
-        assert pattern_found.get_chemical_symbols() == ("C")
+        assert pattern_found.get_chemical_symbols() == ["C"]
 
 
 def test_find_pattern_in_structure__find_all_ch2_in_octane():
