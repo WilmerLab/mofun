@@ -54,7 +54,7 @@ def test_find_pattern_in_structure__octane_has_12_CH2():
 def test_find_pattern_in_structure__octane_over_pbc_has_2_CH3():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     with importlib.resources.path(tests, "octane.xyz") as octane_path:
-        structure = ase.io.read(octane_path)
+        structure = ase.io.read(octane_path)#[0:4]
         positions = structure.get_positions()
 
         # move positions to get part of CH3 across two boundary conditions
