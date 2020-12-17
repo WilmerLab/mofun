@@ -36,7 +36,6 @@ def find_pattern_in_structure(structure, pattern):
     """
 
     uc_offsets = uc_neighbor_offsets(structure.cell)
-    print(uc_offsets)
 
     s_positions = structure.positions
     s_types = list(structure.symbols)
@@ -55,12 +54,8 @@ def find_pattern_in_structure(structure, pattern):
 
         last_match_indices = match_indices
         match_indices = []
-        # print(last_match_indices  )
         for match in last_match_indices:
-            print("----------------------------------")
-            print(match)
             for atom_idx in atoms_of_type(s_types, pattern_atom_1.symbol):
-                print("--")
                 for uc_offset in uc_offsets:
                     found_match = True
                     for j in range(i):
@@ -74,22 +69,15 @@ def find_pattern_in_structure(structure, pattern):
                         s_ss = np.inner(s_diff, s_diff)
 
                         if not math.isclose(p_ss[i,j], s_ss, rel_tol=5e-2):
-                            # print("[%d] %6.4f != %6.4f" % (pattern_atom_0.index, pdist, sdist))
                             found_match = False
                             break
-                        # print("[%d] %6.4f ~= %6.4f" % (pattern_atom_0.index, pdist, sdist))
-                        # print("[%d] %6.4f ~= %6.4f" % (pattern_atom_0.index, pdist, sdist))
+
                     # anything that matches the distance to all prior pattern atoms is a good match so far
                     if found_match:
-                        print("found a match!", match, atom_idx, uc_offset)
                         match_indices.append(match + [(atom_idx, uc_offset)])
 
-                        #TODO: need to save image index for MATCH!!
-
-        # remove duplicates
-        print("round %d: (%d) " % (i, len(match_indices)), match_indices)
         match_indices = remove_duplicates(match_indices)
-        print("round %d deduped: (%d) " % (i, len(match_indices)), match_indices)
+        print("round %d: (%d) " % (i, len(match_indices)), match_indices)
 
     # get ASE atoms objects for each set of indices
     match_atoms = [structure.__getitem__([m[0] for m in match]) for match in match_indices]
