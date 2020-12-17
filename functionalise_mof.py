@@ -19,12 +19,13 @@ def remove_duplicates(match_indices):
     match1 = set([tuple(sorted(matches)) for matches in match_indices])
     return [list(m) for m in match1]
 
-def calc_norms(positions):
-    p_norms = np.zeros([len(positions), len(positions)])
+def calc_sum_of_squares(positions):
+    ss = np.zeros([len(positions), len(positions)])
     for j in range(len(positions)):
         for i in range(j, len(positions)):
-            p_norms[i,j] = norm(positions[j] - positions[i])
-    return p_norms
+            pdiff = positions[j] - positions[i]
+            ss[i,j] = np.inner(pdiff, pdiff)
+    return ss
 
 
 def find_pattern_in_structure(structure, pattern):
@@ -43,7 +44,7 @@ def find_pattern_in_structure(structure, pattern):
     p_positions = pattern.positions
     p_types = list(pattern.symbols)
 
-    p_norms = calc_norms(p_positions)
+    p_ss = calc_sum_of_squares(p_positions)
 
     for i, pattern_atom_1 in enumerate(pattern):
         # Search instances of first atom in a search pattern
@@ -63,13 +64,16 @@ def find_pattern_in_structure(structure, pattern):
                 for uc_offset in uc_offsets:
                     found_match = True
                     for j in range(i):
-                        pdist = p_norms[i,j]
                         match_idx = match[j][0]
                         match_offset = match[j][1]
-                        # print("NORM ARGS: ", structure[match[j]].position + uc_offset, structure_atom.position)
-                        sdist = norm(s_positions[match_idx] + match_offset - s_positions[atom_idx] - uc_offset)
 
-                        if not math.isclose(pdist, sdist, rel_tol=5e-2):
+                        # we don't need an actual distance here, using the sum of squares instead
+                        # saves us the square root calculation and allows us to use an inner product
+                        # which is very fast in numpy
+                        s_diff = s_positions[match_idx] + match_offset - s_positions[atom_idx] - uc_offset
+                        s_ss = np.inner(s_diff, s_diff)
+
+                        if not math.isclose(p_ss[i,j], s_ss, rel_tol=5e-2):
                             # print("[%d] %6.4f != %6.4f" % (pattern_atom_0.index, pdist, sdist))
                             found_match = False
                             break
