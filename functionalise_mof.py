@@ -15,6 +15,17 @@ def uc_neighbor_offsets(uc_vectors):
     # return np.array([(structure.cell * m).sum(axis=1) for m in multipliers]).flatten().reshape(27, 3)
     return [tuple((uc_vectors * m).sum(axis=1)) for m in multipliers]
 
+def remove_duplicates(match_indices):
+    match1 = set([tuple(sorted(matches)) for matches in match_indices])
+    return [list(m) for m in match1]
+
+def calc_norms(positions):
+    p_norms = np.zeros([len(positions), len(positions)])
+    for j in range(len(positions)):
+        for i in range(j, len(positions)):
+            p_norms[i,j] = norm(positions[j] - positions[i])
+    return p_norms
+
 
 def find_pattern_in_structure(structure, pattern):
     """find pattern in structure, where both are ASE atoms objects
@@ -31,6 +42,8 @@ def find_pattern_in_structure(structure, pattern):
 
     p_positions = pattern.positions
     p_types = list(pattern.symbols)
+
+    p_norms = calc_norms(p_positions)
 
     for i, pattern_atom_1 in enumerate(pattern):
         # Search instances of first atom in a search pattern
@@ -50,7 +63,7 @@ def find_pattern_in_structure(structure, pattern):
                 for uc_offset in uc_offsets:
                     found_match = True
                     for j in range(i):
-                        pdist = norm(p_positions[j] - p_positions[i])
+                        pdist = p_norms[i,j]
                         match_idx = match[j][0]
                         match_offset = match[j][1]
                         # print("NORM ARGS: ", structure[match[j]].position + uc_offset, structure_atom.position)
@@ -69,10 +82,9 @@ def find_pattern_in_structure(structure, pattern):
 
                         #TODO: need to save image index for MATCH!!
 
-        print("round %d: (%d) " % (i, len(match_indices)), match_indices)
         # remove duplicates
-        match_indices = set([tuple(sorted(matches)) for matches  in match_indices])
-        match_indices = [list(m) for m in match_indices]
+        print("round %d: (%d) " % (i, len(match_indices)), match_indices)
+        match_indices = remove_duplicates(match_indices)
         print("round %d deduped: (%d) " % (i, len(match_indices)), match_indices)
 
     # get ASE atoms objects for each set of indices
