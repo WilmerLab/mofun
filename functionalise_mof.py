@@ -83,3 +83,7 @@ def find_pattern_in_structure(structure, pattern):
     match_atoms = [structure.__getitem__([m[0] for m in match]) for match in match_indices]
 
     return match_indices, match_atoms
+
+
+def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
+    pass
