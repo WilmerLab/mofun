@@ -43,6 +43,12 @@ def get_types_ss_map_limited_near_uc(structure, length):
     s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
     return s_types_view, s_ss, index_mapper
 
+def atoms_by_type_dict(atom_types):
+    atoms_by_type = {k:[] for k in set(atom_types)}
+    for i, k in enumerate(atom_types):
+        atoms_by_type[k].append(i)
+    return atoms_by_type
+
 def find_pattern_in_structure(structure, pattern):
     """find pattern in structure, where both are ASE atoms objects
 
@@ -51,6 +57,7 @@ def find_pattern_in_structure(structure, pattern):
     """
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
     s_types_view, s_ss, index_mapper = get_types_ss_map_limited_near_uc(structure, p_ss.max())
+    atoms_by_type = atoms_by_type_dict(s_types_view)
 
     for i, pattern_atom_1 in enumerate(pattern):
         # Search instances of first atom in a search pattern
@@ -63,7 +70,7 @@ def find_pattern_in_structure(structure, pattern):
         last_match_index_tuples = match_index_tuples
         match_index_tuples = []
         for match in last_match_index_tuples:
-            for atom_idx in atoms_of_type(s_types_view, pattern_atom_1.symbol):
+            for atom_idx in atoms_by_type[pattern_atom_1.symbol]:
                 found_match = True
                 for j in range(i):
                     if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=5e-2):
