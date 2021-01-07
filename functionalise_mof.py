@@ -47,13 +47,13 @@ def find_pattern_in_structure(structure, pattern):
     for i, pattern_atom_1 in enumerate(pattern):
         # Search instances of first atom in a search pattern
         if i == 0:
-            match_indices = [[(idx,  (0., 0., 0.))] for idx in atoms_of_type(s_types[0:len(structure)], p_types[0])]
-            print("round %d: " % i, match_indices)
+            match_index_tuples = [[(idx,  (0., 0., 0.))] for idx in atoms_of_type(s_types[0:len(structure)], p_types[0])]
+            print("round %d: " % i, match_index_tuples)
             continue
 
-        last_match_indices = match_indices
-        match_indices = []
-        for match in last_match_indices:
+        last_match_index_tuples = match_index_tuples
+        match_index_tuples = []
+        for match in last_match_index_tuples:
             for atom_idx in atoms_of_type(s_types, pattern_atom_1.symbol):
                 found_match = True
                 for j in range(i):
@@ -72,15 +72,15 @@ def find_pattern_in_structure(structure, pattern):
 
                 # anything that matches the distance to all prior pattern atoms is a good match so far
                 if found_match:
-                    match_indices.append(match + [(atom_idx, s_ucoffset[atom_idx])])
+                    match_index_tuples.append(match + [(atom_idx, s_ucoffset[atom_idx])])
 
-        match_indices = remove_duplicates(match_indices)
-        print("round %d: (%d) " % (i, len(match_indices)), match_indices)
+        match_index_tuples = remove_duplicates(match_index_tuples)
+        print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
 
     # get ASE atoms objects for each set of indices
-    match_atoms = [structure.__getitem__([m[0] % len(structure) for m in match]) for match in match_indices]
+    match_atoms = [structure.__getitem__([m[0] % len(structure) for m in match]) for match in match_index_tuples]
 
-    return match_indices, match_atoms
+    return match_index_tuples, match_atoms
 
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
