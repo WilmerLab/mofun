@@ -107,6 +107,7 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust
     for pattern_found in match_atoms:
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_cif, benzene):
     match_indices, match_atoms = find_pattern_in_structure(hkust1_3x3x3_cif, benzene)
 
@@ -119,6 +120,7 @@ def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_r
         assert ((pattern_found[5].position - pattern_found[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
 
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_xyz, benzene):
     match_indices, match_atoms = find_pattern_in_structure(hkust1_3x3x3_xyz, benzene)
 
@@ -130,6 +132,7 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_r
         assert ((pattern_found[0].position - pattern_found[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
         assert ((pattern_found[5].position - pattern_found[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_cif):
     pattern = Atoms('Cu', positions=[(0, 0, 0)])
     match_indices, match_atoms = find_pattern_in_structure(hkust1_3x3x3_cif, pattern)
