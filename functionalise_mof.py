@@ -4,6 +4,7 @@ import ase as ase
 from ase import Atoms, io
 import numpy as np
 from numpy.linalg import norm
+from scipy.spatial import distance
 
 def atoms_of_type(types, element):
     """ returns all atom indices in types that match the symbol element """
@@ -11,8 +12,6 @@ def atoms_of_type(types, element):
 
 def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 3)
-    # offsets = np.array([[0, 0, 0]])
-    # return np.array([(structure.cell * m).sum(axis=1) for m in multipliers]).flatten().reshape(27, 3)
     return {tuple((uc_vectors * m).sum(axis=1)) for m in multipliers}
 
 def remove_duplicates(match_indices):
@@ -40,14 +39,20 @@ def find_pattern_in_structure(structure, pattern):
     p_ss = calc_sum_of_squares(p_positions)
 
     uc_offsets = list(uc_neighbor_offsets(structure.cell))
-    s_positions = list(structure.positions) * len(uc_offsets)
+    index_of_000 = uc_offsets.index((0.0, 0.0, 0.0))
+    uc_offsets[index_of_000] = uc_offsets[0]
+    uc_offsets[0] = (0.0, 0.0, 0.0)
+    index_of_000 = 0
+
+    s_positions = [structure.positions + uc_offset for uc_offset in uc_offsets]
+    s_positions = [x for y in s_positions for x in y]
     s_types = list(structure.symbols) * len(uc_offsets)
     s_ucoffset = [tuple(p) for p in np.repeat(uc_offsets, len(structure), axis=0)]
 
     for i, pattern_atom_1 in enumerate(pattern):
         # Search instances of first atom in a search pattern
         if i == 0:
-            match_index_tuples = [[(idx,  (0., 0., 0.))] for idx in atoms_of_type(s_types[0:len(structure)], p_types[0])]
+            match_index_tuples = [[idx + len(structure) * index_of_000] for idx in atoms_of_type(s_types[len(structure) * index_of_000: len(structure) * (index_of_000 + 1)], p_types[0])]
             print("round %d: " % i, match_index_tuples)
             continue
 
@@ -57,13 +62,14 @@ def find_pattern_in_structure(structure, pattern):
             for atom_idx in atoms_of_type(s_types, pattern_atom_1.symbol):
                 found_match = True
                 for j in range(i):
-                    match_idx = match[j][0]
-                    match_offset = match[j][1]
+                    match_idx = match[j]
+                    # match_offset = match[j][1]
 
                     # we don't need an actual distance here, using the sum of squares instead
                     # saves us the square root calculation and allows us to use an inner product
                     # which is very fast in numpy
-                    s_diff = s_positions[match_idx] + match_offset - s_positions[atom_idx] - s_ucoffset[atom_idx]
+                    # print(match_idx, atom_idx)
+                    s_diff = s_positions[match_idx] - s_positions[atom_idx]
                     s_ss = np.inner(s_diff, s_diff)
 
                     if not math.isclose(p_ss[i,j], s_ss, rel_tol=5e-2):
@@ -72,13 +78,13 @@ def find_pattern_in_structure(structure, pattern):
 
                 # anything that matches the distance to all prior pattern atoms is a good match so far
                 if found_match:
-                    match_index_tuples.append(match + [(atom_idx, s_ucoffset[atom_idx])])
+                    match_index_tuples.append(match + [atom_idx])
 
         match_index_tuples = remove_duplicates(match_index_tuples)
         print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
 
     # get ASE atoms objects for each set of indices
-    match_atoms = [structure.__getitem__([m[0] % len(structure) for m in match]) for match in match_index_tuples]
+    match_atoms = [structure.__getitem__([m % len(structure) for m in match]) for match in match_index_tuples]
 
     return match_index_tuples, match_atoms
 
