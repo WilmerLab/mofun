@@ -18,15 +18,6 @@ def remove_duplicates(match_indices):
     match1 = set([tuple(sorted(matches)) for matches in match_indices])
     return [list(m) for m in match1]
 
-def calc_sum_of_squares(positions):
-    ss = np.zeros([len(positions), len(positions)])
-    for j in range(len(positions)):
-        for i in range(j, len(positions)):
-            pdiff = positions[j] - positions[i]
-            ss[i,j] = np.inner(pdiff, pdiff)
-    return ss
-
-
 def find_pattern_in_structure(structure, pattern):
     """find pattern in structure, where both are ASE atoms objects
 
@@ -36,7 +27,7 @@ def find_pattern_in_structure(structure, pattern):
 
     p_positions = pattern.positions
     p_types = list(pattern.symbols)
-    p_ss = calc_sum_of_squares(p_positions)
+    p_ss = distance.cdist(p_positions, p_positions, "sqeuclidean")
 
     uc_offsets = list(uc_neighbor_offsets(structure.cell))
     index_of_000 = uc_offsets.index((0.0, 0.0, 0.0))
@@ -48,6 +39,7 @@ def find_pattern_in_structure(structure, pattern):
     s_positions = [x for y in s_positions for x in y]
     s_types = list(structure.symbols) * len(uc_offsets)
     s_ucoffset = [tuple(p) for p in np.repeat(uc_offsets, len(structure), axis=0)]
+    s_ss = distance.cdist(s_positions, s_positions, "sqeuclidean")
 
     for i, pattern_atom_1 in enumerate(pattern):
         # Search instances of first atom in a search pattern
@@ -62,17 +54,7 @@ def find_pattern_in_structure(structure, pattern):
             for atom_idx in atoms_of_type(s_types, pattern_atom_1.symbol):
                 found_match = True
                 for j in range(i):
-                    match_idx = match[j]
-                    # match_offset = match[j][1]
-
-                    # we don't need an actual distance here, using the sum of squares instead
-                    # saves us the square root calculation and allows us to use an inner product
-                    # which is very fast in numpy
-                    # print(match_idx, atom_idx)
-                    s_diff = s_positions[match_idx] - s_positions[atom_idx]
-                    s_ss = np.inner(s_diff, s_diff)
-
-                    if not math.isclose(p_ss[i,j], s_ss, rel_tol=5e-2):
+                    if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=5e-2):
                         found_match = False
                         break
 
