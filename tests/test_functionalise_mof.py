@@ -10,23 +10,25 @@ from pytest import approx
 from functionalise_mof import find_pattern_in_structure, replace_pattern_in_structure
 import tests
 
-
-def test_find_pattern_in_structure__octane_has_8_carbons():
+@pytest.fixture
+def octane():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     with importlib.resources.path(tests, "octane.xyz") as octane_path:
         structure = ase.io.read(octane_path)
+        structure.positions += 30
+        structure.set_cell(60 * np.identity(3))
+        yield structure
+
+def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     pattern = Atoms('C', positions=[(0, 0, 0)])
-    match_indices, match_atoms = find_pattern_in_structure(structure, pattern)
-    assert len(match_atoms) == 8
+    match_indices, match_atoms = find_pattern_in_structure(octane, pattern)
+    assert len(match_indices) == 8
     for pattern_found in match_atoms:
         assert pattern_found.get_chemical_symbols() == ["C"]
 
-def test_find_pattern_in_structure__octane_has_2_CH3():
-    # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
-    with importlib.resources.path(tests, "octane.xyz") as octane_path:
-        structure = ase.io.read(octane_path)
+def test_find_pattern_in_structure__octane_has_2_CH3(octane):
     pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
-    match_indices, match_atoms = find_pattern_in_structure(structure, pattern)
+    match_indices, match_atoms = find_pattern_in_structure(octane, pattern)
     assert len(match_atoms) == 2
     for pattern_found in match_atoms:
         assert pattern_found.get_chemical_symbols() == ["C", "H", "H", "H"]
@@ -35,13 +37,10 @@ def test_find_pattern_in_structure__octane_has_2_CH3():
         assert ((pattern_found[2].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
         assert ((pattern_found[3].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
-def test_find_pattern_in_structure__octane_has_12_CH2():
+def test_find_pattern_in_structure__octane_has_12_CH2(octane):
     # there are technically 12 matches, since each CH3 makes 3 variations of CH2
-    # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
-    with importlib.resources.path(tests, "octane.xyz") as octane_path:
-        structure = ase.io.read(octane_path)
     pattern = Atoms('CHH', positions=[(0, 0, 0),(-0.1  , -0.379, -1.017), (-0.547, -0.647,  0.685)])
-    match_indices, match_atoms = find_pattern_in_structure(structure, pattern)
+    match_indices, match_atoms = find_pattern_in_structure(octane, pattern)
 
     assert len(match_atoms) == 12
     for pattern_found in match_atoms:
@@ -54,14 +53,10 @@ def test_find_pattern_in_structure__octane_over_pbc_has_2_CH3():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     with importlib.resources.path(tests, "octane.xyz") as octane_path:
         structure = ase.io.read(octane_path)#[0:4]
-        positions = structure.get_positions()
-
-        # move positions to get part of CH3 across two boundary conditions
-        positions += -1.8
-
+        # move atoms across corner boundary
+        structure.positions += -1.8
         # move coordinates into main 15 Å unit cell
-        positions %= 15
-        structure.set_positions(positions)
+        structure.positions %= 15
         structure.set_cell(15 * np.identity(3))
 
     pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
@@ -120,6 +115,7 @@ def test_find_pattern_in_structure__hkust1_3x3x3_supercell_has_1296_Cu_metal_nod
     for pattern_found in match_atoms:
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
+@pytest.mark.skip(reason="replace not implemented yet")
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     with importlib.resources.path(tests, "octane.xyz") as octane_path:
@@ -131,6 +127,7 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(
     assert len(replaced_structure) == 8
     assert replaced_structure.get_chemical_symbols() == ["C"] * 8
 
+@pytest.mark.skip(reason="replace not implemented yet")
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogens():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     with importlib.resources.path(tests, "octane.xyz") as octane_path:

@@ -44,9 +44,9 @@ def find_pattern_in_structure(structure, pattern):
     s_types_view = []
     for i, pos in enumerate(s_positions):
         # only currently works for orthorhombic crystals
-        if (pos[0] > -p_length and pos[0] < p_length + cell[0] and
-                pos[1] > -p_length and pos[1] < p_length + cell[1] and
-                pos[2] > -p_length and pos[2] < p_length + cell[2]):
+        if (pos[0] >= -p_length and pos[0] < p_length + cell[0] and
+                pos[1] >= -p_length and pos[1] < p_length + cell[1] and
+                pos[2] >= -p_length and pos[2] < p_length + cell[2]):
             index_mapper.append(i)
             s_pos_view.append(pos)
             s_types_view.append(s_types[i])
