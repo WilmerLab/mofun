@@ -18,18 +18,7 @@ def remove_duplicates(match_indices):
     match1 = set([tuple(sorted(matches)) for matches in match_indices])
     return [list(m) for m in match1]
 
-def find_pattern_in_structure(structure, pattern):
-    """find pattern in structure, where both are ASE atoms objects
-
-    Returns:
-        a list of indice lists for each set of matched atoms found
-    """
-
-    p_positions = pattern.positions
-    p_types = list(pattern.symbols)
-    p_ss = distance.cdist(p_positions, p_positions, "sqeuclidean")
-    p_length = p_ss.max()
-
+def get_types_ss_map_limited_near_uc(structure, length):
     uc_offsets = list(uc_neighbor_offsets(structure.cell))
     uc_offsets[uc_offsets.index((0.0, 0.0, 0.0))] = uc_offsets[0]
     uc_offsets[0] = (0.0, 0.0, 0.0)
@@ -44,20 +33,30 @@ def find_pattern_in_structure(structure, pattern):
     s_types_view = []
     for i, pos in enumerate(s_positions):
         # only currently works for orthorhombic crystals
-        if (pos[0] >= -p_length and pos[0] < p_length + cell[0] and
-                pos[1] >= -p_length and pos[1] < p_length + cell[1] and
-                pos[2] >= -p_length and pos[2] < p_length + cell[2]):
+        if (pos[0] >= -length and pos[0] < length + cell[0] and
+                pos[1] >= -length and pos[1] < length + cell[1] and
+                pos[2] >= -length and pos[2] < length + cell[2]):
             index_mapper.append(i)
             s_pos_view.append(pos)
             s_types_view.append(s_types[i])
 
     s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
+    return s_types_view, s_ss, index_mapper
+
+def find_pattern_in_structure(structure, pattern):
+    """find pattern in structure, where both are ASE atoms objects
+
+    Returns:
+        a list of indice lists for each set of matched atoms found
+    """
+    p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
+    s_types_view, s_ss, index_mapper = get_types_ss_map_limited_near_uc(structure, p_ss.max())
 
     for i, pattern_atom_1 in enumerate(pattern):
         # Search instances of first atom in a search pattern
         if i == 0:
             # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
-            match_index_tuples = [[idx] for idx in atoms_of_type(s_types_view[0: len(structure)], p_types[0])]
+            match_index_tuples = [[idx] for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.symbols[0])]
             print("round %d (%d): " % (i, len(match_index_tuples)), match_index_tuples)
             continue
 
