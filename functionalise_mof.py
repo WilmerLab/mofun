@@ -18,7 +18,10 @@ def remove_duplicates(match_indices):
     match1 = set([tuple(sorted(matches)) for matches in match_indices])
     return [list(m) for m in match1]
 
-def get_types_ss_map_limited_near_uc(structure, length):
+def get_types_ss_map_limited_near_uc(structure, length, cell):
+    if not (cell.angles() == [90., 90., 90.]).all():
+        raise Exception("Currently optimizations do not support unit cell angles != 90")
+
     uc_offsets = list(uc_neighbor_offsets(structure.cell))
     uc_offsets[uc_offsets.index((0.0, 0.0, 0.0))] = uc_offsets[0]
     uc_offsets[0] = (0.0, 0.0, 0.0)
@@ -56,7 +59,7 @@ def find_pattern_in_structure(structure, pattern):
         a list of indice lists for each set of matched atoms found
     """
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
-    s_types_view, s_ss, index_mapper = get_types_ss_map_limited_near_uc(structure, p_ss.max())
+    s_types_view, s_ss, index_mapper = get_types_ss_map_limited_near_uc(structure, p_ss.max(), structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
 
     for i, pattern_atom_1 in enumerate(pattern):
