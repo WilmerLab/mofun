@@ -95,3 +95,36 @@ def find_pattern_in_structure(structure, pattern):
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
     pass
+
+def rotate_replace_pattern(pattern, pivot_atom_index, axis, angle):
+
+    numatoms = len(pattern)
+    c = math.cos(angle)
+    s = math.sin(angle)
+
+    x0 = pattern[pivot_atom_index].position[0]
+    y0 = pattern[pivot_atom_index].position[1]
+    z0 = pattern[pivot_atom_index].position[2]
+
+    for i in range(numatoms):
+
+        dx = pattern[i].position[0] - x0
+        dy = pattern[i].position[1] - y0
+        dz = pattern[i].position[2] - z0
+
+        nX = axis[0]
+        nY = axis[1]
+        nZ = axis[2]
+
+        # dxr, dyr, and dzr are the new, rotated coordinates (assuming the pivot atom is the origin)
+
+        # We use a rotation matrix from axis and angle formula
+        dxr = (nX*nX + (1 - nX*nX)*c)*dx +  (nX*nY*(1 - c) - nZ*s)*dy +  (nX*nZ*(1 - c) + nY*s)*dz
+        dyr = (nX*nY*(1 - c) + nZ*s)*dx + (nY*nY + (1 - nY*nY)*c)*dy +  (nY*nZ*(1 - c) - nX*s)*dz
+        dzr = (nX*nZ*(1 - c) - nY*s)*dx +  (nY*nZ*(1 - c) + nX*s)*dy + (nZ*nZ + (1 - nZ*nZ)*c)*dz
+
+        pattern[i].position[0] = x0 + dxr
+        pattern[i].position[1] = y0 + dyr
+        pattern[i].position[2] = z0 + dzr
+
+    return pattern
