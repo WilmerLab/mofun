@@ -101,10 +101,6 @@ def find_pattern_in_structure(structure, pattern):
     return [[index_mapper[m] % len(structure) for m in match] for match in match_index_tuples]
 
 
-
-def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
-    pass
-
 def rotate_replace_pattern(pattern, pivot_atom_index, axis, angle):
 
     numatoms = len(pattern)
@@ -298,3 +294,20 @@ def replace_pattern_orient(search_instance, replace_pattern):
         crs[2] *= (1.0 / mag)
         # Now rotate by 180 degrees
         rotate_replace_pattern(replace_pattern, r_pivot_atom_index, crs, theta)
+
+
+def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
+    match_indices = find_pattern_in_structure(structure, search_pattern)
+
+    search_pattern = search_pattern.copy()
+    translate_molecule_origin(search_pattern)
+
+    new_structure = structure.copy()
+    indices_to_delete = [idx for match in match_indices for idx in match]
+
+    if len(indices_to_delete) > len(set(indices_to_delete)):
+        raise Exception("There is an atom that is matched in two distinct pattern. Each atom can only be matched in one atom.")
+
+    del(new_structure[indices_to_delete])
+
+    return new_structure
