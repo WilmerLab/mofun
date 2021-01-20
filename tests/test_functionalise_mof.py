@@ -43,6 +43,16 @@ def benzene():
     with importlib.resources.path(tests, "benzene.xyz") as path:
         yield ase.io.read(path)
 
+@pytest.fixture
+def benzene_at_origin():
+    with importlib.resources.path(tests, "benzene_at_origin.xyz") as path:
+        yield ase.io.read(path)
+
+@pytest.fixture
+def benzene_rotated():
+    with importlib.resources.path(tests, "benzene_rotated.xyz") as path:
+        yield ase.io.read(path)
+
 
 def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     pattern = Atoms('C', positions=[(0, 0, 0)])
@@ -177,12 +187,10 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogen
         "C", "H", "H", "C", "H", "H", "C", "H", "H", "C", "H", "H", "C", "H", "H", "C", "H", "H", "H"]
 # TODO: assert positions are the same as when we started
 
-def test_translate_molecule_origin__on_benzene_after_translation_relative_atom_positions_are_unchanged():
-    with importlib.resources.path(tests, "benzene.xyz") as molecule_path:
-        molecule = ase.io.read(molecule_path)
-        molecule_copy = ase.Atoms.copy(molecule)
+def test_translate_molecule_origin__on_benzene_after_translation_relative_atom_positions_are_unchanged(benzene):
+    molecule_copy = ase.Atoms.copy(benzene)
 
-    translated_molecule = translate_molecule_origin(molecule)
+    translated_molecule = translate_molecule_origin(benzene)
     assert len(translated_molecule) == 9
     assert translated_molecule.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
 
@@ -194,14 +202,10 @@ def test_translate_molecule_origin__on_benzene_after_translation_relative_atom_p
     assert ((translated_molecule[0].position - translated_molecule[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
     assert ((translated_molecule[5].position - translated_molecule[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
-def test_translate_replace_pattern__on_benzene_after_translation_relative_atom_positions_are_unchanged():
-    with importlib.resources.path(tests, "benzene.xyz") as search_path:
-        search_pattern = ase.io.read(search_path)
-    with importlib.resources.path(tests, "HKUST-1_benzene_replace.xyz") as replace_path:
-        replace_pattern = ase.io.read(replace_path)
-    molecule_copy = ase.Atoms.copy(replace_pattern)
+def test_translate_replace_pattern__on_benzene_after_translation_relative_atom_positions_are_unchanged(benzene, benzene_rotated):
+    molecule_copy = ase.Atoms.copy(benzene_rotated)
 
-    translated_molecule = translate_replace_pattern(replace_pattern, search_pattern)
+    translated_molecule = translate_replace_pattern(benzene_rotated, benzene)
     assert len(translated_molecule) == 9
     assert translated_molecule.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
 
@@ -213,18 +217,15 @@ def test_translate_replace_pattern__on_benzene_after_translation_relative_atom_p
     assert ((translated_molecule[0].position - translated_molecule[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
     assert ((translated_molecule[5].position - translated_molecule[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
-def test_rotate_replace_pattern__rotate_benzene_90_degrees_about_z_axis_at_origin_changes_x_y_positions():
-    with importlib.resources.path(tests, "benzene_at_origin.xyz") as pattern_path:
-        pattern = ase.io.read(pattern_path)
-
-    molecule_copy = ase.Atoms.copy(pattern)
+def test_rotate_replace_pattern__rotate_benzene_90_degrees_about_z_axis_at_origin_changes_x_y_positions(benzene_at_origin):
+    molecule_copy = ase.Atoms.copy(benzene_at_origin)
 
     # Rotate the linker by 90 degrees about z axis at origin (0, 0, 0)
     r =  R.from_euler('z', 90, degrees=True)
     rot_linker_euler = r.apply(molecule_copy.positions)
 
     # Rotate the linker by 90 degrees about z axis at origin (0, 0, 0)
-    rotated_pattern = rotate_replace_pattern(pattern, 0, [0, 0, 1], 1.5707963267948966)
+    rotated_pattern = rotate_replace_pattern(benzene_at_origin, 0, [0, 0, 1], 1.5707963267948966)
 
     assert len(rotated_pattern) == 9
     assert rotated_pattern.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
@@ -237,18 +238,15 @@ def test_rotate_replace_pattern__rotate_benzene_90_degrees_about_z_axis_at_origi
     assert ((rotated_pattern[0].position - rotated_pattern[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
     assert ((rotated_pattern[5].position - rotated_pattern[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
-def test_rotate_replace_pattern__rotate_benzene_180_degrees_about_x_axis_at_origin_swaps_x_y_positions():
-    with importlib.resources.path(tests, "benzene_at_origin.xyz") as pattern_path:
-        pattern = ase.io.read(pattern_path)
-
-    molecule_copy = ase.Atoms.copy(pattern)
+def test_rotate_replace_pattern__rotate_benzene_180_degrees_about_x_axis_at_origin_swaps_x_y_positions(benzene_at_origin):
+    molecule_copy = ase.Atoms.copy(benzene_at_origin)
 
     # Rotate the linker by 180 degrees about x axis at origin (0, 0, 0)
     r =  R.from_euler('x', 180, degrees=True)
     rot_linker_euler = r.apply(molecule_copy.positions)
 
     # Rotate the linker by 180 degrees about x axis at origin (0, 0, 0)
-    rotated_pattern = rotate_replace_pattern(pattern, 0, [1, 0, 0], 3.1415926535897)
+    rotated_pattern = rotate_replace_pattern(benzene_at_origin, 0, [1, 0, 0], 3.1415926535897)
 
     assert len(rotated_pattern) == 9
     assert rotated_pattern.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
@@ -261,14 +259,11 @@ def test_rotate_replace_pattern__rotate_benzene_180_degrees_about_x_axis_at_orig
     assert ((rotated_pattern[0].position - rotated_pattern[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
     assert ((rotated_pattern[5].position - rotated_pattern[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
-def test_rotate_replace_pattern__rotate_benzene_360_degrees_about_vector_1_1_1_at_origin_does_not_change_positions():
-    with importlib.resources.path(tests, "benzene_at_origin.xyz") as pattern_path:
-        pattern = ase.io.read(pattern_path)
-
-    molecule_copy = ase.Atoms.copy(pattern)
+def test_rotate_replace_pattern__rotate_benzene_360_degrees_about_vector_1_1_1_at_origin_does_not_change_positions(benzene_at_origin):
+    molecule_copy = ase.Atoms.copy(benzene_at_origin)
 
     # Rotate the pattern by 360 degrees about a vector [1, 1, 1] at origin (0, 0, 0)
-    rotated_pattern = rotate_replace_pattern(pattern, 0, [1, 1, 1], 6.2831853071794)
+    rotated_pattern = rotate_replace_pattern(benzene_at_origin, 0, [1, 1, 1], 6.2831853071794)
 
     assert len(rotated_pattern) == 9
     assert rotated_pattern.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
@@ -281,25 +276,16 @@ def test_rotate_replace_pattern__rotate_benzene_360_degrees_about_vector_1_1_1_a
     assert ((rotated_pattern[0].position - rotated_pattern[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
     assert ((rotated_pattern[5].position - rotated_pattern[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
-def test_replace_pattern_orient__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions():
-    with importlib.resources.path(tests, "HKUST-1_withbonds.cif") as hkust1_path:
-        structure = ase.io.read(hkust1_path)
-    with importlib.resources.path(tests, "benzene.xyz") as pattern_path:
-        search_pattern = ase.io.read(pattern_path)
+def test_replace_pattern_orient__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
+    match_indices, match_atoms = find_pattern_in_structure(hkust1_cif, benzene)
+    replace_pattern = [benzene.copy() for _ in match_atoms]
 
-    match_indices, match_atoms = find_pattern_in_structure(structure, search_pattern)
-
-
-    replace_pattern = []
-    for i in range(len(match_atoms)):
-        replace_pattern.append(ase.io.read(pattern_path))
-
-    translate_molecule_origin(search_pattern)
+    translate_molecule_origin(benzene)
     for i in range(len(replace_pattern)):
         translate_molecule_origin(replace_pattern[i])
 
     for i in range(len(replace_pattern)):
-        replace_pattern_orient(search_pattern, replace_pattern[i])
+        replace_pattern_orient(benzene, replace_pattern[i])
 
     for i in range(len(replace_pattern)):
         replace_pattern_orient(match_atoms[i], replace_pattern[i])
