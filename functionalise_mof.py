@@ -308,6 +308,18 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
     if len(indices_to_delete) > len(set(indices_to_delete)):
         raise Exception("There is an atom that is matched in two distinct pattern. Each atom can only be matched in one atom.")
 
+    if len(replace_pattern) > 0:
+        for match in match_indices:
+            atoms = structure[match]
+            # print(atoms)
+            new_atoms = replace_pattern.copy()
+            translate_molecule_origin(new_atoms)
+            if len(atoms) > 1:
+                replace_pattern_orient(search_pattern, new_atoms)
+                replace_pattern_orient(atoms, new_atoms)
+            translate_replace_pattern(new_atoms, atoms)
+            new_structure.extend(new_atoms)
+
     del(new_structure[indices_to_delete])
 
     return new_structure

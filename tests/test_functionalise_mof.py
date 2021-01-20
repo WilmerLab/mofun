@@ -1,3 +1,4 @@
+from collections import Counter
 import importlib
 from importlib import resources
 
@@ -178,19 +179,15 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(
     assert len(replaced_structure) == 8
     assert replaced_structure.get_chemical_symbols() == ["C"] * 8
 
-@pytest.mark.skip(reason="replace not implemented yet")
-def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogens():
-    # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
-    with importlib.resources.path(tests, "octane.xyz") as octane_path:
-        structure = ase.io.read(octane_path)
+def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogens(octane):
     search_pattern = Atoms('H', positions=[(0, 0, 0)])
     replace_pattern = search_pattern
 
-    replaced_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
+    replaced_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert len(replaced_structure) == 26
-    assert replaced_structure.get_chemical_symbols() == ["C", "H", "H", "H", "C", "H", "H",
-        "C", "H", "H", "C", "H", "H", "C", "H", "H", "C", "H", "H", "C", "H", "H", "C", "H", "H", "H"]
-# TODO: assert positions are the same as when we started
+    num_types = Counter(replaced_structure.symbols)
+    assert num_types["H"] == 18
+    assert num_types["C"] == 8
 
 def test_translate_molecule_origin__on_benzene_after_translation_relative_atom_positions_are_unchanged(benzene):
     molecule_copy = ase.Atoms.copy(benzene)
