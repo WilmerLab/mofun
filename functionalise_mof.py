@@ -130,21 +130,7 @@ def rotate_replace_pattern(pattern, pivot_atom_index, axis, angle):
     return pattern
 
 def translate_molecule_origin(pattern):
-
-    # Translate the molecule so that the first defined atom's position is at 0,0,0
-
-    first_atom_position = pattern[0].position
-    origin = np.array([0,0,0])
-
-    dx = origin[0] - first_atom_position[0]
-    dy = origin[1] - first_atom_position[1]
-    dz = origin[2] - first_atom_position[2]
-
-    for position in pattern.positions:
-        position[0] += dx
-        position[1] += dy
-        position[2] += dz
-
+    pattern.translate(-pattern.positions[0])
     return pattern
 
 def translate_replace_pattern(replace_pattern, search_instance):
