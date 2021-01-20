@@ -311,7 +311,7 @@ def test_replace_pattern_orient__in_hkust1_replacing_benzene_with_benzene_does_n
         diff = match_atoms[i].positions - replace_pattern[i].positions
         for j in range(len(diff)):
             for k in range(3):
-                (diff[j][k])**2 == approx(0, abs=1e-3)
+                assert (diff[j][k])**2 == approx(0, abs=1e-3)
 
         assert len(replace_pattern[i]) == 9
         assert replace_pattern[i].get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
