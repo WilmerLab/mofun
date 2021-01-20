@@ -87,10 +87,8 @@ def find_pattern_in_structure(structure, pattern):
         match_index_tuples = remove_duplicates(match_index_tuples)
         print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
 
-    # get ASE atoms objects for each set of indices
-    match_atoms = [structure.__getitem__([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
+    return [[index_mapper[m] % len(structure) for m in match] for match in match_index_tuples]
 
-    return match_index_tuples, match_atoms
 
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern):

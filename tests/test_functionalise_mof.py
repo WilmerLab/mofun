@@ -56,16 +56,17 @@ def benzene_rotated():
 
 def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     pattern = Atoms('C', positions=[(0, 0, 0)])
-    match_indices, match_atoms = find_pattern_in_structure(octane, pattern)
+    match_indices = find_pattern_in_structure(octane, pattern)
     assert len(match_indices) == 8
-    for pattern_found in match_atoms:
-        assert pattern_found.get_chemical_symbols() == ["C"]
+    for indices in match_indices:
+        assert octane[indices].get_chemical_symbols() == ["C"]
 
 def test_find_pattern_in_structure__octane_has_2_CH3(octane):
     pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
-    match_indices, match_atoms = find_pattern_in_structure(octane, pattern)
-    assert len(match_atoms) == 2
-    for pattern_found in match_atoms:
+    match_indices = find_pattern_in_structure(octane, pattern)
+    assert len(match_indices) == 2
+    for indices in match_indices:
+        pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ["C", "H", "H", "H"]
         cpos = pattern_found[0].position
         assert ((pattern_found[1].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
@@ -75,36 +76,37 @@ def test_find_pattern_in_structure__octane_has_2_CH3(octane):
 def test_find_pattern_in_structure__octane_has_12_CH2(octane):
     # there are technically 12 matches, since each CH3 makes 3 variations of CH2
     pattern = Atoms('CHH', positions=[(0, 0, 0),(-0.1  , -0.379, -1.017), (-0.547, -0.647,  0.685)])
-    match_indices, match_atoms = find_pattern_in_structure(octane, pattern)
+    match_indices = find_pattern_in_structure(octane, pattern)
 
-    assert len(match_atoms) == 12
-    for pattern_found in match_atoms:
+    assert len(match_indices) == 12
+    for indices in match_indices:
+        pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ["C", "H", "H"]
         cpos = pattern_found[0].position
         assert ((pattern_found[1].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
         assert ((pattern_found[2].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
-def test_find_pattern_in_structure__octane_over_pbc_has_2_CH3():
+def test_find_pattern_in_structure__octane_over_pbc_has_2_CH3(octane):
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
-    with importlib.resources.path(tests, "octane.xyz") as octane_path:
-        structure = ase.io.read(octane_path)#[0:4]
-        # move atoms across corner boundary
-        structure.positions += -1.8
-        # move coordinates into main 15 Å unit cell
-        structure.positions %= 15
-        structure.set_cell(15 * np.identity(3))
+    # move atoms across corner boundary
+    octane.positions += -1.8
+    # move coordinates into main 15 Å unit cell
+    octane.positions %= 15
+    octane.set_cell(15 * np.identity(3))
 
     pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
-    match_indices, match_atoms = find_pattern_in_structure(structure, pattern)
-    assert len(match_atoms) == 2
-    for pattern_found in match_atoms:
-        assert pattern_found.get_chemical_symbols() == ["C", "H", "H", "H"]
+    match_indices = find_pattern_in_structure(octane, pattern)
+    assert len(match_indices) == 2
+    for indices in match_indices:
+        assert octane[indices].get_chemical_symbols() == ["C", "H", "H", "H"]
 
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_unit_cell_has_32_benzene_rings(hkust1_cif, benzene):
-    match_indices, match_atoms = find_pattern_in_structure(hkust1_cif, benzene)
+    match_indices = find_pattern_in_structure(hkust1_cif, benzene)
 
-    assert len(match_atoms) == 32
-    for pattern_found in match_atoms:
+    assert len(match_indices) == 32
+    for indices in match_indices:
+        pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
         assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
         assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
@@ -113,18 +115,20 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_32_benzene_rings(hkust1
 
 def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust1_cif):
     pattern = Atoms('Cu', positions=[(0, 0, 0)])
-    match_indices, match_atoms = find_pattern_in_structure(hkust1_cif, pattern)
+    match_indices = find_pattern_in_structure(hkust1_cif, pattern)
 
-    assert len(match_atoms) == 48
-    for pattern_found in match_atoms:
+    assert len(match_indices) == 48
+    for indices in match_indices:
+        pattern_found = hkust1_cif[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
 @pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_cif, benzene):
-    match_indices, match_atoms = find_pattern_in_structure(hkust1_3x3x3_cif, benzene)
+    match_indices = find_pattern_in_structure(hkust1_3x3x3_cif, benzene)
 
-    assert len(match_atoms) == 864
-    for pattern_found in match_atoms:
+    assert len(match_indices) == 864
+    for indices in match_indices:
+        pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
         assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
         assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
@@ -134,10 +138,11 @@ def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_r
 
 @pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_xyz, benzene):
-    match_indices, match_atoms = find_pattern_in_structure(hkust1_3x3x3_xyz, benzene)
+    match_indices = find_pattern_in_structure(hkust1_3x3x3_xyz, benzene)
 
-    assert len(match_atoms) == 864
-    for pattern_found in match_atoms:
+    assert len(match_indices) == 864
+    for indices in match_indices:
+        pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
         assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
         assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
@@ -147,29 +152,29 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_r
 @pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_cif):
     pattern = Atoms('Cu', positions=[(0, 0, 0)])
-    match_indices, match_atoms = find_pattern_in_structure(hkust1_3x3x3_cif, pattern)
+    match_indices = find_pattern_in_structure(hkust1_3x3x3_cif, pattern)
 
-    assert len(match_atoms) == 1296
-    for pattern_found in match_atoms:
+    assert len(match_indices) == 1296
+    for indices in match_indices:
+        pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_xyz):
     pattern = Atoms('Cu', positions=[(0, 0, 0)])
-    match_indices, match_atoms = find_pattern_in_structure(hkust1_3x3x3_xyz, pattern)
+    match_indices = find_pattern_in_structure(hkust1_3x3x3_xyz, pattern)
 
-    assert len(match_atoms) == 1296
-    for pattern_found in match_atoms:
+    assert len(match_indices) == 1296
+    for indices in match_indices:
+        pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
-@pytest.mark.skip(reason="replace not implemented yet")
-def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing():
+def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(octane):
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
-    with importlib.resources.path(tests, "octane.xyz") as octane_path:
-        structure = ase.io.read(octane_path)
     search_pattern = Atoms('H', positions=[(0, 0, 0)])
-    replace_pattern = search_pattern
+    replace_pattern = Atoms()
 
-    replaced_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
+    replaced_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert len(replaced_structure) == 8
     assert replaced_structure.get_chemical_symbols() == ["C"] * 8
 
@@ -277,8 +282,8 @@ def test_rotate_replace_pattern__rotate_benzene_360_degrees_about_vector_1_1_1_a
     assert ((rotated_pattern[5].position - rotated_pattern[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
 def test_replace_pattern_orient__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
-    match_indices, match_atoms = find_pattern_in_structure(hkust1_cif, benzene)
-    replace_pattern = [benzene.copy() for _ in match_atoms]
+    match_indices = find_pattern_in_structure(hkust1_cif, benzene)
+    replace_pattern = [benzene.copy() for _ in match_indices]
 
     translate_molecule_origin(benzene)
     for i in range(len(replace_pattern)):
