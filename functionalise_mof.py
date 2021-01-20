@@ -19,6 +19,16 @@ def remove_duplicates(match_indices):
     return [list(m) for m in match1]
 
 def get_types_ss_map_limited_near_uc(structure, length, cell):
+    """
+    structure:
+    length: the length of the longest dimension of the search pattern
+    cell:
+
+    creates master lists of indices, types and positions, for all atoms in the structure and all
+    atoms across the PBCs. Limits atoms across PBCs to those that are within a distance of the
+    boundary that is less than the length of the search pattern (i.e. atoms further away from the
+    boundary than this will never match the search pattern).
+    """
     if not (cell.angles() == [90., 90., 90.]).all():
         raise Exception("Currently optimizations do not support unit cell angles != 90")
 
@@ -34,6 +44,7 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     index_mapper = []
     s_pos_view = []
     s_types_view = []
+
     for i, pos in enumerate(s_positions):
         # only currently works for orthorhombic crystals
         if (pos[0] >= -length and pos[0] < length + cell[0] and
