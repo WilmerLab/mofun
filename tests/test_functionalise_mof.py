@@ -54,6 +54,14 @@ def benzene_rotated():
     with importlib.resources.path(tests, "benzene_rotated.xyz") as path:
         yield ase.io.read(path)
 
+def assert_positions_should_be_unchanged(orig_structure, final_structure, decimal_points=5):
+    p = orig_structure.positions.round(decimal_points)
+    p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]
+    new_p = final_structure.positions.round(decimal_points)
+    new_p_ordered = new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))]
+    for i, p1 in enumerate(p_ordered):
+        assert (p1 == new_p_ordered[i]).all()
+
 
 def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     pattern = Atoms('C', positions=[(0, 0, 0)])
@@ -170,24 +178,48 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal
         pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
+
+
+
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(octane):
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     search_pattern = Atoms('H', positions=[(0, 0, 0)])
     replace_pattern = Atoms()
 
-    replaced_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
-    assert len(replaced_structure) == 8
-    assert replaced_structure.get_chemical_symbols() == ["C"] * 8
+    final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
+    assert final_structure.get_chemical_symbols() == ["C"] * 8
 
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogens(octane):
     search_pattern = Atoms('H', positions=[(0, 0, 0)])
     replace_pattern = search_pattern
 
-    replaced_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
-    assert len(replaced_structure) == 26
-    num_types = Counter(replaced_structure.symbols)
-    assert num_types["H"] == 18
-    assert num_types["C"] == 8
+    final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
+    assert Counter(final_structure.symbols) == {"H": 18, "C": 8}
+    assert_positions_should_be_unchanged(octane, final_structure)
+
+def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_fluorines(octane):
+    search_pattern = Atoms('H', positions=[(0, 0, 0)])
+    replace_pattern = Atoms('F', positions=[(0, 0, 0)])
+    final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
+    assert Counter(final_structure.symbols) == {"F": 18, "C": 8}
+    assert_positions_should_be_unchanged(octane, final_structure)
+
+def test_replace_pattern_in_structure__replace_CH3_in_octane_with_fluorines(octane):
+    search_pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
+    replace_pattern = Atoms('FFFF', positions=search_pattern.positions)
+    final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
+    assert Counter(final_structure.symbols) == {"F": 8, "C": 6, "H": 12}
+
+def test_replace_pattern_in_structure__two_points_on_x_axis_positions_are_unchanged():
+
+    structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=[100]*3)
+    search_pattern = Atoms('NN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
+    replace_pattern = Atoms('FF', positions=[(0., 0., 0), (1.0, 0., 0.)])
+
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
+    assert Counter(final_structure.symbols) == {"C":2, "F": 2}
+    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
+
 
 def test_translate_molecule_origin__on_benzene_after_translation_relative_atom_positions_are_unchanged(benzene):
     molecule_copy = ase.Atoms.copy(benzene)

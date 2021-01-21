@@ -5,6 +5,7 @@ from ase import Atoms, io
 import numpy as np
 from numpy.linalg import norm
 from scipy.spatial import distance
+from scipy.spatial.transform import Rotation as R
 
 def atoms_of_type(types, element):
     """ returns all atom indices in types that match the symbol element """
@@ -280,29 +281,67 @@ def replace_pattern_orient(search_instance, replace_pattern):
         # Now rotate by 180 degrees
         rotate_replace_pattern(replace_pattern, r_pivot_atom_index, crs, theta)
 
+def quaternion_from_two_axes(axis1, axis2):
+    """ returns the quaternion necessary to rotate ax1 to ax2
+
+    returns None if ax1 == ax2
+    """
+    ax1 = np.array(axis1)
+    ax2 = np.array(axis2)
+    ax1 /= np.sqrt(np.dot(ax1, ax1))
+    ax2 /= np.sqrt(np.dot(ax2, ax2))
+
+    axis = np.cross(ax1, ax2)
+    if np.isclose(axis, 0.0).all():
+        return None
+
+    angle = np.arccos(np.dot(ax1, ax2))
+    if np.isnan(angle):
+        return None
+    print(axis1, axis2, axis, angle)
+    return quaternion_from_axis_angle(axis, angle)
+
+def quaternion_from_axis_angle(axis, angle):
+    # from https://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
+    # normalize axis to unit form:
+    print(axis, angle)
+    xyz = axis * np.sin(angle / 2) / np.sqrt(np.dot(axis, axis))
+    print(axis, angle, xyz)
+    return R.from_quat([*xyz, np.cos(angle/2)])
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
+    search_pattern = search_pattern.copy()
+    replace_pattern = replace_pattern.copy()
+
     match_indices = find_pattern_in_structure(structure, search_pattern)
 
-    search_pattern = search_pattern.copy()
-    translate_molecule_origin(search_pattern)
+    # translate both search and replace patterns so that first atom of search pattern is at the origin
+    replace_pattern.translate(-search_pattern.positions[0])
+    search_pattern.translate(-search_pattern.positions[0])
+    search_axis = search_pattern.positions[-1]
 
-    new_structure = structure.copy()
     indices_to_delete = [idx for match in match_indices for idx in match]
 
     if len(indices_to_delete) > len(set(indices_to_delete)):
-        raise Exception("There is an atom that is matched in two distinct pattern. Each atom can only be matched in one atom.")
+        raise Exception("There is an atom that is matched in two distinct patterns. Each atom can only be matched in one atom.")
 
+    new_structure = structure.copy()
     if len(replace_pattern) > 0:
         for match in match_indices:
             atoms = structure[match]
-            # print(atoms)
             new_atoms = replace_pattern.copy()
-            translate_molecule_origin(new_atoms)
             if len(atoms) > 1:
-                replace_pattern_orient(search_pattern, new_atoms)
-                replace_pattern_orient(atoms, new_atoms)
-            translate_replace_pattern(new_atoms, atoms)
+                found_axis = atoms.positions[-1] - atoms.positions[0]
+                q1 = quaternion_from_two_axes(search_axis, found_axis)
+                if q1 is not None:
+                    new_atoms.positions = q1.apply(new_atoms.positions)
+
+                if len(atoms) > 2:
+                    pass
+                    # do orient
+
+            # move replacement atoms into correct position
+            new_atoms.translate(atoms.positions[0])
             new_structure.extend(new_atoms)
 
     del(new_structure[indices_to_delete])
