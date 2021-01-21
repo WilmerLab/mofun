@@ -281,6 +281,13 @@ def replace_pattern_orient(search_instance, replace_pattern):
         # Now rotate by 180 degrees
         rotate_replace_pattern(replace_pattern, r_pivot_atom_index, crs, theta)
 
+def position_index_farthest_from_axis(axis, atoms):
+    q = quaternion_from_two_axes(axis, [1., 0., 0.])
+    ratoms = q.apply(atoms.positions)
+    ss = (ratoms[:,1:3] ** 2).sum(axis=1)
+    return np.nonzero(ss==ss.max())[0][0]
+
+
 def quaternion_from_two_axes(axis1, axis2):
     """ returns the quaternion necessary to rotate ax1 to ax2
 

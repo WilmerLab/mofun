@@ -8,7 +8,10 @@ import numpy as np
 import pytest
 from pytest import approx
 
-from functionalise_mof import find_pattern_in_structure, replace_pattern_in_structure, translate_molecule_origin, translate_replace_pattern, rotate_replace_pattern, replace_pattern_orient
+from functionalise_mof import (find_pattern_in_structure, replace_pattern_in_structure,
+                               translate_molecule_origin, translate_replace_pattern,
+                               rotate_replace_pattern, replace_pattern_orient,
+                               position_index_farthest_from_axis)
 import tests
 
 from scipy.spatial.transform import Rotation as R
@@ -178,6 +181,10 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal
         pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
+
+def test_position_index_farthest_from_axis__for_octane_is_index_6_or_20(octane):
+    # index 20 is one of the H on the benzene ring
+    assert position_index_farthest_from_axis(octane.positions[-1] - octane.positions[0], octane) in [6,20]
 
 
 
