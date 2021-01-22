@@ -11,7 +11,8 @@ from pytest import approx
 from functionalise_mof import (find_pattern_in_structure, replace_pattern_in_structure,
                                translate_molecule_origin, translate_replace_pattern,
                                rotate_replace_pattern, replace_pattern_orient,
-                               position_index_farthest_from_axis)
+                               position_index_farthest_from_axis,
+                               remove_duplicates)
 import tests
 
 from scipy.spatial.transform import Rotation as R
@@ -66,6 +67,10 @@ def assert_positions_should_be_unchanged(orig_structure, final_structure, decima
         assert (p1 == new_p_ordered[i]).all()
 
 
+def test_remove_duplicates__should_leave_order_untouched():
+    assert remove_duplicates([(3, 2, 1)]) == [(3, 2, 1)]
+    assert remove_duplicates([(3, 2, 1), (1, 2, 3)]) == [(3, 2, 1)]
+
 def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     pattern = Atoms('C', positions=[(0, 0, 0)])
     match_indices = find_pattern_in_structure(octane, pattern)
@@ -84,6 +89,15 @@ def test_find_pattern_in_structure__octane_has_2_CH3(octane):
         assert ((pattern_found[1].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
         assert ((pattern_found[2].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
         assert ((pattern_found[3].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+
+
+def test_find_pattern_in_structure__match_indices_returned_in_order_of_pattern():
+    structure = Atoms('HOH', positions=[(4., 0, 0), (5., 0., 0), (6., 0., 0.),], cell=[15]*3)
+    search_pattern = Atoms('HO', positions=[(-1., 0, 0), (0., 0., 0.)])
+    match_indices = find_pattern_in_structure(structure, search_pattern)
+    assert set(match_indices) == {(0, 1), (2, 1)}
+
+
 
 def test_find_pattern_in_structure__octane_has_12_CH2(octane):
     # there are technically 12 matches, since each CH3 makes 3 variations of CH2

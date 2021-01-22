@@ -16,8 +16,14 @@ def uc_neighbor_offsets(uc_vectors):
     return {tuple((uc_vectors * m).sum(axis=1)) for m in multipliers}
 
 def remove_duplicates(match_indices):
-    match1 = set([tuple(sorted(matches)) for matches in match_indices])
-    return [list(m) for m in match1]
+    found_tuples = set()
+    new_match_indices = []
+    for m in match_indices:
+        mkey = tuple(sorted(m))
+        if mkey not in found_tuples:
+            new_match_indices.append(m)
+            found_tuples.add(mkey)
+    return new_match_indices
 
 def get_types_ss_map_limited_near_uc(structure, length, cell):
     """
@@ -96,10 +102,11 @@ def find_pattern_in_structure(structure, pattern):
                 if found_match:
                     match_index_tuples.append(match + [atom_idx])
 
-        match_index_tuples = remove_duplicates(match_index_tuples)
+
         print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
 
-    return [[index_mapper[m] % len(structure) for m in match] for match in match_index_tuples]
+    match_index_tuples = remove_duplicates(match_index_tuples)
+    return [tuple([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
 
 
 def rotate_replace_pattern(pattern, pivot_atom_index, axis, angle):
