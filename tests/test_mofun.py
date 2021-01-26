@@ -10,9 +10,8 @@ import numpy as np
 import pytest
 from pytest import approx
 
-from functionalise_mof import (find_pattern_in_structure, replace_pattern_in_structure,
-                               position_index_farthest_from_axis,
-                               remove_duplicates, quaternion_from_two_axes)
+from mofun import (find_pattern_in_structure, replace_pattern_in_structure,
+                   position_index_farthest_from_axis, remove_duplicates, quaternion_from_two_axes)
 import tests
 
 from scipy.spatial.transform import Rotation as R
