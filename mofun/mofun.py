@@ -1,29 +1,14 @@
 import math
 
-import ase as ase
-from ase import Atoms, io
 import numpy as np
-from numpy.linalg import norm
 from scipy.spatial import distance
-from scipy.spatial.transform import Rotation as R
 
-def atoms_of_type(types, element):
-    """ returns all atom indices in types that match the symbol element """
-    return [i for i, t in enumerate(types) if t == element]
+from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_farthest_from_axis, \
+                          quaternion_from_two_axes, remove_duplicates
 
 def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 3)
     return {tuple((uc_vectors * m).sum(axis=1)) for m in multipliers}
-
-def remove_duplicates(match_indices):
-    found_tuples = set()
-    new_match_indices = []
-    for m in match_indices:
-        mkey = tuple(sorted(m))
-        if mkey not in found_tuples:
-            new_match_indices.append(m)
-            found_tuples.add(mkey)
-    return new_match_indices
 
 def get_types_ss_map_limited_near_uc(structure, length, cell):
     """
@@ -64,11 +49,7 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
     return s_types_view, s_ss, index_mapper
 
-def atoms_by_type_dict(atom_types):
-    atoms_by_type = {k:[] for k in set(atom_types)}
-    for i, k in enumerate(atom_types):
-        atoms_by_type[k].append(i)
-    return atoms_by_type
+
 
 def find_pattern_in_structure(structure, pattern):
     """find pattern in structure, where both are ASE atoms objects
@@ -107,29 +88,6 @@ def find_pattern_in_structure(structure, pattern):
 
     match_index_tuples = remove_duplicates(match_index_tuples)
     return [tuple([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
-
-
-def position_index_farthest_from_axis(axis, atoms):
-    q = quaternion_from_two_axes(axis, [1., 0., 0.])
-    ratoms = q.apply(atoms.positions)
-    ss = (ratoms[:,1:3] ** 2).sum(axis=1)
-    return np.nonzero(ss==ss.max())[0][0]
-
-def quaternion_from_two_axes(p1, p2, axis=None, posneg=1):
-    """ returns the quaternion necessary to rotate ax1 to ax2"""
-    v1 = np.array(p1) / np.linalg.norm(p1)
-    v2 = np.array(p2) / np.linalg.norm(p2)
-    angle = posneg * np.arccos(max(-1.0,min(np.dot(v1, v2),1)))
-    if axis is None:
-        axis = np.cross(v1, v2)
-        if np.isclose(axis, [0., 0., 0.], 1e-3).all() and angle != 0.0:
-            # the antiparallel case requires we arbitrarily find a orthogonal rotation axis, since the
-            # cross product of a two parallel / antiparallel vectors is 0.
-            axis = np.cross(v1, np.random.random(3))
-
-    if np.linalg.norm(axis) > 1e-15:
-        axis /= np.linalg.norm(axis)
-    return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
     search_pattern = search_pattern.copy()

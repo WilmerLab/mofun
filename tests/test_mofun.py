@@ -1,94 +1,17 @@
 from collections import Counter
-import importlib
-from importlib import resources
+
 from math import sqrt
 
-import ase
 from ase import Atoms
-from ase.visualize import view
 import numpy as np
 import pytest
 from pytest import approx
-
-from mofun import (find_pattern_in_structure, replace_pattern_in_structure,
-                   position_index_farthest_from_axis, remove_duplicates, quaternion_from_two_axes)
-import tests
-
 from scipy.spatial.transform import Rotation as R
 
-@pytest.fixture
-def octane():
-    # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
-    with importlib.resources.path(tests, "octane.xyz") as path:
-        structure = ase.io.read(path)
-        structure.positions += 30
-        structure.set_cell(60 * np.identity(3))
-        yield structure
+from mofun import find_pattern_in_structure, replace_pattern_in_structure
 
-@pytest.fixture
-def hkust1_cif():
-    with importlib.resources.path(tests, "HKUST-1_withbonds.cif") as path:
-        yield ase.io.read(path)
+from tests.fixtures import *
 
-@pytest.fixture
-def hkust1_3x3x3_xyz():
-    with importlib.resources.path(tests, "HKUST-1_3x3x3.xyz") as path:
-        structure = ase.io.read(path)
-        structure.set_cell(79.0290 * np.identity(3))
-        yield structure
-
-@pytest.fixture
-def hkust1_3x3x3_cif():
-    with importlib.resources.path(tests, "HKUST-1_3x3x3.cif") as path:
-        yield ase.io.read(path)
-
-@pytest.fixture
-def benzene():
-    with importlib.resources.path(tests, "benzene.xyz") as path:
-        yield ase.io.read(path)
-
-@pytest.fixture
-def benzene_at_origin():
-    with importlib.resources.path(tests, "benzene_at_origin.xyz") as path:
-        yield ase.io.read(path)
-
-@pytest.fixture
-def benzene_rotated():
-    with importlib.resources.path(tests, "benzene_rotated.xyz") as path:
-        yield ase.io.read(path)
-
-def assert_positions_should_be_unchanged(orig_structure, final_structure, decimal_points=5):
-    p = orig_structure.positions.round(decimal_points)
-    p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]
-    new_p = final_structure.positions.round(decimal_points)
-    new_p_ordered = new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))]
-    for i, p1 in enumerate(p_ordered):
-        assert (p1 == new_p_ordered[i]).all()
-
-def test_quaternion_from_two_axes__with_antiparallel_z_axes_inverts_z_coord():
-    q = quaternion_from_two_axes((0.,0.,2.),(0.,0.,-2.))
-    assert q.apply([1., 1., 1.])[2] == approx(-1., 1e-5)
-
-
-def test_quaternion_from_two_axes__with_almost_antiparallel_z_axes_mostly_inverts_yz_coords():
-    q = quaternion_from_two_axes((0.,0.,1.),(0.,0.00001,-0.99999))
-    assert np.isclose(q.as_quat(), [-1., 0., 0., 0.], atol=1e-5).all()
-    assert np.isclose(q.apply([1., 1., 1.]), [1., -1., -1.]).all()
-
-def test_quaternion_from_two_axes__with_parallel_axes_is_donothing_0001():
-    q = quaternion_from_two_axes((0., 0., 2.),(0., 0., 2.))
-    assert np.isclose(q.as_quat(), [0., 0., 0., 1.]).all()
-    assert (q.apply([1., 1., 1.]) == [1., 1., 1.]).all()
-
-def test_quaternion_from_two_axes__with_almost_parallel_axes_is_almost_donothing_0001():
-    q = quaternion_from_two_axes((0., 0., 1.),(0., 0.00001, 0.99999))
-    assert np.isclose(q.as_quat(), [0., 0., 0., 1.], atol=1e-5).all()
-    assert np.isclose(q.apply([1., 1., 1.]), [1., 1., 1.]).all()
-
-
-def test_remove_duplicates__should_leave_order_untouched():
-    assert remove_duplicates([(3, 2, 1)]) == [(3, 2, 1)]
-    assert remove_duplicates([(3, 2, 1), (1, 2, 3)]) == [(3, 2, 1)]
 
 def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     pattern = Atoms('C', positions=[(0, 0, 0)])
@@ -109,14 +32,11 @@ def test_find_pattern_in_structure__octane_has_2_CH3(octane):
         assert ((pattern_found[2].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
         assert ((pattern_found[3].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
-
 def test_find_pattern_in_structure__match_indices_returned_in_order_of_pattern():
     structure = Atoms('HOH', positions=[(4., 0, 0), (5., 0., 0), (6., 0., 0.),], cell=[15]*3)
     search_pattern = Atoms('HO', positions=[(-1., 0, 0), (0., 0., 0.)])
     match_indices = find_pattern_in_structure(structure, search_pattern)
     assert set(match_indices) == {(0, 1), (2, 1)}
-
-
 
 def test_find_pattern_in_structure__octane_has_12_CH2(octane):
     # there are technically 12 matches, since each CH3 makes 3 variations of CH2
@@ -214,12 +134,6 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal
         pattern_found = octane[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
-
-def test_position_index_farthest_from_axis__for_octane_is_index_6_or_20(octane):
-    # index 20 is one of the H on the benzene ring
-    assert position_index_farthest_from_axis(octane.positions[-1] - octane.positions[0], octane) in [6,20]
-
-
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(octane):
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     search_pattern = Atoms('H', positions=[(0, 0, 0)])
@@ -256,7 +170,6 @@ def test_replace_pattern_in_structure__replace_CH3_in_octane_with_CH3(octane):
     search_pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
     replace_pattern = Atoms('CHHH', positions=search_pattern.positions)
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
-    view(final_structure)
     assert Counter(final_structure.symbols) == {"C": 8, "H": 18}
     # note the positions are not EXACTLY the same because the original structure has slightly
     # different coordinates for the two CH3 groups!
