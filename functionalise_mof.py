@@ -109,255 +109,88 @@ def find_pattern_in_structure(structure, pattern):
     return [tuple([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
 
 
-def rotate_replace_pattern(pattern, pivot_atom_index, axis, angle):
-
-    numatoms = len(pattern)
-    c = math.cos(angle)
-    s = math.sin(angle)
-
-    x0 = pattern[pivot_atom_index].position[0]
-    y0 = pattern[pivot_atom_index].position[1]
-    z0 = pattern[pivot_atom_index].position[2]
-
-    for i in range(numatoms):
-
-        dx = pattern[i].position[0] - x0
-        dy = pattern[i].position[1] - y0
-        dz = pattern[i].position[2] - z0
-
-        nX = axis[0]
-        nY = axis[1]
-        nZ = axis[2]
-
-        # dxr, dyr, and dzr are the new, rotated coordinates (assuming the pivot atom is the origin)
-
-        # We use a rotation matrix from axis and angle formula
-        dxr = (nX*nX + (1 - nX*nX)*c)*dx +  (nX*nY*(1 - c) - nZ*s)*dy +  (nX*nZ*(1 - c) + nY*s)*dz
-        dyr = (nX*nY*(1 - c) + nZ*s)*dx + (nY*nY + (1 - nY*nY)*c)*dy +  (nY*nZ*(1 - c) - nX*s)*dz
-        dzr = (nX*nZ*(1 - c) - nY*s)*dx +  (nY*nZ*(1 - c) + nX*s)*dy + (nZ*nZ + (1 - nZ*nZ)*c)*dz
-
-        pattern[i].position[0] = x0 + dxr
-        pattern[i].position[1] = y0 + dyr
-        pattern[i].position[2] = z0 + dzr
-
-    return pattern
-
-def translate_molecule_origin(pattern):
-    pattern.translate(-pattern.positions[0])
-    return pattern
-
-def translate_replace_pattern(replace_pattern, search_instance):
-    replace_pattern.translate((search_instance[0].position - replace_pattern[0].position))
-    return replace_pattern
-
-def replace_pattern_orient(search_instance, replace_pattern):
-
-    rt = 0.01; # rotation tolerance error, in radians
-    pi = math.pi
-
-    r_pivot_atom_index = replace_pattern[0].index
-
-    s_numatoms = len(search_instance)
-    r_numatoms = len(replace_pattern)
-
-    s_first_atom_pos = search_instance[0].position
-    s_last_atom_pos = search_instance[s_numatoms-1].position
-    s_second_atom_pos = search_instance[1].position
-
-    r_first_atom_pos = replace_pattern[0].position
-    r_last_atom_pos = replace_pattern[r_numatoms-1].position
-    r_second_atom_pos = replace_pattern[1].position
-
-    # Define the vectors
-
-    # first - f, second - c, last - l, s - search, r - replace
-    # sf_sl - vector between the first atom and the last atom
-    # in the instance of the search pattern in the structure
-
-    sf_sl = np.empty([3])
-    sf_ss = np.empty([3])
-    rf_rl = np.empty([3])
-    rf_rs = np.empty([3])
-
-    # Vectors on the search structure
-    sf_sl[0] = s_last_atom_pos[0] - s_first_atom_pos[0]
-    sf_sl[1] = s_last_atom_pos[1] - s_first_atom_pos[1]
-    sf_sl[2] = s_last_atom_pos[2] - s_first_atom_pos[2]
-
-    sf_ss[0] = s_second_atom_pos[0] - s_first_atom_pos[0]
-    sf_ss[1] = s_second_atom_pos[1] - s_first_atom_pos[1]
-    sf_ss[2] = s_second_atom_pos[2] - s_first_atom_pos[2]
-
-    # Vectors on the replace
-    rf_rl[0] = r_last_atom_pos[0] - r_first_atom_pos[0]
-    rf_rl[1] = r_last_atom_pos[1] - r_first_atom_pos[1]
-    rf_rl[2] = r_last_atom_pos[2] - r_first_atom_pos[2]
-
-    rf_rs[0] = r_second_atom_pos[0] - r_first_atom_pos[0]
-    rf_rs[1] = r_second_atom_pos[1] - r_first_atom_pos[1]
-    rf_rs[2] = r_second_atom_pos[2] - r_first_atom_pos[2]
-
-    # Use the dot-product formula to find the angle between the vectors: SF-SL & RF-RL
-
-    arg = np.dot(sf_sl, rf_rl) / (np.linalg.norm(sf_sl) * np.linalg.norm(rf_rl))
-
-    if arg > 1:
-        arg = 1
-    if arg < -1:
-        arg = -1
-
-    theta = math.acos(arg) # Angle beteen two vectors: SF-SL & RF-RL in Radians
-
-    if theta > rt and theta < pi - rt: # Vectors are not parallel or anti-parallel
-
-        # Find the axis of rotation by taking the cross-product of: SF-SL & RF-RL
-
-        crs = np.cross(sf_sl, rf_rl)
-        mag = np.linalg.norm(crs)
-        mag *= -1
-        crs[0] *= (1.0 / mag)
-        crs[1] *= (1.0 / mag)
-        crs[2] *= (1.0 / mag)
-        rotate_replace_pattern(replace_pattern, r_pivot_atom_index, crs, theta)
-
-    elif theta < rt:
-        # Vectors are parallel, do nothing
-        pass
-
-    else: # Vectors are anti-parallel - rotate by 180 degrees
-        # Now we can rotate by an arbitary normal vector. We can generate an arbitrary normal vector
-        # by taking the cross-product of rf_rs with rf_rl
-        crs = np.cross(rf_rs, rf_rl)
-        mag = np.linalg.norm(crs)
-        crs[0] *= (-1.0 / mag)
-        crs[1] *= (-1.0 / mag)
-        crs[2] *= (-1.0 / mag)
-        # Now rotate by 180 degrees
-        rotate_replace_pattern(replace_pattern, r_pivot_atom_index, crs, theta)
-
-    # Update fgroup vectors after rotation
-    r_first_atom_pos = replace_pattern[0].position
-    r_last_atom_pos = replace_pattern[r_numatoms-1].position
-    r_second_atom_pos = replace_pattern[1].position
-
-    rf_rl[0] = r_last_atom_pos[0] - r_first_atom_pos[0]
-    rf_rl[1] = r_last_atom_pos[1] - r_first_atom_pos[1]
-    rf_rl[2] = r_last_atom_pos[2] - r_first_atom_pos[2]
-
-    rf_rs[0] = r_second_atom_pos[0] - r_first_atom_pos[0]
-    rf_rs[1] = r_second_atom_pos[1] - r_first_atom_pos[1]
-    rf_rs[2] = r_second_atom_pos[2] - r_first_atom_pos[2]
-
-    # Next - twist rotation
-
-    normS = np.cross(sf_sl, sf_ss)
-    normR = np.cross(rf_rl, rf_rs)
-
-    arg = np.dot(normS, normR) / (np.linalg.norm(normS) * np.linalg.norm(normR))
-
-    if arg > 1:
-        arg = 1
-    if arg < -1:
-        arg = -1
-
-    theta = math.acos(arg)
-
-    if theta > rt and theta < pi - rt: # Vectors are not parallel or anti-parallel
-
-        # Find the axis of rotation by taking the cross-product of: SF-SL & RF-RL
-
-        crs = np.cross(normS, normR)
-        mag = np.linalg.norm(crs)
-        mag *= -1
-        crs[0] *= (1.0 / mag)
-        crs[1] *= (1.0 / mag)
-        crs[2] *= (1.0 / mag)
-        rotate_replace_pattern(replace_pattern, r_pivot_atom_index, crs, theta)
-
-    elif theta < rt:
-        # Vectors are parallel, do nothing
-        pass
-
-    else: # Rotate around sf_sl vector
-
-        crs = sf_sl
-        mag = np.linalg.norm(crs)
-        crs[0] *= (1.0 / mag)
-        crs[1] *= (1.0 / mag)
-        crs[2] *= (1.0 / mag)
-        # Now rotate by 180 degrees
-        rotate_replace_pattern(replace_pattern, r_pivot_atom_index, crs, theta)
-
 def position_index_farthest_from_axis(axis, atoms):
     q = quaternion_from_two_axes(axis, [1., 0., 0.])
     ratoms = q.apply(atoms.positions)
     ss = (ratoms[:,1:3] ** 2).sum(axis=1)
     return np.nonzero(ss==ss.max())[0][0]
 
+def quaternion_from_two_axes(p1, p2, axis=None, posneg=1):
+    """ returns the quaternion necessary to rotate ax1 to ax2"""
+    v1 = np.array(p1) / np.linalg.norm(p1)
+    v2 = np.array(p2) / np.linalg.norm(p2)
+    angle = posneg * np.arccos(max(-1.0,min(np.dot(v1, v2),1)))
+    if axis is None:
+        axis = np.cross(v1, v2)
+        if np.isclose(axis, [0., 0., 0.], 1e-3).all() and angle != 0.0:
+            # the antiparallel case requires we arbitrarily find a orthogonal rotation axis, since the
+            # cross product of a two parallel / antiparallel vectors is 0.
+            axis = np.cross(v1, np.random.random(3))
 
-def quaternion_from_two_axes(axis1, axis2):
-    """ returns the quaternion necessary to rotate ax1 to ax2
-
-    returns None if ax1 == ax2
-    """
-    ax1 = np.array(axis1)
-    ax2 = np.array(axis2)
-    ax1 /= np.sqrt(np.dot(ax1, ax1))
-    ax2 /= np.sqrt(np.dot(ax2, ax2))
-
-    axis = np.cross(ax1, ax2)
-    if np.isclose(axis, 0.0).all():
-        return None
-
-    angle = np.arccos(np.dot(ax1, ax2))
-    if np.isnan(angle):
-        return None
-    print(axis1, axis2, axis, angle)
-    return quaternion_from_axis_angle(axis, angle)
-
-def quaternion_from_axis_angle(axis, angle):
-    # from https://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
-    # normalize axis to unit form:
-    print(axis, angle)
-    xyz = axis * np.sin(angle / 2) / np.sqrt(np.dot(axis, axis))
-    print(axis, angle, xyz)
-    return R.from_quat([*xyz, np.cos(angle/2)])
+    if np.linalg.norm(axis) > 1e-15:
+        axis /= np.linalg.norm(axis)
+    return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
     match_indices = find_pattern_in_structure(structure, search_pattern)
+    print(match_indices)
 
     # translate both search and replace patterns so that first atom of search pattern is at the origin
     replace_pattern.translate(-search_pattern.positions[0])
     search_pattern.translate(-search_pattern.positions[0])
     search_axis = search_pattern.positions[-1]
+    print("search_axis: ", search_axis)
 
-    indices_to_delete = [idx for match in match_indices for idx in match]
-
-    if len(indices_to_delete) > len(set(indices_to_delete)):
-        raise Exception("There is an atom that is matched in two distinct patterns. Each atom can only be matched in one atom.")
+    if len(search_pattern) > 2:
+        orientation_point_index = position_index_farthest_from_axis(search_axis, search_pattern)
+        orientation_point = search_pattern.positions[orientation_point_index]
+        orientation_axis = orientation_point - (np.dot(orientation_point, search_axis) / np.dot(search_axis, search_axis)) * search_axis
+        print("orientation_axis: ", orientation_axis)
 
     new_structure = structure.copy()
     if len(replace_pattern) > 0:
+
         for match in match_indices:
             atoms = structure[match]
+            print("--------------")
+            print("original atoms:\n", atoms.positions)
             new_atoms = replace_pattern.copy()
+            print("new atoms:\n", new_atoms.positions)
             if len(atoms) > 1:
                 found_axis = atoms.positions[-1] - atoms.positions[0]
+                print("found axis: ", found_axis)
                 q1 = quaternion_from_two_axes(search_axis, found_axis)
                 if q1 is not None:
                     new_atoms.positions = q1.apply(new_atoms.positions)
+                    print("q1: ", q1.as_quat())
+                    print("new atoms after q1:\n", new_atoms.positions)
+                    print("new atoms after q1 (translated):\n", new_atoms.positions + atoms.positions[0])
 
                 if len(atoms) > 2:
-                    pass
-                    # do orient
+                    found_orientation_point = atoms.positions[orientation_point_index] - atoms.positions[0]
+                    found_orientation_axis = found_orientation_point - (np.dot(found_orientation_point, found_axis) / np.dot(found_axis, found_axis)) * found_axis
+                    print("found orientation_axis: ", found_orientation_axis)
+                    q1_o_axis = orientation_axis
+                    if q1:
+                        q1_o_axis = q1.apply(q1_o_axis)
+
+                    print("(transformed) orientation_axis: ", q1_o_axis)
+                    q2 = quaternion_from_two_axes(found_orientation_axis, q1_o_axis, axis=found_axis, posneg=-1)
+                    print("orienting: ", found_orientation_point, q1_o_axis, found_orientation_axis, q2)
+                    if q2 is not None:
+                        print("q2: ", q2.as_quat())
+                        new_atoms.positions = q2.apply(new_atoms.positions)
+                        print("new atoms after q2:\n", new_atoms.positions)
 
             # move replacement atoms into correct position
             new_atoms.translate(atoms.positions[0])
+            print("new atoms after translate:\n", new_atoms.positions)
             new_structure.extend(new_atoms)
 
+    indices_to_delete = [idx for match in match_indices for idx in match]
     del(new_structure[indices_to_delete])
 
     return new_structure
