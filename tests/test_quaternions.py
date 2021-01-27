@@ -22,3 +22,11 @@ def test_quaternion_from_two_axes__with_almost_parallel_axes_is_almost_donothing
     q = quaternion_from_two_axes((0., 0., 1.),(0., 0.00001, 0.99999))
     assert np.isclose(q.as_quat(), [0., 0., 0., 1.], atol=1e-5).all()
     assert np.isclose(q.apply([1., 1., 1.]), [1., 1., 1.]).all()
+
+def test_quaternion_from_two_axes__with_perpendicular_xy_axes_rotates_90_degrees_around_z_axis():
+    q = quaternion_from_two_axes((1., 0., 0.),(0., 1., 0.))
+    assert np.isclose(q.as_quat(), [0., 0., 2**0.5/2, 2**0.5/2.], atol=1e-5).all()
+    assert np.isclose(q.apply([1., 1., 1.]), [-1., 1., 1.]).all()
+    assert np.isclose(q.apply([-1., 1., 1.]), [-1., -1., 1.]).all()
+    assert np.isclose(q.apply([-1., -1., 1.]), [1., -1., 1.]).all()
+    assert np.isclose(q.apply([1., -1., 1.]), [1., 1., 1.]).all()

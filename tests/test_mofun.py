@@ -100,7 +100,6 @@ def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_r
         assert ((pattern_found[0].position - pattern_found[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
         assert ((pattern_found[5].position - pattern_found[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
-
 @pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_xyz, benzene):
     match_indices = find_pattern_in_structure(hkust1_3x3x3_xyz, benzene)
@@ -175,7 +174,6 @@ def test_replace_pattern_in_structure__replace_CH3_in_octane_with_CH3(octane):
     # different coordinates for the two CH3 groups!
     assert_positions_should_be_unchanged(octane, final_structure, 0)
 
-
 def test_replace_pattern_in_structure__two_points_on_x_axis_positions_are_unchanged():
     structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=[100]*3)
     search_pattern = Atoms('NN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
@@ -195,7 +193,6 @@ def test_replace_pattern_in_structure__pattern_and_reverse_pattern_on_x_axis_pos
     assert Counter(final_structure.symbols) == {"C":3, "H": 4}
     assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
 
-
 def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (1+ sqrt(2)/2, sqrt(2)/2, 0.), (2 + sqrt(2)/2, sqrt(2)/2, 0.)], cell=[100]*3)
     search_pattern = Atoms('NN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
@@ -204,68 +201,6 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.symbols) == {"C":2, "F": 2}
     assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
-
-@pytest.mark.skip("convert test to use check new quaternions")
-def test_rotate_replace_pattern__rotate_benzene_90_degrees_about_z_axis_at_origin_changes_x_y_positions(benzene_at_origin):
-    molecule_copy = ase.Atoms.copy(benzene_at_origin)
-
-    # Rotate the linker by 90 degrees about z axis at origin (0, 0, 0)
-    r =  R.from_euler('z', 90, degrees=True)
-    rot_linker_euler = r.apply(molecule_copy.positions)
-
-    # Rotate the linker by 90 degrees about z axis at origin (0, 0, 0)
-    rotated_pattern = rotate_replace_pattern(benzene_at_origin, 0, [0, 0, 1], 1.5707963267948966)
-
-    assert len(rotated_pattern) == 9
-    assert rotated_pattern.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
-
-    for j, position in enumerate(rotated_pattern.positions):
-        assert (position - rot_linker_euler[j]) ** 2 == approx([0,0,0], 5e-2)
-
-    assert ((rotated_pattern[0].position - rotated_pattern[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
-    assert ((rotated_pattern[0].position - rotated_pattern[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
-    assert ((rotated_pattern[0].position - rotated_pattern[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
-    assert ((rotated_pattern[5].position - rotated_pattern[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
-
-@pytest.mark.skip("convert test to use check new quaternions")
-def test_rotate_replace_pattern__rotate_benzene_180_degrees_about_x_axis_at_origin_swaps_x_y_positions(benzene_at_origin):
-    molecule_copy = ase.Atoms.copy(benzene_at_origin)
-
-    # Rotate the linker by 180 degrees about x axis at origin (0, 0, 0)
-    r =  R.from_euler('x', 180, degrees=True)
-    rot_linker_euler = r.apply(molecule_copy.positions)
-
-    # Rotate the linker by 180 degrees about x axis at origin (0, 0, 0)
-    rotated_pattern = rotate_replace_pattern(benzene_at_origin, 0, [1, 0, 0], 3.1415926535897)
-
-    assert len(rotated_pattern) == 9
-    assert rotated_pattern.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
-
-    for j, position in enumerate(rotated_pattern.positions):
-        assert (position - rot_linker_euler[j]) ** 2 == approx([0,0,0], 5e-2)
-
-    assert ((rotated_pattern[0].position - rotated_pattern[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
-    assert ((rotated_pattern[0].position - rotated_pattern[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
-    assert ((rotated_pattern[0].position - rotated_pattern[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
-    assert ((rotated_pattern[5].position - rotated_pattern[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
-
-@pytest.mark.skip("convert test to use check new quaternions")
-def test_rotate_replace_pattern__rotate_benzene_360_degrees_about_vector_1_1_1_at_origin_does_not_change_positions(benzene_at_origin):
-    molecule_copy = ase.Atoms.copy(benzene_at_origin)
-
-    # Rotate the pattern by 360 degrees about a vector [1, 1, 1] at origin (0, 0, 0)
-    rotated_pattern = rotate_replace_pattern(benzene_at_origin, 0, [1, 1, 1], 6.2831853071794)
-
-    assert len(rotated_pattern) == 9
-    assert rotated_pattern.get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
-
-    for j, position in enumerate(rotated_pattern.positions):
-        assert (position - molecule_copy.positions[j]) ** 2 == approx([0,0,0], 5e-2)
-
-    assert ((rotated_pattern[0].position - rotated_pattern[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
-    assert ((rotated_pattern[0].position - rotated_pattern[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
-    assert ((rotated_pattern[0].position - rotated_pattern[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
-    assert ((rotated_pattern[5].position - rotated_pattern[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
 # def test_replace_pattern_orient__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
 #     match_indices = find_pattern_in_structure(hkust1_cif, benzene)
