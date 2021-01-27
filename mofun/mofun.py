@@ -47,18 +47,16 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
             s_types_view.append(s_types[i])
 
     s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
-    return s_types_view, s_ss, index_mapper
+    return s_types_view, s_ss, index_mapper, s_positions
 
-
-
-def find_pattern_in_structure(structure, pattern):
+def find_pattern_in_structure(structure, pattern, return_positions=False):
     """find pattern in structure, where both are ASE atoms objects
 
     Returns:
         a list of indice lists for each set of matched atoms found
     """
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
-    s_types_view, s_ss, index_mapper = get_types_ss_map_limited_near_uc(structure, p_ss.max(), structure.cell)
+    s_types_view, s_ss, index_mapper, s_positions = get_types_ss_map_limited_near_uc(structure, p_ss.max(), structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
 
     for i, pattern_atom_1 in enumerate(pattern):
@@ -87,13 +85,19 @@ def find_pattern_in_structure(structure, pattern):
         print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
 
     match_index_tuples = remove_duplicates(match_index_tuples)
-    return [tuple([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
+
+    match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
+    if return_positions:
+        match_index_tuple_positions = [tuple([s_positions[index_mapper[m]] for m in match]) for match in match_index_tuples]
+        return match_index_tuples_in_uc, match_index_tuple_positions
+    else:
+        return match_index_tuples_in_uc
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
-    match_indices = find_pattern_in_structure(structure, search_pattern)
+    match_indices, match_positions = find_pattern_in_structure(structure, search_pattern, return_positions=True)
     print(match_indices)
 
     # translate both search and replace patterns so that first atom of search pattern is at the origin
@@ -111,14 +115,14 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
     new_structure = structure.copy()
     if len(replace_pattern) > 0:
 
-        for match in match_indices:
-            atoms = structure[match]
+        for atom_positions in match_positions:
+            print(atom_positions)
             print("--------------")
-            print("original atoms:\n", atoms.positions)
+            print("original atoms:\n", atom_positions)
             new_atoms = replace_pattern.copy()
             print("new atoms:\n", new_atoms.positions)
-            if len(atoms) > 1:
-                found_axis = atoms.positions[-1] - atoms.positions[0]
+            if len(atom_positions) > 1:
+                found_axis = atom_positions[-1] - atom_positions[0]
                 print("found axis: ", found_axis)
                 q1 = quaternion_from_two_axes(search_axis, found_axis)
                 if q1 is not None:
@@ -127,8 +131,8 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
                     print("new atoms after q1:\n", new_atoms.positions)
                     print("new atoms after q1 (translated):\n", new_atoms.positions + atoms.positions[0])
 
-                if len(atoms) > 2:
-                    found_orientation_point = atoms.positions[orientation_point_index] - atoms.positions[0]
+                if len(atom_positions) > 2:
+                    found_orientation_point = atom_positions[orientation_point_index] - atom_positions[0]
                     found_orientation_axis = found_orientation_point - (np.dot(found_orientation_point, found_axis) / np.dot(found_axis, found_axis)) * found_axis
                     print("found orientation_axis: ", found_orientation_axis)
                     q1_o_axis = orientation_axis
@@ -144,7 +148,8 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
                         print("new atoms after q2:\n", new_atoms.positions)
 
             # move replacement atoms into correct position
-            new_atoms.translate(atoms.positions[0])
+            new_atoms.translate(atom_positions[0])
+            new_atoms.positions %= new_structure.cell.lengths()
             print("new atoms after translate:\n", new_atoms.positions)
             new_structure.extend(new_atoms)
 

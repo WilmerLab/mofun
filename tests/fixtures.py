@@ -1,12 +1,16 @@
 import importlib
 from importlib import resources
+from math import sqrt
 
 import ase
-from ase import io
+from ase import io, Atoms
 import numpy as np
 import pytest
 
 import tests
+
+sqrt2_2 = sqrt(2) / 2
+sqrt3_2 = sqrt(3) / 2
 
 def assert_positions_should_be_unchanged(orig_structure, final_structure, decimal_points=5):
     p = orig_structure.positions.round(decimal_points)
@@ -16,6 +20,9 @@ def assert_positions_should_be_unchanged(orig_structure, final_structure, decima
     for i, p1 in enumerate(p_ordered):
         assert (p1 == new_p_ordered[i]).all()
 
+@pytest.fixture
+def linear_cnnc():
+    yield Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=[15]*3)
 
 @pytest.fixture
 def octane():

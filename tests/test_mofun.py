@@ -51,6 +51,24 @@ def test_find_pattern_in_structure__octane_has_12_CH2(octane):
         assert ((pattern_found[1].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
         assert ((pattern_found[2].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
+def test_find_pattern_in_structure__cnnc_over_x_pbc_has_positions_across_x_pbc(linear_cnnc):
+    linear_cnnc.positions = (linear_cnnc.positions + (-0.5, 0.0, 0.0)) % 15
+    linear_cnnc.pop() #don't match final NC
+    search_pattern = Atoms('CN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
+    match_indices, match_positions = find_pattern_in_structure(linear_cnnc, search_pattern, return_positions=True)
+    assert (linear_cnnc[match_indices[0]].positions == [(14.5, 0., 0.), (0.5, 0., 0.)]).all()
+    assert (match_positions[0] == np.array([(14.5, 0., 0.), (15.5, 0., 0.)])).all()
+
+def test_find_pattern_in_structure__cnnc_over_xy_pbc_has_positions_across_xy_pbc(linear_cnnc):
+    linear_cnnc.rotate(45, 'z')
+    linear_cnnc.positions = (linear_cnnc.positions + (-0.5, -0.5, 0.0)) % 15
+    linear_cnnc.pop() #don't match final NC
+    print(linear_cnnc.positions)
+    search_pattern = Atoms('CN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
+    match_indices, match_positions = find_pattern_in_structure(linear_cnnc, search_pattern, return_positions=True)
+    assert np.isclose(linear_cnnc[match_indices[0]].positions, np.array([(14.5, 14.5, 0.), (sqrt2_2 - 0.5, sqrt2_2 - 0.5, 0.)])).all()
+    assert (match_positions[0] == np.array([(14.5, 14.5, 0.), (14.5 + sqrt2_2, 14.5 + sqrt2_2, 0.)])).all()
+
 def test_find_pattern_in_structure__octane_over_pbc_has_2_CH3(octane):
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     # move atoms across corner boundary
@@ -185,16 +203,28 @@ def test_replace_pattern_in_structure__two_points_on_x_axis_positions_are_unchan
 
 def test_replace_pattern_in_structure__pattern_and_reverse_pattern_on_x_axis_positions_are_unchanged():
     structure = Atoms('HHCCCHH', positions=[(-1., 1, 0), (-1., -1, 0), (0., 0., 0), (1., 0., 0.), (3., 0., 0.), (4., 1, 0), (4., -1, 0)], cell=[7]*3)
-    search_pattern = Atoms('HHC', positions=[(-1., 1, 0), (-1., -1, 0), (.0, 0., 0.)])
-    replace_pattern = Atoms('HHC', positions=[(-1., 1, 0), (-1., -1, 0), (0., 0., 0.)])
+    structure.translate([2, 2, 0.1])
+    print("structure.positions: ", structure.positions)
+    search_pattern = Atoms('HHC', positions=[(0., 1, 0), (0., -1, 0), (1., 0., 0.)])
+    replace_pattern = Atoms('HHC', positions=[(0., 1, 0), (0., -1, 0), (1., 0., 0.)])
 
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
 
     assert Counter(final_structure.symbols) == {"C":3, "H": 4}
     assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
 
+def test_replace_pattern_in_structure__replacement_pattern_across_pbc_gets_coordinates_within_unit_cell():
+    structure = Atoms('CNNX', positions=[(9.1, 0., 0), (0.1, 0., 0), (1.1, 0., 0.), (2.1, 0., 0.)], cell=[10]*3)
+    search_pattern = Atoms('CN', positions=[(0., 0., 0), (1.0, 0., 0.)])
+    replace_pattern = search_pattern
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
+    assert Counter(final_structure.symbols) == Counter(structure.symbols)
+    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
+
 def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
-    structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (1+ sqrt(2)/2, sqrt(2)/2, 0.), (2 + sqrt(2)/2, sqrt(2)/2, 0.)], cell=[100]*3)
+    structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.),
+                                        (1+ sqrt(2)/2, sqrt(2)/2, 0.),
+                                        (2 + sqrt(2)/2, sqrt(2)/2, 0.)], cell=[100]*3)
     search_pattern = Atoms('NN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
     replace_pattern = Atoms('FF', positions=[(0., 0., 0), (1.0, 0., 0.)])
 
