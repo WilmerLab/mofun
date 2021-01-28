@@ -89,7 +89,7 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_32_benzene_rings(hkust1
 
     assert len(match_indices) == 32
     for indices in match_indices:
-        pattern_found = octane[indices]
+        pattern_found = hkust1_cif[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
         assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
         assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
@@ -111,7 +111,7 @@ def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_r
 
     assert len(match_indices) == 864
     for indices in match_indices:
-        pattern_found = octane[indices]
+        pattern_found = hkust1_3x3x3_cif[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
         assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
         assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
@@ -124,7 +124,7 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_r
 
     assert len(match_indices) == 864
     for indices in match_indices:
-        pattern_found = octane[indices]
+        pattern_found = hkust1_3x3x3_xyz[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
         assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
         assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
@@ -138,7 +138,7 @@ def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal
 
     assert len(match_indices) == 1296
     for indices in match_indices:
-        pattern_found = octane[indices]
+        pattern_found = hkust1_3x3x3_cif[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
 @pytest.mark.slow
@@ -148,7 +148,7 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal
 
     assert len(match_indices) == 1296
     for indices in match_indices:
-        pattern_found = octane[indices]
+        pattern_found = hkust1_3x3x3_xyz[indices]
         assert pattern_found.get_chemical_symbols() == ['Cu']
 
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(octane):
