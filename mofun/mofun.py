@@ -7,8 +7,8 @@ from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_fart
                           quaternion_from_two_axes, remove_duplicates
 
 def uc_neighbor_offsets(uc_vectors):
-    multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 3)
-    return {tuple((uc_vectors * m).sum(axis=1)) for m in multipliers}
+    multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
+    return (uc_vectors * multipliers).sum(axis=1)
 
 def get_types_ss_map_limited_near_uc(structure, length, cell):
     """
@@ -24,12 +24,13 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     if not (cell.angles() == [90., 90., 90.]).all():
         raise Exception("Currently optimizations do not support unit cell angles != 90")
 
-    uc_offsets = list(uc_neighbor_offsets(structure.cell))
-    uc_offsets[uc_offsets.index((0.0, 0.0, 0.0))] = uc_offsets[0]
+    uc_offsets = uc_neighbor_offsets(structure.cell)
+    # move (0., 0., 0.) to be at the 0 index
+    uc_offsets[np.where(np.all(uc_offsets == (0,0,0), axis=1))[0][0]] = uc_offsets[0]
     uc_offsets[0] = (0.0, 0.0, 0.0)
 
     s_positions = [structure.positions + uc_offset for uc_offset in uc_offsets]
-    s_positions = [x for y in s_positions for x in y]
+    s_positions = np.array([x for y in s_positions for x in y])
 
     s_types = list(structure.symbols) * len(uc_offsets)
     cell = list(structure.cell.lengths())
