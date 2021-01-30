@@ -89,7 +89,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False):
 
     match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
     if return_positions:
-        match_index_tuple_positions = [tuple([s_positions[index_mapper[m]] for m in match]) for match in match_index_tuples]
+        match_index_tuple_positions = np.array([[s_positions[index_mapper[m]] for m in match] for match in match_index_tuples])
         return match_index_tuples_in_uc, match_index_tuple_positions
     else:
         return match_index_tuples_in_uc
