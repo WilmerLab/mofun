@@ -1,6 +1,7 @@
 
 import pytest
 
+pytest.register_assert_rewrite("tests.fixtures")
 
 def pytest_addoption(parser):
     parser.addoption(
