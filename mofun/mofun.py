@@ -94,7 +94,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False):
     else:
         return match_index_tuples_in_uc
 
-def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
+def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=-1):
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
@@ -102,9 +102,9 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
     print(match_indices)
 
     # translate both search and replace patterns so that first atom of search pattern is at the origin
-    replace_pattern.translate(-search_pattern.positions[0])
-    search_pattern.translate(-search_pattern.positions[0])
-    search_axis = search_pattern.positions[-1]
+    replace_pattern.translate(-search_pattern.positions[axis1a_idx])
+    search_pattern.translate(-search_pattern.positions[axis1a_idx])
+    search_axis = search_pattern.positions[axis1b_idx]
     print("search_axis: ", search_axis)
 
     if len(search_pattern) > 2:
@@ -123,17 +123,17 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
             new_atoms = replace_pattern.copy()
             print("new atoms:\n", new_atoms.positions)
             if len(atom_positions) > 1:
-                found_axis = atom_positions[-1] - atom_positions[0]
+                found_axis = atom_positions[axis1b_idx] - atom_positions[axis1a_idx]
                 print("found axis: ", found_axis)
                 q1 = quaternion_from_two_axes(search_axis, found_axis)
                 if q1 is not None:
                     new_atoms.positions = q1.apply(new_atoms.positions)
                     print("q1: ", q1.as_quat())
                     print("new atoms after q1:\n", new_atoms.positions)
-                    print("new atoms after q1 (translated):\n", new_atoms.positions + atoms.positions[0])
+                    print("new atoms after q1 (translated):\n", new_atoms.positions + atom_positions[axis1a_idx])
 
                 if len(atom_positions) > 2:
-                    found_orientation_point = atom_positions[orientation_point_index] - atom_positions[0]
+                    found_orientation_point = atom_positions[orientation_point_index] - atom_positions[axis1a_idx]
                     found_orientation_axis = found_orientation_point - (np.dot(found_orientation_point, found_axis) / np.dot(found_axis, found_axis)) * found_axis
                     print("found orientation_axis: ", found_orientation_axis)
                     q1_o_axis = orientation_axis
@@ -149,7 +149,7 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern):
                         print("new atoms after q2:\n", new_atoms.positions)
 
             # move replacement atoms into correct position
-            new_atoms.translate(atom_positions[0])
+            new_atoms.translate(atom_positions[axis1a_idx])
             new_atoms.positions %= new_structure.cell.lengths()
             print("new atoms after translate:\n", new_atoms.positions)
             new_structure.extend(new_atoms)
