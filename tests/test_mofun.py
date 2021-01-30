@@ -3,6 +3,7 @@ from collections import Counter
 from math import sqrt
 
 from ase import Atoms
+from ase.visualize import view
 import numpy as np
 import pytest
 from pytest import approx
@@ -220,6 +221,45 @@ def test_replace_pattern_in_structure__replacement_pattern_across_pbc_gets_coord
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.symbols) == Counter(structure.symbols)
     assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
+
+def test_replace_pattern_in_structure__randomly_rotated_pattern_replaced_with_itself_does_not_change_positions():
+    search_pattern = Atoms('CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
+    replace_pattern = Atoms('FFHe', positions=search_pattern.positions)
+    structure = search_pattern.copy()
+    structure.cell=[15]*3
+    r = R.random(1)
+    print(r.as_quat())
+    structure.positions = r.apply(structure.positions)
+    dp = np.random.random(3) * 15
+    print(dp)
+    structure.translate(dp)
+    structure.positions = structure.positions % 15
+    view(structure)
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
+    view(final_structure)
+    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=2)
+
+def test_replace_pattern_in_structure__special_rotated_pattern_replaced_with_itself_does_not_change_positions():
+    search_pattern = Atoms('CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
+    replace_pattern = Atoms('FFHe', positions=search_pattern.positions)
+    structure = search_pattern.copy()
+    structure.cell=[15]*3
+    r = R.from_quat([-0.4480244,  -0.50992783,  0.03212454, -0.7336319 ])
+    structure.positions = r.apply(structure.positions)
+    structure.positions = structure.positions % 15
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
+    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=2)
+
+def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_itself_does_not_change_positions():
+    search_pattern = Atoms('CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
+    replace_pattern = Atoms('FFHe', positions=search_pattern.positions)
+    structure = search_pattern.copy()
+    structure.cell=[15]*3
+    r = R.from_quat([ 0.02814096,  0.99766676,  0.03984918, -0.04776152])
+    structure.positions = r.apply(structure.positions)
+    structure.positions = structure.positions % 15
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
+    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=2)
 
 def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.),
