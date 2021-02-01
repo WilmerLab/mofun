@@ -4,7 +4,8 @@ import numpy as np
 from scipy.spatial import distance
 
 from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_farthest_from_axis, \
-                          quaternion_from_two_axes, remove_duplicates
+                          quaternion_from_two_vectors, quaternion_from_two_vectors_around_axis, \
+                          remove_duplicates
 
 def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
@@ -125,7 +126,7 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axi
             if len(atom_positions) > 1:
                 found_axis = atom_positions[axis1b_idx] - atom_positions[axis1a_idx]
                 print("found axis: ", found_axis)
-                q1 = quaternion_from_two_axes(search_axis, found_axis)
+                q1 = quaternion_from_two_vectors(search_axis, found_axis)
                 if q1 is not None:
                     new_atoms.positions = q1.apply(new_atoms.positions)
                     print("q1: ", q1.as_quat())
@@ -141,7 +142,7 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axi
                         q1_o_axis = q1.apply(q1_o_axis)
 
                     print("(transformed) orientation_axis: ", q1_o_axis)
-                    q2 = quaternion_from_two_axes(found_orientation_axis, q1_o_axis, axis=found_axis, posneg=-1)
+                    q2 = quaternion_from_two_vectors_around_axis(found_orientation_axis, q1_o_axis, found_axis)
                     print("orienting: ", found_orientation_point, q1_o_axis, found_orientation_axis, q2)
                     if q2 is not None:
                         print("q2: ", q2.as_quat())
