@@ -271,29 +271,8 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     assert Counter(final_structure.symbols) == {"C":2, "F": 2}
     assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
 
-# def test_replace_pattern_orient__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
-#     match_indices = find_pattern_in_structure(hkust1_cif, benzene)
-#     replace_pattern = [benzene.copy() for _ in match_indices]
-#
-#     translate_molecule_origin(benzene)
-#     for i in range(len(replace_pattern)):
-#         translate_molecule_origin(replace_pattern[i])
-#
-#     for i in range(len(replace_pattern)):
-#         replace_pattern_orient(benzene, replace_pattern[i])
-#
-#     for i in range(len(replace_pattern)):
-#         replace_pattern_orient(match_atoms[i], replace_pattern[i])
-#
-#     for i in range(len(replace_pattern)):
-#         translate_replace_pattern(replace_pattern[i], match_atoms[i])
-#
-#     for i in range(len(replace_pattern)):
-#         diff = match_atoms[i].positions - replace_pattern[i].positions
-#         for j in range(len(diff)):
-#             for k in range(3):
-#                 assert (diff[j][k])**2 == approx(0, abs=1e-3)
-#
-#
-#         assert len(replace_pattern[i]) == 9
-#         assert replace_pattern[i].get_chemical_symbols() == ["C", "C", "C", "C", "C", "C", "H", "H", "H"]
+@pytest.mark.slow
+def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
+    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
+    assert Counter(final_structure.symbols) == Counter(hkust1_cif.symbols)
+    assert_positions_should_be_unchanged(hkust1_cif, final_structure, decimal_points=1)
