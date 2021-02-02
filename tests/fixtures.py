@@ -5,7 +5,9 @@ from math import sqrt
 import ase
 from ase import io, Atoms
 import numpy as np
+from numpy.linalg import norm
 import pytest
+from pytest import approx
 
 import tests
 
@@ -19,6 +21,14 @@ def assert_positions_should_be_unchanged(orig_structure, final_structure, decima
     new_p_ordered = new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))]
     for i, p1 in enumerate(p_ordered):
         assert (p1 == new_p_ordered[i]).all()
+
+def assert_benzene(coords):
+    # incomplete sample
+    p = coords
+    assert norm(p[0] - p[1]) == approx(2.42, 5e-2)
+    assert norm(p[0] - p[3]) == approx(1.40, 5e-2)
+    assert norm(p[0] - p[4]) == approx(2.79, 5e-2)
+    assert norm(p[5] - p[8]) == approx(0.93, 5e-2)
 
 @pytest.fixture
 def linear_cnnc():

@@ -92,10 +92,7 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_32_benzene_rings(hkust1
     for indices in match_indices:
         pattern_found = hkust1_cif[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
-        assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
-        assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
-        assert ((pattern_found[0].position - pattern_found[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
-        assert ((pattern_found[5].position - pattern_found[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
+        assert_benzene(pattern_found.positions)
 
 def test_find_pattern_in_structure__hkust1_unit_cell_offset_has_32_benzene_rings(hkust1_cif, benzene):
     hkust1_cif.translate((-4,-4,-4))
@@ -103,6 +100,7 @@ def test_find_pattern_in_structure__hkust1_unit_cell_offset_has_32_benzene_rings
     match_indices, coords = find_pattern_in_structure(hkust1_cif, benzene, return_positions=True)
     for i, indices in enumerate(match_indices):
         assert hkust1_cif[indices].get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
+        assert_benzene(coords[i])
     assert len(match_indices) == 32
 
 def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust1_cif):
@@ -122,10 +120,7 @@ def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_r
     for indices in match_indices:
         pattern_found = hkust1_3x3x3_cif[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
-        assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
-        assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
-        assert ((pattern_found[0].position - pattern_found[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
-        assert ((pattern_found[5].position - pattern_found[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
+        assert_benzene(pattern_found.positions)
 
 @pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_xyz, benzene):
@@ -135,10 +130,7 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_r
     for indices in match_indices:
         pattern_found = hkust1_3x3x3_xyz[indices]
         assert pattern_found.get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
-        assert ((pattern_found[0].position - pattern_found[1].position) ** 2).sum() == approx(5.8620934418, 5e-2)
-        assert ((pattern_found[0].position - pattern_found[3].position) ** 2).sum() == approx(1.9523164046, 5e-2)
-        assert ((pattern_found[0].position - pattern_found[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
-        assert ((pattern_found[5].position - pattern_found[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
+        assert_benzene(pattern_found.positions)
 
 @pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_cif):
