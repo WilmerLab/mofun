@@ -97,6 +97,14 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_32_benzene_rings(hkust1
         assert ((pattern_found[0].position - pattern_found[4].position) ** 2).sum() == approx(7.8072193204, 5e-2)
         assert ((pattern_found[5].position - pattern_found[8].position) ** 2).sum() == approx(0.8683351588, 5e-2)
 
+def test_find_pattern_in_structure__hkust1_unit_cell_offset_has_32_benzene_rings(hkust1_cif, benzene):
+    hkust1_cif.translate((-4,-4,-4))
+    hkust1_cif.positions = hkust1_cif.positions % hkust1_cif.cell.lengths()[0]
+    match_indices, coords = find_pattern_in_structure(hkust1_cif, benzene, return_positions=True)
+    for i, indices in enumerate(match_indices):
+        assert hkust1_cif[indices].get_chemical_symbols() == ['C','C','C','C','C','C','H','H','H']
+    assert len(match_indices) == 32
+
 def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust1_cif):
     pattern = Atoms('Cu', positions=[(0, 0, 0)])
     match_indices = find_pattern_in_structure(hkust1_cif, pattern)

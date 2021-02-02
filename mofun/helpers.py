@@ -12,11 +12,11 @@ def atoms_by_type_dict(atom_types):
         atoms_by_type[k].append(i)
     return atoms_by_type
 
-def remove_duplicates(match_indices):
+def remove_duplicates(match_indices, key=lambda m: tuple(sorted(m))):
     found_tuples = set()
     new_match_indices = []
     for m in match_indices:
-        mkey = tuple(sorted(m))
+        mkey = key(m)
         if mkey not in found_tuples:
             new_match_indices.append(m)
             found_tuples.add(mkey)
@@ -44,7 +44,6 @@ def quaternion_from_two_vectors(p1, p2):
     if norm(axis) > 1e-15:
         axis /= norm(axis)
     return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
-
 
 def quaternion_from_two_vectors_around_axis(p1, p2, axis):
     """ returns the quaternion necessary to rotate p1 to p2"""

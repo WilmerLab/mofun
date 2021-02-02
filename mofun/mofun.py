@@ -83,10 +83,10 @@ def find_pattern_in_structure(structure, pattern, return_positions=False):
                 if found_match:
                     match_index_tuples.append(match + [atom_idx])
 
-
         print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
 
-    match_index_tuples = remove_duplicates(match_index_tuples)
+    match_index_tuples = remove_duplicates(match_index_tuples,
+        key=lambda m: tuple(sorted([index_mapper[i] % len(structure) for i in m])))
 
     match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in match_index_tuples]
     if return_positions:
