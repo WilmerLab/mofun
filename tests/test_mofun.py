@@ -271,10 +271,16 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     assert Counter(final_structure.symbols) == {"C":2, "F": 2}
     assert_positions_are_unchanged(structure, final_structure)
 
-
-
 @pytest.mark.slow
 def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
+    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
+    assert Counter(final_structure.symbols) == Counter(hkust1_cif.symbols)
+    assert_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
+
+@pytest.mark.slow
+def test_replace_pattern_in_structure__in_hkust1_offset_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
+    hkust1_cif.translate((-4,-4,-4))
+    hkust1_cif.positions = hkust1_cif.positions % hkust1_cif.cell.lengths()[0]
     final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
     assert Counter(final_structure.symbols) == Counter(hkust1_cif.symbols)
     assert_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
