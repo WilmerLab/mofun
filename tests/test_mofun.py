@@ -166,14 +166,14 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogen
 
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert Counter(final_structure.symbols) == {"H": 18, "C": 8}
-    assert_positions_should_be_unchanged(octane, final_structure)
+    assert_positions_are_unchanged(octane, final_structure)
 
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_fluorines(octane):
     search_pattern = Atoms('H', positions=[(0, 0, 0)])
     replace_pattern = Atoms('F', positions=[(0, 0, 0)])
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert Counter(final_structure.symbols) == {"F": 18, "C": 8}
-    assert_positions_should_be_unchanged(octane, final_structure)
+    assert_positions_are_unchanged(octane, final_structure)
 
 def test_replace_pattern_in_structure__replace_CH3_in_octane_with_fluorines(octane):
     search_pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
@@ -182,7 +182,7 @@ def test_replace_pattern_in_structure__replace_CH3_in_octane_with_fluorines(octa
     assert Counter(final_structure.symbols) == {"F": 8, "C": 6, "H": 12}
     # note the positions are not EXACTLY the same because the original structure has slightly
     # different coordinates for the two CH3 groups!
-    assert_positions_should_be_unchanged(octane, final_structure, 0)
+    assert_positions_are_unchanged(octane, final_structure, max_delta=0.1)
 
 def test_replace_pattern_in_structure__replace_CH3_in_octane_with_CH3(octane):
     search_pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
@@ -191,7 +191,7 @@ def test_replace_pattern_in_structure__replace_CH3_in_octane_with_CH3(octane):
     assert Counter(final_structure.symbols) == {"C": 8, "H": 18}
     # note the positions are not EXACTLY the same because the original structure has slightly
     # different coordinates for the two CH3 groups!
-    assert_positions_should_be_unchanged(octane, final_structure, 0)
+    assert_positions_are_unchanged(octane, final_structure, max_delta=0.1)
 
 def test_replace_pattern_in_structure__two_points_on_x_axis_positions_are_unchanged():
     structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=[100]*3)
@@ -200,7 +200,7 @@ def test_replace_pattern_in_structure__two_points_on_x_axis_positions_are_unchan
 
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.symbols) == {"C":2, "F": 2}
-    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
+    assert_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__pattern_and_reverse_pattern_on_x_axis_positions_are_unchanged():
     structure = Atoms('HHCCCHH', positions=[(-1., 1, 0), (-1., -1, 0), (0., 0., 0), (1., 0., 0.), (3., 0., 0.), (4., 1, 0), (4., -1, 0)], cell=[7]*3)
@@ -212,7 +212,7 @@ def test_replace_pattern_in_structure__pattern_and_reverse_pattern_on_x_axis_pos
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
 
     assert Counter(final_structure.symbols) == {"C":3, "H": 4}
-    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
+    assert_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__replacement_pattern_across_pbc_gets_coordinates_within_unit_cell():
     structure = Atoms('CNNX', positions=[(9.1, 0., 0), (0.1, 0., 0), (1.1, 0., 0.), (2.1, 0., 0.)], cell=[10]*3)
@@ -220,7 +220,7 @@ def test_replace_pattern_in_structure__replacement_pattern_across_pbc_gets_coord
     replace_pattern = search_pattern
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.symbols) == Counter(structure.symbols)
-    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
+    assert_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_with_itself_does_not_change_positions():
     search_pattern = Atoms('CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
@@ -236,7 +236,7 @@ def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_wi
         structure.translate(dp)
         structure.positions = structure.positions % 15
         final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
-        assert_positions_should_be_unchanged(structure, final_structure, decimal_points=2)
+        assert_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__special_rotated_pattern_replaced_with_itself_does_not_change_positions():
     search_pattern = Atoms('CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
@@ -247,7 +247,7 @@ def test_replace_pattern_in_structure__special_rotated_pattern_replaced_with_its
     structure.positions = r.apply(structure.positions)
     structure.positions = structure.positions % 15
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
-    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=2)
+    assert_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_itself_does_not_change_positions():
     search_pattern = Atoms('CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
@@ -258,7 +258,7 @@ def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_it
     structure.positions = r.apply(structure.positions)
     structure.positions = structure.positions % 15
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
-    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=2)
+    assert_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     structure = Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.),
@@ -269,10 +269,12 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
 
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.symbols) == {"C":2, "F": 2}
-    assert_positions_should_be_unchanged(structure, final_structure, decimal_points=5)
+    assert_positions_are_unchanged(structure, final_structure)
+
+
 
 @pytest.mark.slow
 def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
     final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
     assert Counter(final_structure.symbols) == Counter(hkust1_cif.symbols)
-    assert_positions_should_be_unchanged(hkust1_cif, final_structure, decimal_points=1)
+    assert_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
