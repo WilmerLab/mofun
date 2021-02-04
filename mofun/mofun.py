@@ -51,7 +51,7 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
     return s_types_view, s_ss, index_mapper, s_positions
 
-def find_pattern_in_structure(structure, pattern, return_positions=False):
+def find_pattern_in_structure(structure, pattern, return_positions=False, verbose=False):
     """find pattern in structure, where both are ASE atoms objects
 
     Returns:
@@ -66,7 +66,8 @@ def find_pattern_in_structure(structure, pattern, return_positions=False):
         if i == 0:
             # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
             match_index_tuples = [[idx] for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.symbols[0])]
-            print("round %d (%d): " % (i, len(match_index_tuples)), match_index_tuples)
+            if verbose:
+                print("round %d (%d): " % (i, len(match_index_tuples)), match_index_tuples)
             continue
 
         last_match_index_tuples = match_index_tuples
@@ -82,8 +83,8 @@ def find_pattern_in_structure(structure, pattern, return_positions=False):
                 # anything that matches the distance to all prior pattern atoms is a good match so far
                 if found_match:
                     match_index_tuples.append(match + [atom_idx])
-
-        print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
+        if verbose:
+            print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
 
     match_index_tuples = remove_duplicates(match_index_tuples,
         key=lambda m: tuple(sorted([index_mapper[i] % len(structure) for i in m])))
@@ -95,64 +96,71 @@ def find_pattern_in_structure(structure, pattern, return_positions=False):
     else:
         return match_index_tuples_in_uc
 
-def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=-1):
+def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=-1, verbose=False):
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
     match_indices, match_positions = find_pattern_in_structure(structure, search_pattern, return_positions=True)
-    print(match_indices)
+    if verbose: print(match_indices)
 
     # translate both search and replace patterns so that first atom of search pattern is at the origin
     replace_pattern.translate(-search_pattern.positions[axis1a_idx])
     search_pattern.translate(-search_pattern.positions[axis1a_idx])
     search_axis = search_pattern.positions[axis1b_idx]
-    print("search_axis: ", search_axis)
+    if verbose: print("search_axis: ", search_axis)
 
     if len(search_pattern) > 2:
         orientation_point_index = position_index_farthest_from_axis(search_axis, search_pattern)
         orientation_point = search_pattern.positions[orientation_point_index]
         orientation_axis = orientation_point - (np.dot(orientation_point, search_axis) / np.dot(search_axis, search_axis)) * search_axis
-        print("orientation_axis: ", orientation_axis)
+        if verbose: print("orientation_axis: ", orientation_axis)
 
     new_structure = structure.copy()
     if len(replace_pattern) > 0:
 
         for atom_positions in match_positions:
-            print(atom_positions)
-            print("--------------")
-            print("original atoms:\n", atom_positions)
             new_atoms = replace_pattern.copy()
-            print("new atoms:\n", new_atoms.positions)
+            if verbose:
+                print(atom_positions)
+                print("--------------")
+                print("original atoms:\n", atom_positions)
+                print("new atoms:\n", new_atoms.positions)
+
             if len(atom_positions) > 1:
                 found_axis = atom_positions[axis1b_idx] - atom_positions[axis1a_idx]
-                print("found axis: ", found_axis)
+                if verbose: print("found axis: ", found_axis)
                 q1 = quaternion_from_two_vectors(search_axis, found_axis)
                 if q1 is not None:
                     new_atoms.positions = q1.apply(new_atoms.positions)
-                    print("q1: ", q1.as_quat())
-                    print("new atoms after q1:\n", new_atoms.positions)
-                    print("new atoms after q1 (translated):\n", new_atoms.positions + atom_positions[axis1a_idx])
+                    if verbose:
+                        print("q1: ", q1.as_quat())
+                        print("new atoms after q1:\n", new_atoms.positions)
+                        print("new atoms after q1 (translated):\n", new_atoms.positions + atom_positions[axis1a_idx])
 
                 if len(atom_positions) > 2:
                     found_orientation_point = atom_positions[orientation_point_index] - atom_positions[axis1a_idx]
                     found_orientation_axis = found_orientation_point - (np.dot(found_orientation_point, found_axis) / np.dot(found_axis, found_axis)) * found_axis
-                    print("found orientation_axis: ", found_orientation_axis)
+                    if verbose: print("found orientation_axis: ", found_orientation_axis)
                     q1_o_axis = orientation_axis
                     if q1:
                         q1_o_axis = q1.apply(q1_o_axis)
 
-                    print("(transformed) orientation_axis: ", q1_o_axis)
+
                     q2 = quaternion_from_two_vectors_around_axis(found_orientation_axis, q1_o_axis, found_axis)
-                    print("orienting: ", found_orientation_point, q1_o_axis, found_orientation_axis, q2)
+                    if verbose:
+                        print("(transformed) orientation_axis: ", q1_o_axis)
+                        print("orienting: ", found_orientation_point, q1_o_axis, found_orientation_axis, q2)
                     if q2 is not None:
-                        print("q2: ", q2.as_quat())
+
                         new_atoms.positions = q2.apply(new_atoms.positions)
-                        print("new atoms after q2:\n", new_atoms.positions)
+                        if verbose:
+                            print("q2: ", q2.as_quat())
+                            print("new aif verbose: toms after q2:\n", new_atoms.positions)
 
             # move replacement atoms into correct position
             new_atoms.translate(atom_positions[axis1a_idx])
             new_atoms.positions %= new_structure.cell.lengths()
-            print("new atoms after translate:\n", new_atoms.positions)
+            if verbose: print("new atoms after translate:\n", new_atoms.positions)
             new_structure.extend(new_atoms)
 
     indices_to_delete = [idx for match in match_indices for idx in match]
