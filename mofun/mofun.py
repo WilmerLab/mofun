@@ -142,7 +142,7 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axi
                     found_orientation_axis = found_orientation_point - (np.dot(found_orientation_point, found_axis) / np.dot(found_axis, found_axis)) * found_axis
                     if verbose: print("found orientation_axis: ", found_orientation_axis)
                     q1_o_axis = orientation_axis
-                    if q1:
+                    if q1 is not None:
                         q1_o_axis = q1.apply(q1_o_axis)
 
 
