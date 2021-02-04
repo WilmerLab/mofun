@@ -87,13 +87,3 @@ def hkust1_3x3x3_cif():
 def benzene():
     with importlib.resources.path(tests, "benzene.xyz") as path:
         yield ase.io.read(path)
-
-@pytest.fixture
-def benzene_at_origin():
-    with importlib.resources.path(tests, "benzene_at_origin.xyz") as path:
-        yield ase.io.read(path)
-
-@pytest.fixture
-def benzene_rotated():
-    with importlib.resources.path(tests, "benzene_rotated.xyz") as path:
-        yield ase.io.read(path)
