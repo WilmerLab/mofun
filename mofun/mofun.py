@@ -34,7 +34,7 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     s_positions = np.array([x for y in s_positions for x in y])
 
     s_types = list(structure.symbols) * len(uc_offsets)
-    cell = list(structure.cell.lengths())
+    cell = list(np.diag(cell))
     index_mapper = []
     s_pos_view = []
     s_types_view = []
@@ -60,8 +60,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, verbos
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
     s_types_view, s_ss, index_mapper, s_positions = get_types_ss_map_limited_near_uc(structure, p_ss.max(), structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
-
-    for i, pattern_atom_1 in enumerate(pattern):
+    for i in range(len(pattern)):
         # Search instances of first atom in a search pattern
         if i == 0:
             # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
@@ -73,7 +72,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, verbos
         last_match_index_tuples = match_index_tuples
         match_index_tuples = []
         for match in last_match_index_tuples:
-            for atom_idx in atoms_by_type[pattern_atom_1.symbol]:
+            for atom_idx in atoms_by_type[pattern.symbols[i]]:
                 found_match = True
                 for j in range(i):
                     if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=5e-2):
@@ -159,7 +158,7 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axi
 
             # move replacement atoms into correct position
             new_atoms.translate(atom_positions[axis1a_idx])
-            new_atoms.positions %= new_structure.cell.lengths()
+            new_atoms.positions %= np.diag(new_structure.cell)
             if verbose: print("new atoms after translate:\n", new_atoms.positions)
             new_structure.extend(new_atoms)
 

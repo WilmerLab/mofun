@@ -3,13 +3,14 @@ from importlib import resources
 from math import sqrt
 
 import ase
-from ase import io, Atoms
+from ase import io
 import numpy as np
 from numpy.linalg import norm
 import pytest
 from pytest import approx
 
 import tests
+from mofun import Atoms
 
 sqrt2_2 = sqrt(2) / 2
 sqrt3_2 = sqrt(3) / 2
@@ -57,15 +58,15 @@ def assert_benzene(coords):
 
 @pytest.fixture
 def linear_cnnc():
-    yield Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=[15]*3)
+    yield ase.Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=[15]*3)
 
 @pytest.fixture
 def octane():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     with importlib.resources.path(tests, "octane.xyz") as path:
-        structure = ase.io.read(path)
+        ase_structure = ase.io.read(path)
+        structure = Atoms(ase_structure.symbols, ase_structure.positions, cell=60 * np.identity(3))
         structure.positions += 30
-        structure.set_cell(60 * np.identity(3))
         yield structure
 
 @pytest.fixture

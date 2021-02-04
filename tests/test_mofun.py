@@ -2,14 +2,14 @@ from collections import Counter
 
 from math import sqrt
 
-from ase import Atoms
+import ase
 from ase.visualize import view
 import numpy as np
 import pytest
 from pytest import approx
 from scipy.spatial.transform import Rotation as R
 
-from mofun import find_pattern_in_structure, replace_pattern_in_structure
+from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms
 
 from tests.fixtures import *
 
@@ -27,14 +27,14 @@ def test_find_pattern_in_structure__octane_has_2_CH3(octane):
     assert len(match_indices) == 2
     for indices in match_indices:
         pattern_found = octane[indices]
-        assert pattern_found.get_chemical_symbols() == ["C", "H", "H", "H"]
-        cpos = pattern_found[0].position
-        assert ((pattern_found[1].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
-        assert ((pattern_found[2].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
-        assert ((pattern_found[3].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+        assert (pattern_found.atom_types == ["C", "H", "H", "H"]).all()
+        cpos = pattern_found.positions[0]
+        assert ((pattern_found.positions[1] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+        assert ((pattern_found.positions[2] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+        assert ((pattern_found.positions[3] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
 def test_find_pattern_in_structure__match_indices_returned_in_order_of_pattern():
-    structure = Atoms('HOH', positions=[(4., 0, 0), (5., 0., 0), (6., 0., 0.),], cell=[15]*3)
+    structure = ase.Atoms('HOH', positions=[(4., 0, 0), (5., 0., 0), (6., 0., 0.),], cell=[15]*3)
     search_pattern = Atoms('HO', positions=[(-1., 0, 0), (0., 0., 0.)])
     match_indices = find_pattern_in_structure(structure, search_pattern)
     assert set(match_indices) == {(0, 1), (2, 1)}
