@@ -42,7 +42,9 @@ def assert_positions_are_unchanged(orig_structure, final_structure, max_delta=1e
             if distances[i] > max_delta:
                 annotation = " * "
             print(i, p1, p_corresponding[i], distances[i], annotation)
-
+        print("UNMATCHED coords: ")
+        for p1 in new_p_ordered:
+            print(p1)
     assert (distances < max_delta).all()
 
 def assert_benzene(coords):
