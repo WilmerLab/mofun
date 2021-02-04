@@ -10,6 +10,9 @@ setup(name='mofun',
       url='https://github.com/wilmerlab/mofun.git',
       packages=find_packages(include=['mofun']),
       install_requires=[
-          'ase'
+          'ase',
+          'numpy',
+          'scipy',
+          'PyCifRW'
       ],
 )
