@@ -19,7 +19,7 @@ def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     match_indices = find_pattern_in_structure(octane, pattern)
     assert len(match_indices) == 8
     for indices in match_indices:
-        assert octane[indices].get_chemical_symbols() == ["C"]
+        assert octane[indices].atom_types == ["C"]
 
 def test_find_pattern_in_structure__octane_has_2_CH3(octane):
     pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
@@ -47,10 +47,10 @@ def test_find_pattern_in_structure__octane_has_12_CH2(octane):
     assert len(match_indices) == 12
     for indices in match_indices:
         pattern_found = octane[indices]
-        assert pattern_found.get_chemical_symbols() == ["C", "H", "H"]
-        cpos = pattern_found[0].position
-        assert ((pattern_found[1].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
-        assert ((pattern_found[2].position - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+        assert (pattern_found.atom_types == ["C", "H", "H"]).all()
+        cpos = pattern_found.positions[0]
+        assert ((pattern_found.positions[1] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+        assert ((pattern_found.positions[2] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
 def test_find_pattern_in_structure__cnnc_over_x_pbc_has_positions_across_x_pbc(linear_cnnc):
     linear_cnnc.positions = (linear_cnnc.positions + (-0.5, 0.0, 0.0)) % 15
@@ -76,13 +76,13 @@ def test_find_pattern_in_structure__octane_over_pbc_has_2_CH3(octane):
     octane.positions += -1.8
     # move coordinates into main 15 Å unit cell
     octane.positions %= 15
-    octane.set_cell(15 * np.identity(3))
+    octane.cell = (15 * np.identity(3))
 
     pattern = Atoms('CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
     match_indices = find_pattern_in_structure(octane, pattern)
     assert len(match_indices) == 2
     for indices in match_indices:
-        assert octane[indices].get_chemical_symbols() == ["C", "H", "H", "H"]
+        assert (octane[indices].atom_types == ["C", "H", "H", "H"]).all()
 
 @pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_unit_cell_has_32_benzene_rings(hkust1_cif, benzene):
