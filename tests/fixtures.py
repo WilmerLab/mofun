@@ -58,7 +58,8 @@ def assert_benzene(coords):
 
 @pytest.fixture
 def linear_cnnc():
-    yield Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=15*np.identity(3))
+    yield Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)],
+                bonds=[(0,1), (1,2), (2,3)], cell=15*np.identity(3))
 
 @pytest.fixture
 def octane():
