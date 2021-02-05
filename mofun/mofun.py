@@ -22,10 +22,11 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     boundary that is less than the length of the search pattern (i.e. atoms further away from the
     boundary than this will never match the search pattern).
     """
-    if not (cell.angles() == [90., 90., 90.]).all():
-        raise Exception("Currently optimizations do not support unit cell angles != 90")
+    # if not (cell.angles() == [90., 90., 90.]).all():
+    #     raise Exception("Currently optimizations do not support unit cell angles != 90")
 
     uc_offsets = uc_neighbor_offsets(structure.cell)
+
     # move (0., 0., 0.) to be at the 0 index
     uc_offsets[np.where(np.all(uc_offsets == (0,0,0), axis=1))[0][0]] = uc_offsets[0]
     uc_offsets[0] = (0.0, 0.0, 0.0)

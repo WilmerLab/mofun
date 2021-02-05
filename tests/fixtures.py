@@ -28,7 +28,7 @@ def assert_positions_are_unchanged(orig_structure, final_structure, max_delta=1e
         for j, p2 in enumerate(new_p_ordered):
             if p2[2] - p1[2] > 1:
                 break
-            elif (np21 := norm(np.array(p2) - p1)) < 0.1:
+            elif (np21 := norm(np.array(p2) - p1)) < max_delta:
                 found_match = True
                 p_corresponding.append(new_p_ordered.pop(j))
                 distances[i] = np21
@@ -58,35 +58,35 @@ def assert_benzene(coords):
 
 @pytest.fixture
 def linear_cnnc():
-    yield ase.Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=[15]*3)
+    yield Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=15*np.identity(3))
 
 @pytest.fixture
 def octane():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     with importlib.resources.path(tests, "octane.xyz") as path:
-        ase_structure = ase.io.read(path)
-        structure = Atoms(ase_structure.symbols, ase_structure.positions, cell=60 * np.identity(3))
-        structure.positions += 30
+        structure = Atoms.from_ase_atoms(ase.io.read(path))
+        structure.cell = 60 * np.identity(3)
+        structure.translate((30., 30., 30.))
         yield structure
 
 @pytest.fixture
 def hkust1_cif():
     with importlib.resources.path(tests, "HKUST-1_withbonds.cif") as path:
-        yield ase.io.read(path)
+        yield Atoms.from_cif(str(path))
 
 @pytest.fixture
 def hkust1_3x3x3_xyz():
     with importlib.resources.path(tests, "HKUST-1_3x3x3.xyz") as path:
-        structure = ase.io.read(path)
-        structure.set_cell(79.0290 * np.identity(3))
+        structure = Atoms.from_ase_atoms(ase.io.read(path))
+        structure.cell = 79.0290 * np.identity(3)
         yield structure
 
 @pytest.fixture
 def hkust1_3x3x3_cif():
     with importlib.resources.path(tests, "HKUST-1_3x3x3.cif") as path:
-        yield ase.io.read(path)
+        yield Atoms.from_cif(path)
 
 @pytest.fixture
 def benzene():
     with importlib.resources.path(tests, "benzene.xyz") as path:
-        yield ase.io.read(path)
+        yield Atoms.from_ase_atoms(ase.io.read(path))
