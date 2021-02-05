@@ -83,9 +83,9 @@ class Atoms:
         return len(self.positions)
 
     def extend(self, other):
+        self.bonds = np.append(self.bonds, other.bonds + len(self.positions), axis=0)
         self.positions = np.append(self.positions, other.positions, axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types, axis=0)
-        # self.bonds = np.append(self.bonds, other.bonds, axis=0)
 
     def __delitem__(self, indices):
         self.positions = np.delete(self.positions, indices, axis=0)
