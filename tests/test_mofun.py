@@ -34,7 +34,7 @@ def test_find_pattern_in_structure__octane_has_2_CH3(octane):
         assert ((pattern_found.positions[3] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
 def test_find_pattern_in_structure__match_indices_returned_in_order_of_pattern():
-    structure = ase.Atoms('HOH', positions=[(4., 0, 0), (5., 0., 0), (6., 0., 0.),], cell=15*np.identity(3))
+    structure = Atoms('HOH', positions=[(4., 0, 0), (5., 0., 0), (6., 0., 0.),], cell=15*np.identity(3))
     search_pattern = Atoms('HO', positions=[(-1., 0, 0), (0., 0., 0.)])
     match_indices = find_pattern_in_structure(structure, search_pattern)
     assert set(match_indices) == {(0, 1), (2, 1)}
