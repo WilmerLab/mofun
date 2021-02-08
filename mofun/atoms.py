@@ -7,7 +7,7 @@ import numpy as np
 
 class Atoms:
 
-    def __init__(self, atom_types=[], positions=[], bonds=[], cell=[]):
+    def __init__(self, atom_types=[], positions=[], bond_types=[], bonds=[], cell=[]):
         self.positions = np.array(positions, dtype=float)
         if isinstance(atom_types, str):
             self.atom_types = list(Formula(atom_types))
@@ -15,8 +15,58 @@ class Atoms:
             self.atom_types = np.array(atom_types)
         self.cell = np.array(cell)
         self.bonds = np.array(bonds)
+        self.bond_types = np.array(bond_types)
+
         if len(self.positions) != len(self.atom_types):
             raise Exception("len of positions and atom types must match")
+        if len(self.bonds) != len(self.bond_types):
+            raise Exception("len of bonds and bond types must match")
+
+    @classmethod
+    def from_lammps_data(cls, path):
+        def type_tuple(types, tup):
+            return tuple([t(tup[i]) for i, t in enumerate(types)])
+
+        atoms = []
+        bonds = []
+        angles = []
+        dihedrals = []
+
+        sections_handled = ["Atoms", "Bonds", "Angles", "Dihedrals"]
+        current_section = None
+        start_section = False
+
+        with open(path) as fd:
+            for unprocessed_line in fd:
+                line = unprocessed_line.strip()
+                if line in sections_handled:
+                    current_section = line
+                    start_section = True
+                    continue
+                elif line == "":
+                    if not start_section:
+                        # end of section or blank
+                        current_section= None
+                    start_section = False
+                    continue
+                tup = line.split()
+                print(tup)
+                if current_section == "Atoms":
+                    atoms.append(type_tuple([int]*2 + [float]*3, tup))
+                elif current_section == "Bonds":
+                    bonds.append(type_tuple([int]*4, tup))
+                elif current_section == "Angles":
+                    angles.append(type_tuple([int]*5, tup))
+                elif current_section == "Dihedrals":
+                    dihedrals.append(type_tuple([int]*6, tup))
+
+            atoms = np.array(atoms)
+            bonds = np.array(bonds)
+
+            # note: bond indices in lammps-data file are 1-indexed and we are 0-indexed which is why
+            # the bond pairs get a -1
+            return cls(atom_types=atoms[:, 1], positions=atoms[:, 2:5],
+                       bond_types=bonds[:, 1], bonds=bonds[:, 2:4] - 1)
 
     @classmethod
     def from_cif(cls, path):
