@@ -23,7 +23,7 @@ class Atoms:
             raise Exception("len of bonds and bond types must match")
 
     @classmethod
-    def from_lammps_data(cls, path):
+    def from_lammps_data(cls, f):
         def type_tuple(types, tup):
             return tuple([t(tup[i]) for i, t in enumerate(types)])
 
@@ -36,37 +36,59 @@ class Atoms:
         current_section = None
         start_section = False
 
-        with open(path) as fd:
-            for unprocessed_line in fd:
-                line = unprocessed_line.strip()
-                if line in sections_handled:
-                    current_section = line
-                    start_section = True
-                    continue
-                elif line == "":
-                    if not start_section:
-                        # end of section or blank
-                        current_section= None
-                    start_section = False
-                    continue
-                tup = line.split()
-                print(tup)
-                if current_section == "Atoms":
-                    atoms.append(type_tuple([int]*2 + [float]*3, tup))
-                elif current_section == "Bonds":
-                    bonds.append(type_tuple([int]*4, tup))
-                elif current_section == "Angles":
-                    angles.append(type_tuple([int]*5, tup))
-                elif current_section == "Dihedrals":
-                    dihedrals.append(type_tuple([int]*6, tup))
+        for unprocessed_line in f:
+            line = unprocessed_line.strip()
+            if line in sections_handled:
+                current_section = line
+                start_section = True
+                continue
+            elif line == "":
+                if not start_section:
+                    # end of section or blank
+                    current_section= None
+                start_section = False
+                continue
+            tup = line.split()
+            if current_section == "Atoms":
+                atoms.append(type_tuple([int]*2 + [float]*3, tup))
+            elif current_section == "Bonds":
+                bonds.append(type_tuple([int]*4, tup))
+            elif current_section == "Angles":
+                angles.append(type_tuple([int]*5, tup))
+            elif current_section == "Dihedrals":
+                dihedrals.append(type_tuple([int]*6, tup))
 
-            atoms = np.array(atoms)
-            bonds = np.array(bonds)
+        atoms = np.array(atoms)
+        bonds = np.array(bonds)
 
-            # note: bond indices in lammps-data file are 1-indexed and we are 0-indexed which is why
-            # the bond pairs get a -1
-            return cls(atom_types=atoms[:, 1], positions=atoms[:, 2:5],
-                       bond_types=bonds[:, 1], bonds=bonds[:, 2:4] - 1)
+        # note: bond indices in lammps-data file are 1-indexed and we are 0-indexed which is why
+        # the bond pairs get a -1
+        return cls(atom_types=atoms[:, 1] - 1, positions=atoms[:, 2:5],
+                   bond_types=bonds[:, 1] - 1, bonds=bonds[:, 2:4] - 1)
+
+    def to_lammps_data(self, f, file_comment=""):
+        f.write("%s (written by mofun)\n\n" % file_comment)
+
+        f.write('{} atoms\n'.format(len(self.atom_types)))
+        f.write('{} bonds\n'.format(len(self.bond_types)))
+        f.write('0 angles\n')
+        f.write('0 dihedrals\n')
+        f.write('0 impropers\n')
+        f.write("\n")
+        if (num_atom_types := len(set(self.atom_types))) > 0:
+            f.write('{} atom types\n'.format(num_atom_types))
+        if (num_bond_types := len(set(self.bond_types))) > 0:
+            f.write('{} bond types\n'.format(num_bond_types))
+        f.write("\n")
+
+        f.write("Atoms\n\n")
+        for i, (x, y, z) in enumerate(self.positions):
+            f.write(" %d %d %10.6f %10.6f %10.6f\n" % (i + 1, self.atom_types[i] + 1, x, y, z))
+        f.write("\n")
+
+        f.write("Bonds\n\n")
+        for i, (a1, a2) in enumerate(self.bonds):
+            f.write(" %d %d %d %d\n" % (i + 1, self.bond_types[i] + 1, a1 + 1, a2 + 1))
 
     @classmethod
     def from_cif(cls, path):
