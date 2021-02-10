@@ -80,16 +80,16 @@ class Atoms:
         # note: bond indices in lammps-data file are 1-indexed and we are 0-indexed which is why
         # the bond pairs get a -1
         atom_types = np.array(atoms[:, 1] - 1, dtype=int)
-        atom_coords = atoms[:, 2:5]
+        atom_tups = atoms[:, 2:5]
 
         bond_types, bond_tups = get_types_tups(bonds)
         angle_types, angle_tups = get_types_tups(angles)
         dihedral_types, dihedral_tups = get_types_tups(dihedrals)
 
-        return cls(atom_types=atom_types, positions=atom_coords,
+        return cls(atom_types=atom_types, positions=atom_tups,
                    bond_types=bond_types, bonds=bond_tups,
                    angle_types=angle_types, angles=angle_tups,
-                   dihedral_types=dihedral_types, dihedrals=dihedrals)
+                   dihedral_types=dihedral_types, dihedrals=dihedral_tups)
 
     def to_lammps_data(self, f, file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)

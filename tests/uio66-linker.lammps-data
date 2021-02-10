@@ -3,12 +3,13 @@ uio66-linker.lammps-data (written by mofun)
 16 atoms
 4 bonds
 8 angles
-0 dihedrals
+6 dihedrals
 0 impropers
 
 3 atom types
 1 bond types
 1 angle types
+1 dihedral types
 
 Atoms
 
@@ -46,3 +47,12 @@ Angles
  6 1 11 10 13
  7 1 10 11 12
  8 1 4 11 12
+
+Dihedrals
+
+ 1 1 6 7 4 5
+ 2 1 12 9 10 11
+ 3 1 5 4 3 0
+ 4 1 11 10 3 0
+ 5 1 6 7 8 14
+ 6 1 12 9 8 14
