@@ -2,8 +2,7 @@ import importlib
 from importlib import resources
 from math import sqrt
 
-import ase
-from ase import io
+import ase.io
 import numpy as np
 from numpy.linalg import norm
 import pytest
@@ -59,7 +58,9 @@ def assert_benzene(coords):
 @pytest.fixture
 def linear_cnnc():
     yield Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)],
-                bonds=[(0,1), (1,2), (2,3)], bond_types=[1] * 3, cell=15*np.identity(3))
+                bonds=[(0,1), (1,2), (2,3)], bond_types=[0] * 3,
+                angles=[(0,1,2), (1,2,3)], angle_types=[0,0],
+                dihedrals=[(0,1,2,3)], dihedral_types=[0], cell=15*np.identity(3))
 
 @pytest.fixture
 def octane():
@@ -91,3 +92,13 @@ def hkust1_3x3x3_cif():
 def benzene():
     with importlib.resources.path(tests, "benzene.xyz") as path:
         yield Atoms.from_ase_atoms(ase.io.read(path))
+
+@pytest.fixture
+def uio66_linker_no_bonds():
+    with importlib.resources.open_text(tests, "uio66-linker-no-bonds.lammps-data") as fd:
+        yield Atoms.from_lammps_data(fd)
+
+@pytest.fixture
+def uio66_linker_w_bonds():
+    with importlib.resources.open_text(tests, "uio66-linker.lammps-data") as fd:
+        yield Atoms.from_lammps_data(fd)

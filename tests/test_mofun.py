@@ -300,3 +300,13 @@ def test_replace_pattern_in_structure__in_uio66_replacing_linker_with_linker_doe
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.atom_types) == {'C': 192, 'O': 120, 'F': 96, 'Zr': 24}
     # assert_positions_are_unchanged(structure, final_structure, max_delta=0.25, verbose=True)
+
+def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_bonds_angles_has_bonds_angles(uio66_linker_no_bonds, uio66_linker_w_bonds):
+    lammps_atom_type_map = {0: "C", 1: "O", 2: "H"}
+    structure = uio66_linker_no_bonds.copy()
+    structure.cell = 100*np.identity(3)
+    final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_w_bonds, axis1a_idx=0, axis1b_idx=15)
+    assert Counter(final_structure.map_atom_types(lammps_atom_type_map)) == {'C': 8, 'O': 4, 'H': 4}
+    assert_positions_are_unchanged(structure, final_structure, max_delta=0.1)
+    assert np.array_equal(final_structure.bonds, [(6, 7), (4, 5), (9, 12), (10, 11)])
+    assert np.array_equal(final_structure.angles, [(7, 4, 5), (3, 4, 5), (8, 7, 6), (4, 7, 6), (8, 9, 12), (10, 9, 12), (9, 10, 11), (3, 10, 11)])
