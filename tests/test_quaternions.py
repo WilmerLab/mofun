@@ -1,7 +1,7 @@
 import numpy as np
 from pytest import approx
 
-from mofun import quaternion_from_two_vectors
+from mofun import quaternion_from_two_vectors, quaternion_from_two_vectors_around_axis
 
 
 def test_quaternion_from_two_axes__with_antiparallel_z_axes_inverts_z_coord():
@@ -30,3 +30,8 @@ def test_quaternion_from_two_vectors__with_perpendicular_xy_axes_rotates_90_degr
     assert np.isclose(q.apply([-1., 1., 1.]), [-1., -1., 1.]).all()
     assert np.isclose(q.apply([-1., -1., 1.]), [1., -1., 1.]).all()
     assert np.isclose(q.apply([1., -1., 1.]), [1., 1., 1.]).all()
+
+def test_quaternion_from_two_vectors_around_axis__with_parallel_vectors_is_donothing_0001():
+    q = quaternion_from_two_vectors_around_axis((0., 0., 2.),(0., 0., 2.), axis=(1., 0., 0.))
+    assert np.isclose(q.as_quat(), [0., 0., 0., 1.]).all()
+    assert (q.apply([1., 1., 1.]) == [1., 1., 1.]).all()
