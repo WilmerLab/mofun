@@ -51,7 +51,8 @@ class Atoms:
         start_section = False
 
         for unprocessed_line in f:
-            line = unprocessed_line.strip()
+            # handle comments
+            line = unprocessed_line.split('#')[0].strip()
             if line in sections_handled:
                 current_section = line
                 start_section = True
