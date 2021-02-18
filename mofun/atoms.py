@@ -264,4 +264,4 @@ class Atoms:
                      cell=self.cell)
 
     def to_ase(self):
-        return ase.Atoms(self.atom_types, positions=self.positions, cell=   self.cell)
+        return ase.Atoms(self.atom_types, positions=self.positions, cell=self.cell)
