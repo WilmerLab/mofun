@@ -226,7 +226,7 @@ class Atoms:
         self.positions = np.append(self.positions, other.positions, axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types, axis=0)
 
-    def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices):
+    def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices, secondary_arr=None):
         updated_arr = arr.copy()
         arr_idx_to_delete = []
         for i, atom_idx_tuple in enumerate(arr):
@@ -238,7 +238,12 @@ class Atoms:
         for i in sorted_deleted_indices:
             updated_arr = np.subtract(updated_arr, 1, where=updated_arr>i)
 
-        return updated_arr
+        if secondary_arr:
+            # remove same indices from secondary array; this is used for types arrays
+            secondary_arr = np.delete(secondary_arr, arr_idx_to_delete, axis=0)
+            return (updated_arr, secondary_arr)
+        else:
+            return updated_arr
 
 
     def __delitem__(self, indices):
@@ -247,11 +252,11 @@ class Atoms:
 
         sorted_indices = sorted(indices, reverse=True)
         if len(self.bonds) > 0:
-            self.bonds = self._delete_and_reindex_atom_index_array(self.bonds, sorted_indices)
+            self.bonds, self.bond_types = self._delete_and_reindex_atom_index_array(self.bonds, sorted_indices, self.bond_types)
         if len(self.angles) > 0:
-            self.angles = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices)
+            self.angles, self.angle_types = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices, self.angle_types)
         if len(self.dihedrals) > 0:
-            self.dihedrals = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices)
+            self.dihedrals, self.dihedral_types = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices, self.dihedral_types)
 
 
 

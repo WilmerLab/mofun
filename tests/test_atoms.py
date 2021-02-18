@@ -10,6 +10,15 @@ def test_atoms_del__deletes_bonds_attached_to_atoms(linear_cnnc):
     assert list(linear_cnnc.atom_types) == ["C", "N", "C"]
     assert (linear_cnnc.bonds == [[1,2]]).all()
 
+def test_atoms_del__deletes_types_with_all_topologies(linear_cnnc):
+    linear_cnnc.bond_types = [0, 1, 2]
+    linear_cnnc.angle_types = [0, 1]
+    linear_cnnc.dihedral_types = [0]
+    del(linear_cnnc[[0]])
+    assert (linear_cnnc.bond_types == (1, 2)).all()
+    assert linear_cnnc.angle_types == (1)
+    assert len(linear_cnnc.dihedral_types) == 0
+
 def test_atoms_del__deletes_angles_attached_to_atoms(linear_cnnc):
     del(linear_cnnc[[0]])
     assert (linear_cnnc.angles == [(0,1,2)]).all()
