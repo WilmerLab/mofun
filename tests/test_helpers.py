@@ -1,5 +1,5 @@
 
-from mofun.helpers import remove_duplicates, position_index_farthest_from_axis
+from mofun.helpers import remove_duplicates, position_index_farthest_from_axis, guess_elements_from_masses
 from tests.fixtures import *
 
 def test_remove_duplicates__leaves_order_untouched():
@@ -15,3 +15,10 @@ def test_remove_duplicates__with_no_key_uses_sorted_tuples():
 def test_position_index_farthest_from_axis__for_octane_is_index_6_or_20(octane):
     # index 20 is one of the H on the benzene ring
     assert position_index_farthest_from_axis(octane.positions[-1] - octane.positions[0], octane) in [6,20]
+
+def test_guess_elements_from_masses__finds_CNHHOC():
+    assert guess_elements_from_masses([12.0, 14.0, 1.0, 1.0, 16.0, 12.0]) == ["C", "N", "H", "H", "O", "C"]
+
+def test_guess_elements_from_masses__unknown_mass_raises_exception():
+    with pytest.raises(Exception):
+        guess_elements_from_masses([1700])

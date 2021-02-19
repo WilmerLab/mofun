@@ -59,3 +59,13 @@ def quaternion_from_two_vectors_around_axis(p1, p2, axis):
     if angle != 0. and np.isclose(axis, np.cross(v1, v2) / norm(np.cross(v1, v2)), 1e-3).all():
         angle *= -1
     return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
+
+def guess_elements_from_masses(masses, max_delta=1e-2):
+    elements = [(1.00794, "H"), (12.0107, "C"), (14.0067, "N"), (15.9994, "O")]
+    def find_element(elmass):
+        for mass, sym in elements:
+            if elmass - mass < max_delta:
+                return sym
+        raise Exception("no element matching mass %8.5f in elements list. Please add one?")
+
+    return [find_element(m) for m in masses]
