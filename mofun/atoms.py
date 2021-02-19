@@ -43,7 +43,7 @@ class Atoms:
             raise Exception("len of dihedrals and dihedral_types must match")
 
     @classmethod
-    def from_lammps_data(cls, f):
+    def from_lammps_data(cls, f, atom_format="full"):
         def get_types_tups(arr):
             types = tups = []
             if len(arr) > 0:
@@ -94,8 +94,13 @@ class Atoms:
 
         # note: bond indices in lammps-data file are 1-indexed and we are 0-indexed which is why
         # the bond pairs get a -1
-        atom_types = np.array(atoms[:, 1] - 1, dtype=int)
-        atom_tups = atoms[:, 2:5]
+        if atom_format == "atomic":
+            atom_types = np.array(atoms[:, 1] - 1, dtype=int)
+            atom_tups = atoms[:, 2:5]
+        elif atom_format == "full":
+            atom_types = np.array(atoms[:, 2] - 1, dtype=int)
+            atom_charges = np.array(atoms[:, 3], dtype=float)
+            atom_tups = atoms[:, 3:6]
 
         bond_types, bond_tups = get_types_tups(bonds)
         angle_types, angle_tups = get_types_tups(angles)
