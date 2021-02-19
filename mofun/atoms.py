@@ -283,8 +283,8 @@ class Atoms:
         del(self, pos)
 
     def __getitem__(self, i):
-        return Atoms(positions=np.take(self.positions, i, axis=0),
-                     atom_types=np.take(self.atom_types, i, axis=0),
+        return Atoms(positions=np.take(self.positions, [i], axis=0),
+                     atom_types=np.take(self.atom_types, [i], axis=0),
                      cell=self.cell)
 
     def to_ase(self):
