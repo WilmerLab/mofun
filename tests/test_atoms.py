@@ -4,6 +4,7 @@ from io import StringIO
 
 from tests.fixtures import *
 from mofun import Atoms
+from mofun.atoms import find_unchanged_atom_pairs
 
 def test_atoms_del__deletes_bonds_attached_to_atoms(linear_cnnc):
     del(linear_cnnc[[1]])
@@ -57,3 +58,16 @@ def test_atoms_to_lammps_data__output_file_identical_to_one_read():
     sout.seek(0)
     sin.seek(0)
     assert sout.read() == sin.read()
+
+def test_find_unchanged_atom_pairs__same_structure_is_unchanged(linear_cnnc):
+    assert find_unchanged_atom_pairs(linear_cnnc, linear_cnnc) == [(0,0), (1,1), (2,2), (3,3)]
+
+def test_find_unchanged_atom_pairs__different_atom_type_is_changed(linear_cnnc):
+    cncc = linear_cnnc.copy()
+    cncc.atom_types[2] = cncc.element_by_type.index("C")
+    assert find_unchanged_atom_pairs(linear_cnnc, cncc) == [(0,0), (1,1), (3,3)]
+
+def test_find_unchanged_atom_pairs__different_position_is_changed(linear_cnnc):
+    offset_linear_cnns = linear_cnnc.copy()
+    offset_linear_cnns.positions[2] += 0.5
+    assert find_unchanged_atom_pairs(linear_cnnc, offset_linear_cnns) == [(0,0), (1,1), (3,3)]

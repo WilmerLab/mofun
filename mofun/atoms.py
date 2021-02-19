@@ -289,3 +289,16 @@ class Atoms:
 
     def to_ase(self):
         return ase.Atoms(self.atom_types, positions=self.positions, cell=self.cell)
+
+def find_unchanged_atom_pairs(orig_structure, final_structure, max_delta=1e-5):
+    """returns array of tuple pairs, where each pair contains the indices in the original and the final
+    structure that match.
+
+    does not work across pbcs"""
+    match_pairs = []
+    for i, p1 in enumerate(orig_structure.positions):
+        for j, p2 in enumerate(final_structure.positions):
+            if norm(np.array(p2) - p1) < max_delta and orig_structure.elements[i] == final_structure.elements[j]:
+                match_pairs.append((i,j))
+                break
+    return match_pairs
