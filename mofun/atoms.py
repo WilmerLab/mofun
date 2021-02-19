@@ -4,17 +4,27 @@ import ase
 from ase.formula import Formula
 from CifFile import ReadCif as read_cif
 import numpy as np
+from scipy.linalg import norm
+
+from mofun.helpers import guess_elements_from_masses
 
 class Atoms:
 
     def __init__(self, atom_types=[], positions=[], bond_types=[], bonds=[],
-                    angle_types=[], angles=[], dihedrals=[], dihedral_types=[], cell=[]):
+                    angle_types=[], angles=[], dihedrals=[], dihedral_types=[],
+                    masses=[], cell=[]):
 
+        self.masses = np.array(masses)
         self.positions = np.array(positions, dtype=float)
+
         if isinstance(atom_types, str):
-            self.atom_types = list(Formula(atom_types))
+            elements = list(Formula(atom_types))
+            self.element_by_type = list(set(elements))
+            self.atom_types = [self.element_by_type.index(s) for s in elements]
         else:
             self.atom_types = np.array(atom_types)
+            self.element_by_type = guess_elements_from_masses(self.masses)
+
         self.cell = np.array(cell)
         self.bonds = np.array(bonds)
         self.bond_types = np.array(bond_types)
@@ -41,6 +51,7 @@ class Atoms:
                 tups = arr[:, 2:] - 1
             return types, tups
 
+        masses = []
         atoms = []
         bonds = []
         angles = []
@@ -64,7 +75,9 @@ class Atoms:
                 start_section = False
                 continue
             tup = line.split()
-            if current_section == "Atoms":
+            if current_section == "Masses":
+                masses.append(tup[1])
+            elif current_section == "Atoms":
                 atoms.append(tup)
             elif current_section == "Bonds":
                 bonds.append(tup)
@@ -73,6 +86,7 @@ class Atoms:
             elif current_section == "Dihedrals":
                 dihedrals.append(tup)
 
+        masses = np.array(masses, dtype=float)
         atoms = np.array(atoms, dtype=float)
         bonds = np.array(bonds, dtype=int)
         angles = np.array(angles, dtype=int)
@@ -90,7 +104,7 @@ class Atoms:
         return cls(atom_types=atom_types, positions=atom_tups,
                    bond_types=bond_types, bonds=bond_tups,
                    angle_types=angle_types, angles=angle_tups,
-                   dihedral_types=dihedral_types, dihedrals=dihedral_tups)
+                   dihedral_types=dihedral_types, dihedrals=dihedral_tups, masses=masses)
 
     def to_lammps_data(self, f, file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
@@ -183,9 +197,9 @@ class Atoms:
     def from_ase_atoms(cls, atoms):
         return cls(atoms.symbols, atoms.positions, cell=atoms.cell)
 
-    def map_atom_types(self, type_map):
-        """ converts lammps style atom types (indices) to string atom types based on a provided map"""
-        return [type_map[i] for i in self.atom_types]
+    @property
+    def elements(self):
+        return [self.element_by_type[i] for i in self.atom_types]
 
     @property
     def symbols(self):
