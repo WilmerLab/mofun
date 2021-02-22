@@ -57,7 +57,7 @@ class Atoms:
         angles = []
         dihedrals = []
 
-        sections_handled = ["Atoms", "Bonds", "Angles", "Dihedrals"]
+        sections_handled = ["Atoms", "Bonds", "Angles", "Dihedrals", "Masses"]
         current_section = None
         start_section = False
 

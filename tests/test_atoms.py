@@ -71,3 +71,8 @@ def test_find_unchanged_atom_pairs__different_position_is_changed(linear_cnnc):
     offset_linear_cnns = linear_cnnc.copy()
     offset_linear_cnns.positions[2] += 0.5
     assert find_unchanged_atom_pairs(linear_cnnc, offset_linear_cnns) == [(0,0), (1,1), (3,3)]
+
+
+def test_atoms_elements__finds_cnnc_for_masses_12_14():
+    atoms = Atoms(masses=[12.0, 14.0], atom_types=[0, 1, 1, 0], positions=[[0,0,0]] * 4)
+    linear_cnnc.elements = ["C", "N", "N", "C"]
