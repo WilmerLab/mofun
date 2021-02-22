@@ -9,6 +9,13 @@ uio66-linker.lammps-data (written by mofun)
 3 atom types
 1 bond types
 
+Masses
+
+1  12.0107
+2  15.9994
+3   1.0079
+
+
 Atoms
 
  1 1   0.000000   0.000000   0.000000

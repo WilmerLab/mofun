@@ -34,7 +34,7 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     s_positions = [structure.positions + uc_offset for uc_offset in uc_offsets]
     s_positions = np.array([x for y in s_positions for x in y])
 
-    s_types = list(structure.symbols) * len(uc_offsets)
+    s_types = list(structure.elements) * len(uc_offsets)
     cell = list(np.diag(cell))
     index_mapper = []
     s_pos_view = []
@@ -65,7 +65,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, verbos
         # Search instances of first atom in a search pattern
         if i == 0:
             # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
-            match_index_tuples = [[idx] for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.symbols[0])]
+            match_index_tuples = [[idx] for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.elements[0])]
             if verbose:
                 print("round %d (%d): " % (i, len(match_index_tuples)), match_index_tuples)
             continue
@@ -73,7 +73,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, verbos
         last_match_index_tuples = match_index_tuples
         match_index_tuples = []
         for match in last_match_index_tuples:
-            for atom_idx in atoms_by_type[pattern.symbols[i]]:
+            for atom_idx in atoms_by_type[pattern.elements[i]]:
                 found_match = True
                 for j in range(i):
                     if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=5e-2):
@@ -117,9 +117,12 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axi
 
     new_structure = structure.copy()
     if len(replace_pattern) > 0:
-
+        new_structure.extend_atom_types(replace_pattern)
         for atom_positions in match_positions:
             new_atoms = replace_pattern.copy()
+            # offset atom types so we they don't conflict with first structure's atom_types
+            new_atoms.atom_types += structure.num_atom_types
+
             if verbose:
                 print(atom_positions)
                 print("--------------")

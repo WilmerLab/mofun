@@ -57,7 +57,7 @@ def assert_benzene(coords):
 
 @pytest.fixture
 def linear_cnnc():
-    yield Atoms('CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)],
+    yield Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)],
                 bonds=[(0,1), (1,2), (2,3)], bond_types=[0] * 3,
                 angles=[(0,1,2), (1,2,3)], angle_types=[0,0],
                 dihedrals=[(0,1,2,3)], dihedral_types=[0], cell=15*np.identity(3))
@@ -96,9 +96,9 @@ def benzene():
 @pytest.fixture
 def uio66_linker_no_bonds():
     with importlib.resources.open_text(tests, "uio66-linker-no-bonds.lammps-data") as fd:
-        yield Atoms.from_lammps_data(fd)
+        yield Atoms.from_lammps_data(fd, atom_format="atomic")
 
 @pytest.fixture
 def uio66_linker_w_bonds():
     with importlib.resources.open_text(tests, "uio66-linker.lammps-data") as fd:
-        yield Atoms.from_lammps_data(fd)
+        yield Atoms.from_lammps_data(fd, atom_format="atomic")

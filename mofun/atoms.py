@@ -6,24 +6,38 @@ from CifFile import ReadCif as read_cif
 import numpy as np
 from scipy.linalg import norm
 
-from mofun.helpers import guess_elements_from_masses
+from mofun.helpers import guess_elements_from_masses, ELEMENT_MASSES
 
 class Atoms:
 
     def __init__(self, atom_types=[], positions=[], bond_types=[], bonds=[],
                     angle_types=[], angles=[], dihedrals=[], dihedral_types=[],
-                    masses=[], cell=[]):
+                    atom_type_masses=[], cell=[], elements=[], atom_type_elements=[]):
 
-        self.masses = np.array(masses)
-        self.positions = np.array(positions, dtype=float)
+        self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
+        self.positions = np.array(positions, dtype=float, ndmin=1)
 
-        if isinstance(atom_types, str):
-            elements = list(Formula(atom_types))
-            self.element_by_type = list(set(elements))
-            self.atom_types = [self.element_by_type.index(s) for s in elements]
-        else:
+        if len(atom_type_elements) > 0:
+            # this is a __getitem__ subset
             self.atom_types = np.array(atom_types)
-            self.element_by_type = guess_elements_from_masses(self.masses)
+            self.atom_type_elements = atom_type_elements
+        elif len(atom_types) > 0:
+            # from atom type ids and masses, such as from LAMMPS:
+            self.atom_types = np.array(atom_types, ndmin=1)
+            self.atom_type_elements = guess_elements_from_masses(self.atom_type_masses)
+        elif len(elements) > 0:
+            # from element array, such as from ASE atoms
+            # i.e. Propane ['C', 'H', 'H', 'H', 'C', 'H', 'H', 'C', 'H', 'H', 'H']:
+            if isinstance(elements, str):
+                # from element string, i.e. Propane "CHHHCHHCHHH" (shorthand):
+                elements = list(Formula(elements))
+
+            self.atom_type_elements = list(set(elements))
+            self.atom_types = np.array([self.atom_type_elements.index(s) for s in elements])
+            self.atom_type_masses = [ELEMENT_MASSES[s] for s in self.atom_type_elements]
+        else:
+            # no atom_types, atom_type_elements or elements passed
+            self.atom_types = np.array([], ndmin=1)
 
         self.cell = np.array(cell)
         self.bonds = np.array(bonds)
@@ -34,7 +48,7 @@ class Atoms:
         self.dihedral_types = np.array(dihedral_types)
 
         if len(self.positions) != len(self.atom_types):
-            raise Exception("len of positions and atom types must match")
+            raise Exception("len of positions (%d) and atom types (%d) must match" % (len(self.positions), len(self.atom_types)))
         if len(self.bonds) != len(self.bond_types):
             raise Exception("len of bonds and bond types must match")
         if len(self.angles) != len(self.angle_types):
@@ -86,7 +100,7 @@ class Atoms:
             elif current_section == "Dihedrals":
                 dihedrals.append(tup)
 
-        masses = np.array(masses, dtype=float)
+        atom_type_masses = np.array(masses, dtype=float)
         atoms = np.array(atoms, dtype=float)
         bonds = np.array(bonds, dtype=int)
         angles = np.array(angles, dtype=int)
@@ -109,7 +123,8 @@ class Atoms:
         return cls(atom_types=atom_types, positions=atom_tups,
                    bond_types=bond_types, bonds=bond_tups,
                    angle_types=angle_types, angles=angle_tups,
-                   dihedral_types=dihedral_types, dihedrals=dihedral_tups, masses=masses)
+                   dihedral_types=dihedral_types, dihedrals=dihedral_tups,
+                   atom_type_masses=atom_type_masses)
 
     def to_lammps_data(self, f, file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
@@ -131,7 +146,11 @@ class Atoms:
             f.write('%d dihedral types\n' % num_dihedral_types)
         f.write("\n")
 
-        f.write("Atoms\n\n")
+        f.write("Masses\n\n")
+        for i, m in enumerate(self.atom_type_masses):
+            f.write(" %d %5.4f\n" % (i + 1, m))
+
+        f.write("\nAtoms\n\n")
         for i, (x, y, z) in enumerate(self.positions):
             f.write(" %d %d %10.6f %10.6f %10.6f\n" % (i + 1, self.atom_types[i] + 1, x, y, z))
 
@@ -200,11 +219,11 @@ class Atoms:
 
     @classmethod
     def from_ase_atoms(cls, atoms):
-        return cls(atoms.symbols, atoms.positions, cell=atoms.cell)
+        return cls(elements=atoms.symbols, positions=atoms.positions, cell=atoms.cell)
 
     @property
     def elements(self):
-        return [self.element_by_type[i] for i in self.atom_types]
+        return [self.atom_type_elements[i] for i in self.atom_types]
 
     @property
     def symbols(self):
@@ -219,6 +238,14 @@ class Atoms:
 
     def __len__(self):
         return len(self.positions)
+
+    @property
+    def num_atom_types(self):
+        return max(self.atom_types) + 1
+
+    def extend_atom_types(self, other):
+        self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
+        self.atom_type_masses = np.append(self.atom_type_masses, other.atom_type_masses)
 
     def extend(self, other):
         if len(self.bonds) == 0:
@@ -283,8 +310,11 @@ class Atoms:
         del(self, pos)
 
     def __getitem__(self, i):
-        return Atoms(positions=np.take(self.positions, [i], axis=0),
-                     atom_types=np.take(self.atom_types, [i], axis=0),
+        idx = np.array(i, ndmin=1)
+        return Atoms(positions=np.take(self.positions, idx, axis=0),
+                     atom_types=np.take(self.atom_types, idx, axis=0),
+                     atom_type_masses=self.atom_type_masses,
+                     atom_type_elements=self.atom_type_elements,
                      cell=self.cell)
 
     def to_ase(self):
