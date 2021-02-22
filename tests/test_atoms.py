@@ -83,3 +83,11 @@ def test_atoms_getitem__has_all_atom_types():
     assert atoms[1].elements[0] == "C"
     assert atoms[(0,1)].elements == ["N", "C"]
     assert atoms[(2,3)].elements == ["C", "N"]
+
+def test_atoms_from_cml__loads_atoms_bonds():
+    with importlib.resources.path(tests, "uio66.cml") as path:
+        atoms = Atoms.from_cml(path)
+
+    assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
+    assert (atoms.bonds == [[0, 1], [10, 11], [0, 2], [0, 3], [3, 10], [9, 10], [3, 4], [9, 12],
+                           [8, 9], [4, 5], [4, 7], [7, 8], [8, 14], [6, 7], [13, 14], [14, 15]]).all()

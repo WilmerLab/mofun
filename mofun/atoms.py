@@ -1,4 +1,5 @@
 import copy
+import xml.etree.ElementTree as ET
 
 import ase
 from ase.formula import Formula
@@ -26,7 +27,7 @@ class Atoms:
             self.atom_types = np.array(atom_types, ndmin=1)
             self.atom_type_elements = guess_elements_from_masses(self.atom_type_masses)
         elif len(elements) > 0:
-            # from element array, such as from ASE atoms
+            # from element array, such as from ASE atoms or read CML
             # i.e. Propane ['C', 'H', 'H', 'H', 'C', 'H', 'H', 'C', 'H', 'H', 'H']:
             if isinstance(elements, str):
                 # from element string, i.e. Propane "CHHHCHHCHHH" (shorthand):
@@ -216,6 +217,26 @@ class Atoms:
                 positions *= (a,b,c)
 
         return cls(atom_types, positions, cell=cell)
+
+    @classmethod
+    def from_cml(cls, path):
+        tree = ET.parse(path)
+        root = tree.getroot()
+
+        atom_dicts = [a.attrib for a in root.findall('.//atom')]
+        atom_tuples = [(a['id'], a['elementType'],
+                       float(a['x3']), float(a['y3']), float(a['z3'])) for a in atom_dicts]
+        ids, elements, x, y, z = zip(*atom_tuples)
+        id_to_idx = {id:i for i, id in enumerate(ids)}
+        positions = np.array([x,y,z]).T
+
+        bond_dicts = [a.attrib for a in root.findall('.//bond')]
+        bond_tuples = [(a['atomRefs2'].split(), float(a['order'])) for a in bond_dicts]
+        bonds_by_ids, bond_orders = zip(*bond_tuples)
+        bonds = [(id_to_idx[b1], id_to_idx[b2]) for (b1,b2) in bonds_by_ids]
+        bond_types = [0 for b in bonds]
+        return cls(elements=elements, positions=positions, bonds=bonds, bond_types=bond_types)
+
 
     @classmethod
     def from_ase_atoms(cls, atoms):
