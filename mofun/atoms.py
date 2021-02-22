@@ -257,7 +257,7 @@ class Atoms:
         for i in sorted_deleted_indices:
             updated_arr = np.subtract(updated_arr, 1, where=updated_arr>i)
 
-        if secondary_arr:
+        if secondary_arr is not None:
             # remove same indices from secondary array; this is used for types arrays
             secondary_arr = np.delete(secondary_arr, arr_idx_to_delete, axis=0)
             return (updated_arr, secondary_arr)
