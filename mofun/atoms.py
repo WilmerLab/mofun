@@ -33,7 +33,8 @@ class Atoms:
                 # from element string, i.e. Propane "CHHHCHHCHHH" (shorthand):
                 elements = list(Formula(elements))
 
-            self.atom_type_elements = list(set(elements))
+            # preserve order of types
+            self.atom_type_elements = list(dict.fromkeys(elements).keys())
             self.atom_types = np.array([self.atom_type_elements.index(s) for s in elements])
             self.atom_type_masses = [ELEMENT_MASSES[s] for s in self.atom_type_elements]
         else:
@@ -192,8 +193,9 @@ class Atoms:
         x = [float(c) for c in coords[0]]
         y = [float(c) for c in coords[1]]
         z = [float(c) for c in coords[2]]
+
         atom_name = coords[3]
-        positions = np.array([x,y,z]).T
+        positions = np.array([x,y,z], dtype=float).T
 
         atom_types = block['_atom_site_type_symbol']
 
@@ -216,7 +218,7 @@ class Atoms:
             if use_fract_coords:
                 positions *= (a,b,c)
 
-        return cls(atom_types, positions, cell=cell)
+        return cls(elements=atom_types, positions=positions, cell=cell)
 
     @classmethod
     def from_cml(cls, path):
@@ -339,7 +341,7 @@ class Atoms:
                      cell=self.cell)
 
     def to_ase(self):
-        return ase.Atoms(self.atom_types, positions=self.positions, cell=self.cell)
+        return ase.Atoms(self.elements, positions=self.positions, cell=self.cell)
 
 def find_unchanged_atom_pairs(orig_structure, final_structure, max_delta=1e-5):
     """returns array of tuple pairs, where each pair contains the indices in the original and the final
