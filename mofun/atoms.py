@@ -9,7 +9,7 @@ import networkx as nx
 import numpy as np
 from scipy.linalg import norm
 
-from mofun.helpers import guess_elements_from_masses, ELEMENT_MASSES
+from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES
 
 class Atoms:
 
@@ -38,7 +38,7 @@ class Atoms:
             # preserve order of types
             self.atom_type_elements = list(dict.fromkeys(elements).keys())
             self.atom_types = np.array([self.atom_type_elements.index(s) for s in elements])
-            self.atom_type_masses = [ELEMENT_MASSES[s] for s in self.atom_type_elements]
+            self.atom_type_masses = [ATOMIC_MASSES[s] for s in self.atom_type_elements]
         else:
             # no atom_types, atom_type_elements or elements passed
             self.atom_types = np.array([], ndmin=1)

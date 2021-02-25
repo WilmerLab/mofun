@@ -2,6 +2,8 @@ import numpy as np
 from scipy.linalg import norm
 from scipy.spatial.transform import Rotation as R
 
+from mofun.atomic_masses import ATOMIC_MASSES
+
 def atoms_of_type(types, element):
     """ returns all atom indices in types that match the symbol element """
     return [i for i, t in enumerate(types) if t == element]
@@ -60,19 +62,9 @@ def quaternion_from_two_vectors_around_axis(p1, p2, axis):
         angle *= -1
     return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
 
-
-ELEMENT_MASSES = {
-    "H": 1.00794,
-    "He": 4.0026,
-    "C": 12.0107,
-    "N": 14.0067,
-    "O": 15.9994,
-    "F": 18.998,
-}
-
 def guess_elements_from_masses(masses, max_delta=1e-2):
     def find_element(elmass):
-        for sym, mass in ELEMENT_MASSES.items():
+        for sym, mass in ATOMIC_MASSES.items():
             if elmass - mass < max_delta:
                 return sym
         raise Exception("no element matching mass %8.5f in elements list. Please add one?")
