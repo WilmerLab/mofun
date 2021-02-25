@@ -1,9 +1,11 @@
 import copy
+import itertools
 import xml.etree.ElementTree as ET
 
 import ase
 from ase.formula import Formula
 from CifFile import ReadCif as read_cif
+import networkx as nx
 import numpy as np
 from scipy.linalg import norm
 
@@ -342,6 +344,30 @@ class Atoms:
 
     def to_ase(self):
         return ase.Atoms(self.elements, positions=self.positions, cell=self.cell)
+
+    def calc_angles(self):
+        g = nx.Graph()
+        g.add_edges_from([tuple(x) for x in self.bonds])
+
+        angles = []
+        for n in g.nodes:
+            angles += [(a, n, b) for (a,b) in itertools.combinations(g.neighbors(n), 2)]
+        self.angles = np.array(angles)
+
+    def calc_dihedrals(self):
+        g = nx.Graph()
+        g.add_edges_from([tuple(x) for x in self.bonds])
+
+        dihedrals = []
+        for a, b in g.edges:
+            a_neighbors = list(g.adj[a])
+            a_neighbors.remove(b)
+            b_neighbors = list(g.adj[b])
+            b_neighbors.remove(a)
+
+            dihedrals += [(a1, a, b, b1) for a1 in a_neighbors for b1 in b_neighbors]
+        self.dihedrals = np.array(dihedrals)
+
 
 def find_unchanged_atom_pairs(orig_structure, final_structure, max_delta=1e-5):
     """returns array of tuple pairs, where each pair contains the indices in the original and the final
