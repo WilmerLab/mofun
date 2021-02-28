@@ -30,6 +30,7 @@ def test_add_aromatic_flag__uio66_linker_has_aromatic_benzene_ring(uio66_linker_
     g.add_edges_from(uio66_linker_cml.bonds)
     add_aromatic_flag(g)
     atom_benzene_ring = ["aromatic" in g.nodes[n] for n in sorted(g.nodes())]
+    # Trues indicate where the benzene carbons are in the uio_linker_cml file
     assert atom_benzene_ring == [False, False, False, True, True, False, False, True, True, True, True, False, False, False, False, False]
 
 def test_assign_uff_atom_types__uio66_linker(uio66_linker_cml):
