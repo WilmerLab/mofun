@@ -6,11 +6,11 @@ from mofun.uff4mof import UFF4MOF, uff_key_starts_with
 def default_uff_rules():
     return {
         "H": [
-            ("H_b", dict(bo=2)),
+            ("H_b", dict(h=2)),
             ("H_", {})
         ],
         "O": [
-            ("O_1", dict(bo=0))
+            ("O_1", dict(h=0))
         ],
         "C": [
             ("C_R", dict(aromatic=True))
@@ -39,11 +39,11 @@ def assign_uff_atom_types(g, elements, override_rules=None):
         # handle override rules
         el = elements[n]
         found_type = False
-        bo = g.degree(n) - 1
+        h = g.degree(n) - 1
 
         if el in override_rules:
             for ufftype, reqs in override_rules[el]:
-                if "bo" in reqs and bo != reqs['bo']:
+                if "h" in reqs and h != reqs['h']:
                     continue
                 if "aromatic" in reqs and "aromatic" not in g.nodes[n]:
                     continue
@@ -54,7 +54,7 @@ def assign_uff_atom_types(g, elements, override_rules=None):
                 continue
 
         # handle default cases
-        uff_key = "%s%1d" % (el.ljust(2, "_"), bo)
+        uff_key = "%s%1d" % (el.ljust(2, "_"), h)
         possible_uff_keys = uff_key_starts_with(uff_key)
         if len(possible_uff_keys) == 1:
             atom_types.append(possible_uff_keys[0])
