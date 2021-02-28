@@ -1,4 +1,6 @@
 
+import networkx as nx
+
 from mofun.uff4mof import UFF4MOF, uff_key_starts_with
 
 def default_uff_rules():
@@ -10,7 +12,18 @@ def default_uff_rules():
         "O": [
             ("O_1", dict(bo=0))
         ],
+        "C": [
+            ("C_R", dict(aromatic=True))
+        ]
     }
+
+def add_aromatic_flag(g):
+    cycles = nx.cycle_basis(g)
+    for cycle in cycles:
+        if 5 <= len(cycle) <= 7:
+            for n in cycle:
+                g.nodes[n]['aromatic'] = True
+
 
 def assign_uff_atom_types(g, elements, override_rules=None):
     """ g is a networkx Graph object
@@ -21,8 +34,8 @@ def assign_uff_atom_types(g, elements, override_rules=None):
     uff_keys = UFF4MOF.keys()
 
     atom_types = []
-
-    for n in g.nodes:
+    add_aromatic_flag(g)
+    for n in sorted(g.nodes):
         # handle override rules
         el = elements[n]
         found_type = False
@@ -31,6 +44,8 @@ def assign_uff_atom_types(g, elements, override_rules=None):
         if el in override_rules:
             for ufftype, reqs in override_rules[el]:
                 if "bo" in reqs and bo != reqs['bo']:
+                    continue
+                if "aromatic" in reqs and "aromatic" not in g.nodes[n]:
                     continue
                 found_type = True
                 atom_types.append(ufftype)

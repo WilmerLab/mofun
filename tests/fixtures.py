@@ -102,3 +102,8 @@ def uio66_linker_no_bonds():
 def uio66_linker_w_bonds():
     with importlib.resources.open_text(tests, "uio66-linker.lammps-data") as fd:
         yield Atoms.from_lammps_data(fd, atom_format="atomic")
+
+@pytest.fixture
+def uio66_linker_cml():
+    with importlib.resources.path(tests, "uio66.cml") as path:
+        yield Atoms.from_cml(path)
