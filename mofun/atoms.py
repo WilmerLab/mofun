@@ -252,7 +252,7 @@ class Atoms:
 
     @property
     def symbols(self):
-        return self.atom_types
+        return self.elements
 
     def copy(self):
         return copy.deepcopy(self)
