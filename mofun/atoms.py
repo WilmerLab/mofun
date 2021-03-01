@@ -55,6 +55,11 @@ class Atoms:
         self.dihedrals = np.array(dihedrals)
         self.dihedral_types = np.array(dihedral_types)
 
+        self.pair_params = np.array([])
+        self.bond_type_params = np.array([])
+        self.angle_type_params = np.array([])
+        self.dihedral_type_params = np.array([])
+
         if len(self.positions) != len(self.atom_types):
             raise Exception("len of positions (%d) and atom types (%d) must match" % (len(self.positions), len(self.atom_types)))
         if len(self.bonds) != len(self.bond_types):
@@ -135,8 +140,7 @@ class Atoms:
                    dihedral_types=dihedral_types, dihedrals=dihedral_tups,
                    atom_type_masses=atom_type_masses)
 
-    def to_lammps_data(self, f, pair_params=[], bond_params=[], angle_params=[], atom_molecules=[],
-            atom_format="full", file_comment=""):
+    def to_lammps_data(self, f, atom_molecules=[], atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
 
         f.write('%d atoms\n' % len(self.atom_types))
@@ -159,25 +163,25 @@ class Atoms:
         for i, m in enumerate(self.atom_type_masses):
             f.write(" %d %5.4f # %s\n" % (i + 1, m, self.label_atoms(i)))
 
-        if len(pair_params) > 0:
+        if len(self.pair_params) > 0:
             f.write('\nPair Coeffs\n\n')
-            for i, label in enumerate(self.atom_type_labels):
-                f.write(' %d %10.6f %10.6f # %s\n' % (i + 1, *pair_params[label], label))
+            for i, params in enumerate(self.pair_params):
+                f.write(' %d %s\n' % (i + 1, params))
 
-        if len(bond_params) > 0:
+        if len(self.bond_type_params) > 0:
             f.write('\nBond Coeffs\n\n')
-            for i, (atom_types, params) in enumerate(bond_params.items()):
-                f.write(' %d %10.6f %10.6f # %s\n' % (i + 1, *params, " ".join(atom_types)))
+            for i, params in enumerate(self.bond_type_params):
+                f.write(' %d %s\n' % (i + 1, params))
 
-        if len(angle_params) > 0:
+        if len(self.angle_type_params) > 0:
             f.write('\nAngle Coeffs\n\n')
-            for i, (atom_types, params) in enumerate(angle_params.items()):
-                if params[0] == "fourier":
-                    f.write(' %d %s %10.6f %10.6f %10.6f %10.6f # %s\n' % (i + 1, *params, " ".join(atom_types)))
-                elif params[0] == "cosine/periodic":
-                    f.write(' %d %s %10.6f %d %d # %s\n' % (i + 1, *params, " ".join(atom_types)))
-                else:
-                    raise Exception("Unhandled angle style '%s'" % params[0])
+            for i, params in enumerate(self.angle_type_params):
+                f.write(' %d %s\n' % (i + 1, params))
+
+        if len(self.dihedral_type_params) > 0:
+            f.write('\nDihedral Coeffs\n\n')
+            for i, params in enumerate(self.dihedral_type_params):
+                f.write(' %d %s\n' % (i + 1, params))
 
         f.write("\nAtoms\n\n")
         if atom_format == "atomic":
