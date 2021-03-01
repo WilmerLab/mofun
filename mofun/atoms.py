@@ -13,12 +13,13 @@ from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES
 
 class Atoms:
 
-    def __init__(self, atom_types=[], positions=[], bond_types=[], bonds=[],
+    def __init__(self, atom_types=[], positions=[], charges=[], bond_types=[], bonds=[],
                     angle_types=[], angles=[], dihedrals=[], dihedral_types=[],
                     atom_type_masses=[], cell=[], elements=[], atom_type_elements=[]):
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
+        self.charges = np.array(charges, dtype=float)
 
         if len(atom_type_elements) > 0:
             # this is a __getitem__ subset
@@ -117,20 +118,20 @@ class Atoms:
             atom_tups = atoms[:, 2:5]
         elif atom_format == "full":
             atom_types = np.array(atoms[:, 2] - 1, dtype=int)
-            atom_charges = np.array(atoms[:, 3], dtype=float)
+            charges = np.array(atoms[:, 3], dtype=float)
             atom_tups = atoms[:, 3:6]
 
         bond_types, bond_tups = get_types_tups(bonds)
         angle_types, angle_tups = get_types_tups(angles)
         dihedral_types, dihedral_tups = get_types_tups(dihedrals)
 
-        return cls(atom_types=atom_types, positions=atom_tups,
+        return cls(atom_types=atom_types, positions=atom_tups, charges=charges,
                    bond_types=bond_types, bonds=bond_tups,
                    angle_types=angle_types, angles=angle_tups,
                    dihedral_types=dihedral_types, dihedrals=dihedral_tups,
                    atom_type_masses=atom_type_masses)
 
-    def to_lammps_data(self, f, file_comment=""):
+    def to_lammps_data(self, f, bond_types=[], angle_types=[], atom_molecules=[], atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
 
         f.write('%d atoms\n' % len(self.atom_types))
@@ -148,15 +149,30 @@ class Atoms:
             f.write('%d angle types\n' % num_angle_types)
         if (num_dihedral_types := len(set(self.dihedral_types))) > 0:
             f.write('%d dihedral types\n' % num_dihedral_types)
-        f.write("\n")
 
-        f.write("Masses\n\n")
+        f.write("\nMasses\n\n")
         for i, m in enumerate(self.atom_type_masses):
             f.write(" %d %5.4f\n" % (i + 1, m))
 
+        if len(bond_types) > 0:
+            f.write('\nBond Coeffs\n\n')
+            for i, (atom_types, bond_params) in enumerate(bond_types.items()):
+                f.write(' %d %10.6f %10.6f # %s\n' % (i + 1, *bond_params, " ".join(atom_types)))
+
+        if len(angle_types) > 0:
+            f.write('\nAngle Coeffs\n\n')
+            for i, (atom_types, angle_params) in enumerate(angle_types.items()):
+                f.write(' %d %s %10.6f %d %d # %s\n' % (i + 1, *angle_params, " ".join(atom_types)))
+
         f.write("\nAtoms\n\n")
-        for i, (x, y, z) in enumerate(self.positions):
-            f.write(" %d %d %10.6f %10.6f %10.6f\n" % (i + 1, self.atom_types[i] + 1, x, y, z))
+        if atom_format == "atomic":
+            for i, (x, y, z) in enumerate(self.positions):
+                f.write(" %d %d %10.6f %10.6f %10.6f\n" % (i + 1, self.atom_types[i] + 1, x, y, z))
+        elif atom_format == "full":
+            for i, (x, y, z) in enumerate(self.positions):
+                f.write(" %d %d %d %10.6f %10.6f %10.6f %10.6f\n" % (i + 1, atom_molecules[i], self.atom_types[i] + 1, self.charges[i], x, y, z))
+
+
 
         if len(self.bonds) > 0:
             f.write("\nBonds\n\n")
