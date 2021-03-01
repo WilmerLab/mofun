@@ -172,7 +172,12 @@ class Atoms:
         if len(angle_params) > 0:
             f.write('\nAngle Coeffs\n\n')
             for i, (atom_types, params) in enumerate(angle_params.items()):
-                f.write(' %d %s %10.6f %d %d # %s\n' % (i + 1, *params, " ".join(atom_types)))
+                if params[0] == "fourier":
+                    f.write(' %d %s %10.6f %10.6f %10.6f %10.6f # %s\n' % (i + 1, *params, " ".join(atom_types)))
+                elif params[0] == "cosine/periodic":
+                    f.write(' %d %s %10.6f %d %d # %s\n' % (i + 1, *params, " ".join(atom_types)))
+                else:
+                    raise Exception("Unhandled angle style '%s'" % params[0])
 
         f.write("\nAtoms\n\n")
         if atom_format == "atomic":
