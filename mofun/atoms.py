@@ -19,7 +19,10 @@ class Atoms:
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
-        self.charges = np.array(charges, dtype=float)
+        if len(charges) == 0:
+            self.charges = np.zeros(len(self.positions), dtype=float)
+        else:
+            self.charges = np.array(charges, dtype=float)
 
         if len(atom_type_elements) > 0:
             # this is a __getitem__ subset
