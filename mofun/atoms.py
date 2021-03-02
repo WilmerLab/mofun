@@ -401,7 +401,10 @@ class Atoms:
                      cell=self.cell)
 
     def to_ase(self):
-        return ase.Atoms(self.elements, positions=self.positions, cell=self.cell)
+        kwargs = dict(positions=self.positions)
+        if self.cell is not None and len(self.cell) > 0:
+            kwargs['cell'] = self.cell
+        return ase.Atoms(self.elements, **kwargs)
 
     def calc_angles(self):
         g = nx.Graph()
