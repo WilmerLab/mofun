@@ -25,6 +25,12 @@ def test_assign_uff_atom_types__carbon_in_benzene_ring_is_aromatic():
     uff_atom_types = assign_uff_atom_types(g, ["C"] * 6)
     assert uff_atom_types == ["C_R"] * 6
 
+def test_assign_uff_atom_types__elements_with_only_one_uff_atom_type_wo_hybridization_get_that_type():
+    g = nx.Graph()
+    g.add_edges_from([(0,1), (1,2), (2,3), (3,4), (4,5), (5,0)])
+    uff_atom_types = assign_uff_atom_types(g, ["F", "Rb", "Li", "Cl", "K", "Br"])
+    assert uff_atom_types == ["F_", "Rb", "Li", "Cl", "K_", "Br"]
+
 def test_add_aromatic_flag__uio66_linker_has_aromatic_benzene_ring(uio66_linker_cml):
     g = nx.Graph()
     g.add_edges_from(uio66_linker_cml.bonds)

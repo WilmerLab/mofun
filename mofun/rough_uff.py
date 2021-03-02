@@ -54,13 +54,22 @@ def assign_uff_atom_types(g, elements, override_rules=None):
                 continue
 
         # handle default cases
+        # 1: try element + hybridization
         uff_key = "%s%1d" % (el.ljust(2, "_"), h)
         possible_uff_keys = uff_key_starts_with(uff_key)
         if len(possible_uff_keys) == 1:
             atom_types.append(possible_uff_keys[0])
-        elif len(possible_uff_keys) == 0:
-            raise Exception("no appropriate UFF key that starts with %s" % uff_key)
+            continue
         elif len(possible_uff_keys) >= 2:
             raise Exception("too many possible UFF keys that starts with %s with no way of discerning which one: " % (uff_key, possible_uff_keys))
+
+        # 2: try element w/o hybridization
+        # Note that UFF4MOF adds some fancy types, i.e. Li3f2, and if the hybridization doesn't match
+        # above, then this will still default to the original UFF Li term.
+        if (el := uff_key[0:2]) in UFF4MOF:
+            atom_types.append(el)
+            continue
+
+        raise Exception("no appropriate UFF key that starts with %s" % uff_key)
 
     return atom_types
