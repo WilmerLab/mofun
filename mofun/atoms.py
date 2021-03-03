@@ -111,8 +111,14 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.angle_type_params = np.array(angle_type_params)
         self.dihedral_type_params = np.array(dihedral_type_params)
 
+        self.assert_arrays_are_consistent_sizes()
+
+    def assert_arrays_are_consistent_sizes(self):
         if len(self.positions) != len(self.atom_types):
             raise Exception("len of positions (%d) and atom types (%d) must match" % (len(self.positions), len(self.atom_types)))
+        if len(self.positions) != len(self.charges):
+            raise Exception("len of positions (%d) and charges (%d) must match" % (len(self.positions), len(self.charges)))
+
         if len(self.bonds) != len(self.bond_types):
             raise Exception("len of bonds and bond types must match")
         if len(self.angles) != len(self.angle_types):
