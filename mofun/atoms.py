@@ -416,6 +416,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
     def extend_atom_types(self, other):
         self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
         self.atom_type_masses = np.append(self.atom_type_masses, other.atom_type_masses)
+        self.atom_type_labels = np.append(self.atom_type_labels, other.atom_type_labels)
 
     def extend(self, other):
         if len(self.bonds) == 0:
@@ -441,6 +442,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
         self.positions = np.append(self.positions, other.positions, axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types, axis=0)
+        self.charges = np.append(self.charges, other.charges, axis=0)
 
     def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices, secondary_arr=None):
         updated_arr = arr.copy()
@@ -465,6 +467,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
     def __delitem__(self, indices):
         self.positions = np.delete(self.positions, indices, axis=0)
         self.atom_types = np.delete(self.atom_types, indices, axis=0)
+        self.charges = np.delete(self.charges, indices, axis=0)
 
         sorted_indices = sorted(indices, reverse=True)
         if len(self.bonds) > 0:
