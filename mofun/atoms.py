@@ -12,6 +12,54 @@ from scipy.linalg import norm
 from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES
 
 class Atoms:
+    """
+indexed one per atom:
+    atom_types=[], types for each atom
+    positions=[]: coordinates (x,y,z) for each atom
+    charges=[]: charges for each atom
+
+indexed one per atom type:
+    atom_type_masses=[]: mass for each atom type
+    atom_type_elements=[]: periodic table element for each atom type
+    atom_type_labels=[]: (optional) type labels to be output in line comments for lammps output.
+
+indexed one per bond:
+    bonds=[]: atom index tuple for each bond, i.e. (1,2) would be a bond connecting atoms 1 and 2.
+    bond_types=[]: type of the bond
+
+indexed one per angle:
+    angles=[]: atom index tuple for each angle, i.e. (1,2,3 )
+    angle_types=[]: type of the angle
+
+indexed one per dihedral:
+    dihedrals=[]: atom index tuple for each dihedral, i.e. (1,2,3,4)
+    dihedral_types=[]: type of the dihedral
+
+cell=[]: unit cell matrix (same definition as in ASE)
+
+*_params:
+
+    pair_params=[]
+    bond_type_params=[]
+    angle_type_params=[]
+    dihedral_type_params=[]
+
+    The *_params variables are lists of strings, where the item index corresponds to the atom type, and
+    the string is the full lampps coeffs def string. we do not interpret any of the LAMMPS coefficient
+    specifics, we just store it in its original form, i.e. this Angle Coeffs section
+
+    ```
+    Angle Coeffs
+
+     1 cosine/periodic  72.500283  -1  1   # C_R O_1 H_
+     2 cosine/periodic  277.164705  -1  3   # C_R C_R O_1
+     ```
+    would be interpreted like this:
+
+    ```
+    angle_type_params= ["cosine/periodic  72.500283  -1  1   # C_R O_1 H_",
+                        "cosine/periodic  277.164705  -1  3   # C_R C_R O_1"]
+    ```"""
 
     def __init__(self, atom_types=[], positions=[], charges=[], bond_types=[], bonds=[],
                     angle_types=[], angles=[], dihedrals=[], dihedral_types=[],
