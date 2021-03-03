@@ -419,26 +419,14 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.atom_type_labels = np.append(self.atom_type_labels, other.atom_type_labels)
 
     def extend(self, other):
-        if len(self.bonds) == 0:
-            self.bonds = other.bonds.copy() + len(self.positions)
-            self.bond_types = other.bond_types.copy() + len(self.positions)
-        else:
-            self.bonds = np.append(self.bonds, other.bonds + len(self.positions), axis=0)
-            self.bond_types = np.append(self.bond_types, other.bond_types + len(self.bond_types), axis=0)
+        self.bonds = np.append(self.bonds, other.bonds + len(self.positions)).reshape((-1,2))
+        self.bond_types = np.append(self.bond_types, other.bond_types + len(self.bond_types))
 
-        if len(self.angles) == 0:
-            self.angles = other.angles.copy() + len(self.positions)
-            self.angle_types = other.angle_types.copy() + len(self.angle_types)
-        else:
-            self.angles = np.append(self.angles, other.angles + len(self.positions), axis=0)
-            self.angle_types = np.append(self.angle_types, other.angle_types + len(self.angle_types), axis=0)
+        self.angles = np.append(self.angles, other.angles + len(self.positions)).reshape((-1,3))
+        self.angle_types = np.append(self.angle_types, other.angle_types + len(self.angle_types))
 
-        if len(self.dihedrals) == 0:
-            self.dihedrals = other.dihedrals.copy() + len(self.positions)
-            self.dihedral_types = other.dihedral_types.copy() + len(self.dihedral_types)
-        else:
-            self.dihedrals = np.append(self.dihedrals, other.dihedrals + len(self.positions), axis=0)
-            self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + len(self.dihedral_types), axis=0)
+        self.dihedrals = np.append(self.dihedrals, other.dihedrals + len(self.positions)).reshape((-1,4))
+        self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + len(self.dihedral_types))
 
         self.positions = np.append(self.positions, other.positions, axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types, axis=0)
