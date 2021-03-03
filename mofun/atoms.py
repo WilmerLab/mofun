@@ -15,7 +15,9 @@ class Atoms:
 
     def __init__(self, atom_types=[], positions=[], charges=[], bond_types=[], bonds=[],
                     angle_types=[], angles=[], dihedrals=[], dihedral_types=[],
-                    atom_type_masses=[], cell=[], elements=[], atom_type_elements=[]):
+                    atom_type_masses=[], cell=[], elements=[], atom_type_elements=[],
+                    pair_params=[], bond_type_params=[], angle_type_params=[],
+                    dihedral_type_params=[], atom_type_labels=[]):
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
@@ -24,6 +26,7 @@ class Atoms:
         else:
             self.charges = np.array(charges, dtype=float)
 
+        self.atom_type_labels=atom_type_labels
         if len(atom_type_elements) > 0:
             # this is a __getitem__ subset
             self.atom_types = np.array(atom_types)
@@ -55,10 +58,10 @@ class Atoms:
         self.dihedrals = np.array(dihedrals)
         self.dihedral_types = np.array(dihedral_types)
 
-        self.pair_params = np.array([])
-        self.bond_type_params = np.array([])
-        self.angle_type_params = np.array([])
-        self.dihedral_type_params = np.array([])
+        self.pair_params = np.array(pair_params)
+        self.bond_type_params = np.array(bond_type_params)
+        self.angle_type_params = np.array(angle_type_params)
+        self.dihedral_type_params = np.array(dihedral_type_params)
 
         if len(self.positions) != len(self.atom_types):
             raise Exception("len of positions (%d) and atom types (%d) must match" % (len(self.positions), len(self.atom_types)))
@@ -70,7 +73,7 @@ class Atoms:
             raise Exception("len of dihedrals and dihedral_types must match")
 
     @classmethod
-    def from_lammps_data(cls, f, atom_format="full"):
+    def from_lammps_data(cls, f, atom_format="full", atom_type_labels=[]):
         def get_types_tups(arr):
             types = tups = []
             if len(arr) > 0:
@@ -84,13 +87,25 @@ class Atoms:
         angles = []
         dihedrals = []
 
-        sections_handled = ["Atoms", "Bonds", "Angles", "Dihedrals", "Masses"]
+        pair_coeffs = []
+        bond_coeffs = []
+        angle_coeffs = []
+        dihedral_coeffs = []
+
+        sections_handled = ["Pair Coeffs", "Bond Coeffs", "Angle Coeffs", "Dihedral Coeffs",
+                            "Atoms", "Bonds", "Angles", "Dihedrals", "Masses"]
         current_section = None
         start_section = False
 
         for unprocessed_line in f:
             # handle comments
-            line = unprocessed_line.split('#')[0].strip()
+            comment = ""
+            if "#" in unprocessed_line:
+                line, comment = unprocessed_line.split('#')
+                comment ="   #" + comment.rstrip()
+            else:
+                line = unprocessed_line.split('#')[0]
+            line = line.strip()
             if line in sections_handled:
                 current_section = line
                 start_section = True
@@ -104,6 +119,14 @@ class Atoms:
             tup = line.split()
             if current_section == "Masses":
                 masses.append(tup[1])
+            elif current_section == "Pair Coeffs":
+                pair_coeffs.append("%s%s" % (" ".join(tup[1:]), comment))
+            elif current_section == "Bond Coeffs":
+                bond_coeffs.append("%s%s" % (" ".join(tup[1:]), comment))
+            elif current_section == "Angle Coeffs":
+                angle_coeffs.append("%s%s" % ("  ".join(tup[1:]), comment))
+            elif current_section == "Dihedral Coeffs":
+                dihedral_coeffs.append("%s%s" % (" ".join(tup[1:]), comment))
             elif current_section == "Atoms":
                 atoms.append(tup)
             elif current_section == "Bonds":
@@ -128,7 +151,7 @@ class Atoms:
         elif atom_format == "full":
             atom_types = np.array(atoms[:, 2] - 1, dtype=int)
             charges = np.array(atoms[:, 3], dtype=float)
-            atom_tups = atoms[:, 3:6]
+            atom_tups = atoms[:, 4:7]
 
         bond_types, bond_tups = get_types_tups(bonds)
         angle_types, angle_tups = get_types_tups(angles)
@@ -138,7 +161,10 @@ class Atoms:
                    bond_types=bond_types, bonds=bond_tups,
                    angle_types=angle_types, angles=angle_tups,
                    dihedral_types=dihedral_types, dihedrals=dihedral_tups,
-                   atom_type_masses=atom_type_masses)
+                   atom_type_masses=atom_type_masses,
+                   pair_params=pair_coeffs, bond_type_params=bond_coeffs,
+                   angle_type_params=angle_coeffs, dihedral_type_params=dihedral_coeffs,
+                   atom_type_labels=atom_type_labels)
 
     def to_lammps_data(self, f, atom_molecules=[], atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
@@ -149,6 +175,9 @@ class Atoms:
         f.write('%d dihedrals\n' % len(self.dihedral_types))
         f.write('0 impropers\n')
         f.write("\n")
+
+        if len(atom_molecules) == 0:
+            atom_molecules = [1] * len(self.atom_types)
 
         if (num_atom_types := len(set(self.atom_types))) > 0:
             f.write('%d atom types\n' % num_atom_types)
@@ -161,7 +190,7 @@ class Atoms:
 
         f.write("\nMasses\n\n")
         for i, m in enumerate(self.atom_type_masses):
-            f.write(" %d %5.4f # %s\n" % (i + 1, m, self.label_atoms(i)))
+            f.write(" %d %5.4f   # %s\n" % (i + 1, m, self.label_atoms(i)))
 
         if len(self.pair_params) > 0:
             f.write('\nPair Coeffs\n\n')
@@ -186,26 +215,26 @@ class Atoms:
         f.write("\nAtoms\n\n")
         if atom_format == "atomic":
             for i, (x, y, z) in enumerate(self.positions):
-                f.write(" %d %d %10.6f %10.6f %10.6f # %s\n" % (i + 1, self.atom_types[i] + 1, x, y, z, self.label_atoms(self.atom_types[i])))
+                f.write(" %d %d %10.6f %10.6f %10.6f   # %s\n" % (i + 1, self.atom_types[i] + 1, x, y, z, self.label_atoms(self.atom_types[i])))
         elif atom_format == "full":
             for i, (x, y, z) in enumerate(self.positions):
-                f.write(" %d %d %d %10.6f %10.6f %10.6f %10.6f # %s\n" %
+                f.write(" %d %d %d %10.6f %10.6f %10.6f %10.6f   # %s\n" %
                     (i + 1, atom_molecules[i], self.atom_types[i] + 1, self.charges[i], x, y, z, self.label_atoms(self.atom_types[i])))
 
         if len(self.bonds) > 0:
             f.write("\nBonds\n\n")
             for i, tup in enumerate(self.bonds):
-                f.write(" %d %d %d %d # %s\n" % (i + 1, self.bond_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
+                f.write(" %d %d %d %d   # %s\n" % (i + 1, self.bond_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
 
         if len(self.angles) > 0:
             f.write("\nAngles\n\n")
             for i, tup in enumerate(self.angles):
-                f.write(" %d %d %d %d %d # %s\n" % (i + 1, self.angle_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
+                f.write(" %d %d %d %d %d   # %s\n" % (i + 1, self.angle_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
 
         if len(self.dihedrals) > 0:
             f.write("\nDihedrals\n\n")
             for i, tup in enumerate(self.dihedrals):
-                f.write(" %d %d %d %d %d %d # %s\n" % (i + 1, self.dihedral_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
+                f.write(" %d %d %d %d %d %d   # %s\n" % (i + 1, self.dihedral_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
 
     @classmethod
     def from_cif(cls, path):
