@@ -83,12 +83,16 @@ def test_atoms_elements__finds_cnnc_for_masses_12_14():
     linear_cnnc.elements = ["C", "N", "N", "C"]
 
 
-def test_atoms_getitem__has_all_atom_types():
-    atoms = Atoms(atom_type_masses=[12.0, 14.0], atom_types=[1, 0, 0, 1], positions=[[0,0,0]] * 4)
+def test_atoms_getitem__has_all_atom_types_and_charges():
+    atoms = Atoms(atom_type_masses=[12.0, 14.0], atom_types=[1, 0, 0, 1], positions=[[0,0,0]] * 4, charges=[1,2,3,4])
+    atoms.assert_arrays_are_consistent_sizes()
     assert atoms[0].elements[0] == "N"
     assert atoms[1].elements[0] == "C"
+    assert atoms[0].charges[0] == 1
+    assert atoms[1].charges[0] == 2
     assert atoms[(0,1)].elements == ["N", "C"]
     assert atoms[(2,3)].elements == ["C", "N"]
+    assert (atoms[(0,1)].charges ==[1, 2]).all()
 
 def test_atoms_from_cml__loads_elements_bonds():
     with importlib.resources.path(tests, "uio66.cml") as path:

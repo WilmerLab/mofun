@@ -483,6 +483,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         idx = np.array(i, ndmin=1)
         return Atoms(positions=np.take(self.positions, idx, axis=0),
                      atom_types=np.take(self.atom_types, idx, axis=0),
+                     charges=np.take(self.charges, idx, axis=0),
                      atom_type_masses=self.atom_type_masses,
                      atom_type_elements=self.atom_type_elements,
                      cell=self.cell)
