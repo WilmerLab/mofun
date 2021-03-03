@@ -411,7 +411,19 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
     @property
     def num_atom_types(self):
-        return max(self.atom_types) + 1
+        return 0 if len(self.atom_types) == 0 else max(self.atom_types) + 1
+
+    @property
+    def num_bond_types(self):
+        return 0 if len(self.bond_types) == 0 else max(self.bond_types) + 1
+
+    @property
+    def num_angle_types(self):
+        return 0 if len(self.angle_types) == 0 else max(self.angle_types) + 1
+
+    @property
+    def num_dihedral_types(self):
+        return 0 if len(self.dihedral_types) == 0 else max(self.dihedral_types) + 1
 
     def extend_atom_types(self, other):
         self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
@@ -419,14 +431,20 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.atom_type_labels = np.append(self.atom_type_labels, other.atom_type_labels)
 
     def extend(self, other):
-        self.bonds = np.append(self.bonds, other.bonds + len(self.positions)).reshape((-1,2))
-        self.bond_types = np.append(self.bond_types, other.bond_types + len(self.bond_types))
+        atom_idx_offset = len(self.positions)
 
-        self.angles = np.append(self.angles, other.angles + len(self.positions)).reshape((-1,3))
-        self.angle_types = np.append(self.angle_types, other.angle_types + len(self.angle_types))
+        self.bonds = np.append(self.bonds, other.bonds + atom_idx_offset).reshape((-1,2))
+        self.bond_types = np.append(self.bond_types, other.bond_types + self.num_bond_types)
 
-        self.dihedrals = np.append(self.dihedrals, other.dihedrals + len(self.positions)).reshape((-1,4))
-        self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + len(self.dihedral_types))
+        self.angles = np.append(self.angles, other.angles + atom_idx_offset).reshape((-1,3))
+        self.angle_types = np.append(self.angle_types, other.angle_types + self.num_angle_types)
+
+        self.dihedrals = np.append(self.dihedrals, other.dihedrals + atom_idx_offset).reshape((-1,4))
+        self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + self.num_dihedral_types)
+
+        self.bond_type_params = np.append(self.bond_type_params, other.bond_type_params)
+        self.angle_type_params = np.append(self.angle_type_params, other.angle_type_params)
+        self.dihedral_type_params = np.append(self.dihedral_type_params, other.dihedral_type_params)
 
         self.positions = np.append(self.positions, other.positions, axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types, axis=0)
