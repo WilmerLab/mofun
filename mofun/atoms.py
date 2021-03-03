@@ -325,6 +325,10 @@ class Atoms:
 
         ptable_order = lambda x: list(ATOMIC_MASSES.keys()).index(x.split("_")[0])
         unique_types = list(set(new_types))
+
+        # sort by string ordering, so types like 'C_1', 'C_2', 'C_3', 'C_R' will show up in order
+        unique_types.sort()
+        # sort by periodic element # order
         unique_types.sort(key=ptable_order)
 
         self.atom_type_labels = unique_types
