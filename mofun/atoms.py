@@ -17,6 +17,7 @@ indexed one per atom:
     atom_types=[], types for each atom
     positions=[]: coordinates (x,y,z) for each atom
     charges=[]: charges for each atom
+    atom_group=[]: which "group" atom is part of. For LAMMPS, gets mapped to a molecule id.
 
 indexed one per atom type:
     atom_type_masses=[]: mass for each atom type
@@ -65,7 +66,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                     angle_types=[], angles=[], dihedrals=[], dihedral_types=[],
                     atom_type_masses=[], cell=[], elements=[], atom_type_elements=[],
                     pair_params=[], bond_type_params=[], angle_type_params=[],
-                    dihedral_type_params=[], atom_type_labels=[]):
+                    dihedral_type_params=[], atom_type_labels=[], atom_groups=[]):
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
@@ -73,6 +74,11 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.charges = np.zeros(len(self.positions), dtype=float)
         else:
             self.charges = np.array(charges, dtype=float)
+
+        if len(atom_groups) == 0:
+            self.atom_groups = np.zeros(len(self.positions), dtype=int)
+        else:
+            self.atom_groups = np.array(atom_groups, dtype=int)
 
         self.atom_type_labels=atom_type_labels
         if len(atom_type_elements) > 0:
@@ -220,7 +226,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                    angle_type_params=angle_coeffs, dihedral_type_params=dihedral_coeffs,
                    atom_type_labels=atom_type_labels)
 
-    def to_lammps_data(self, f, atom_molecules=[], atom_format="full", file_comment=""):
+    def to_lammps_data(self, f, atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
 
         f.write('%d atoms\n' % len(self.atom_types))
@@ -229,9 +235,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
         f.write('%d dihedrals\n' % len(self.dihedral_types))
         f.write('0 impropers\n')
         f.write("\n")
-
-        if len(atom_molecules) == 0:
-            atom_molecules = [1] * len(self.atom_types)
 
         if (num_atom_types := len(set(self.atom_types))) > 0:
             f.write('%d atom types\n' % num_atom_types)
@@ -273,7 +276,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         elif atom_format == "full":
             for i, (x, y, z) in enumerate(self.positions):
                 f.write(" %d %d %d %10.6f %10.6f %10.6f %10.6f   # %s\n" %
-                    (i + 1, atom_molecules[i], self.atom_types[i] + 1, self.charges[i], x, y, z, self.label_atoms(self.atom_types[i])))
+                    (i + 1, self.atom_groups[i] + 1, self.atom_types[i] + 1, self.charges[i], x, y, z, self.label_atoms(self.atom_types[i])))
 
         if len(self.bonds) > 0:
             f.write("\nBonds\n\n")
@@ -474,6 +477,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.positions = np.delete(self.positions, indices, axis=0)
         self.atom_types = np.delete(self.atom_types, indices, axis=0)
         self.charges = np.delete(self.charges, indices, axis=0)
+        self.atom_groups = np.delete(self.atom_groups, indices, axis=0)
 
         sorted_indices = sorted(indices, reverse=True)
         if len(self.bonds) > 0:
@@ -495,6 +499,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                      charges=np.take(self.charges, idx, axis=0),
                      atom_type_masses=self.atom_type_masses,
                      atom_type_elements=self.atom_type_elements,
+                     atom_groups=self.atom_groups,
                      cell=self.cell)
 
     def to_ase(self):
