@@ -34,14 +34,17 @@ def test_atoms_extend__on_nonbonded_structure_reindexes_new_bonds_to_proper_atom
     assert np.array_equal(linear_cnnc_no_bonds.bonds, [(4,5), (5,6), (6,7)])
 
 def test_atoms_extend__new_types_come_after_old_types(linear_cnnc):
-    linear_cnnc.bond_types = np.array([0,1,1,0])
-    linear_cnnc.angle_types = np.array([0,1,2])
+    linear_cnnc.atom_types = np.array([0,1,1,0])
+    linear_cnnc.bond_types = np.array([0,1,0])
+    linear_cnnc.angle_types = np.array([0,1])
     linear_cnnc.dihedral_types = np.array([0])
     double_cnnc = linear_cnnc.copy()
     double_cnnc.extend(linear_cnnc)
-    assert (double_cnnc.bond_types == [0, 1, 1, 0, 2, 3, 3, 2]).all()
-    assert (double_cnnc.angle_types == [0, 1, 2, 3, 4, 5]).all()
-    assert (double_cnnc.dihedral_types == [0, 1]).all()
+    assert np.array_equal(double_cnnc.atom_types, [0, 1, 1, 0, 2, 3, 3, 2])
+    assert np.array_equal(double_cnnc.bond_types, [0, 1, 0, 2, 3, 2])
+    assert np.array_equal(double_cnnc.angle_types, [0, 1, 2, 3])
+    assert np.array_equal(double_cnnc.dihedral_types, [0, 1])
+    assert np.array_equal(double_cnnc.elements, ["C", "N", "N", "C"] * 2)
 
 def test_atoms_extend__reindexes_new_bonds_to_proper_atoms(linear_cnnc):
     double_cnnc = linear_cnnc.copy()

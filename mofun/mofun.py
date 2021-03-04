@@ -117,12 +117,9 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axi
 
     new_structure = structure.copy()
     if len(replace_pattern) > 0:
-        new_structure.extend_atom_types(replace_pattern)
+        offsets = new_structure.extend_types(replace_pattern)
         for atom_positions in match_positions:
             new_atoms = replace_pattern.copy()
-            # offset atom types so we they don't conflict with first structure's atom_types
-            new_atoms.atom_types += structure.num_atom_types
-
             if verbose:
                 print(atom_positions)
                 print("--------------")
@@ -164,7 +161,7 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axi
             new_atoms.translate(atom_positions[axis1a_idx])
             new_atoms.positions %= np.diag(new_structure.cell)
             if verbose: print("new atoms after translate:\n", new_atoms.positions)
-            new_structure.extend(new_atoms)
+            new_structure.extend(new_atoms, offsets=offsets)
 
     indices_to_delete = [idx for match in match_indices for idx in match]
     del(new_structure[indices_to_delete])

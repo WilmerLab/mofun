@@ -167,7 +167,6 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogens(octane):
     search_pattern = Atoms(elements='H', positions=[(0, 0, 0)])
     replace_pattern = search_pattern
-
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert Counter(final_structure.elements) == {"H": 18, "C": 8}
     assert_positions_are_unchanged(octane, final_structure)

@@ -361,7 +361,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
         bond_types = [0 for b in bonds]
         return cls(elements=elements, positions=positions, bonds=bonds, bond_types=bond_types)
 
-
     @classmethod
     def from_ase_atoms(cls, atoms):
         return cls(elements=atoms.symbols, positions=atoms.positions, cell=atoms.cell)
@@ -428,30 +427,53 @@ cell=[]: unit cell matrix (same definition as in ASE)
     def num_dihedral_types(self):
         return 0 if len(self.dihedral_types) == 0 else max(self.dihedral_types) + 1
 
-    def extend_atom_types(self, other):
+    def extend_types(self, other):
+        offsets = (self.num_atom_types, self.num_bond_types,
+                   self.num_angle_types, self.num_dihedral_types)
+
         self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
         self.atom_type_masses = np.append(self.atom_type_masses, other.atom_type_masses)
         self.atom_type_labels = np.append(self.atom_type_labels, other.atom_type_labels)
-
-    def extend(self, other):
-        atom_idx_offset = len(self.positions)
-
-        self.bonds = np.append(self.bonds, other.bonds + atom_idx_offset).reshape((-1,2))
-        self.bond_types = np.append(self.bond_types, other.bond_types + self.num_bond_types)
-
-        self.angles = np.append(self.angles, other.angles + atom_idx_offset).reshape((-1,3))
-        self.angle_types = np.append(self.angle_types, other.angle_types + self.num_angle_types)
-
-        self.dihedrals = np.append(self.dihedrals, other.dihedrals + atom_idx_offset).reshape((-1,4))
-        self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + self.num_dihedral_types)
 
         self.bond_type_params = np.append(self.bond_type_params, other.bond_type_params)
         self.angle_type_params = np.append(self.angle_type_params, other.angle_type_params)
         self.dihedral_type_params = np.append(self.dihedral_type_params, other.dihedral_type_params)
 
+        return offsets
+
+
+    def extend(self, other, offsets=None):
+        """ adds other Atoms object's arrays to its own.
+
+        The Default behavior is for all the types and params from other structure to be appended to
+        this structure.
+
+        Alternatively, an offsets tuple may be passed with the results of calling extend_types(). No
+        new types will be added, but the newly added atoms, bonds, etc will refer to types by their
+        value in the other Atoms object plus the offset. Use this when you are adding the same set
+        of atoms multiple times, or if your other atoms already share the same type ids as this
+        object. For the later case, the tuple (0,0,0,0) may be passed in.
+        """
+        atom_idx_offset = len(self.positions)
+        if offsets is None:
+            print("auto offset: extending types")
+            offsets = self.extend_types(other)
+
         self.positions = np.append(self.positions, other.positions, axis=0)
-        self.atom_types = np.append(self.atom_types, other.atom_types, axis=0)
-        self.charges = np.append(self.charges, other.charges, axis=0)
+        self.atom_types = np.append(self.atom_types, other.atom_types + offsets[0])
+        self.charges = np.append(self.charges, other.charges)
+        self.atom_groups = np.append(self.atom_groups, other.atom_groups)
+
+        self.bonds = np.append(self.bonds, other.bonds + atom_idx_offset).reshape((-1,2))
+        self.bond_types = np.append(self.bond_types, other.bond_types + offsets[1])
+
+        self.angles = np.append(self.angles, other.angles + atom_idx_offset).reshape((-1,3))
+        self.angle_types = np.append(self.angle_types, other.angle_types + offsets[2])
+
+        self.dihedrals = np.append(self.dihedrals, other.dihedrals + atom_idx_offset).reshape((-1,4))
+        self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
+
+
 
     def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices, secondary_arr=None):
         updated_arr = arr.copy()
