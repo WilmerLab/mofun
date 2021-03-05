@@ -434,6 +434,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
         self.atom_type_masses = np.append(self.atom_type_masses, other.atom_type_masses)
         self.atom_type_labels = np.append(self.atom_type_labels, other.atom_type_labels)
+        self.pair_params = np.append(self.pair_params, other.pair_params)
 
         self.bond_type_params = np.append(self.bond_type_params, other.bond_type_params)
         self.angle_type_params = np.append(self.angle_type_params, other.angle_type_params)

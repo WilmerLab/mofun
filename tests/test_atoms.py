@@ -61,6 +61,23 @@ def test_atoms_extend__reindexes_new_dihedrals_to_proper_atoms(linear_cnnc):
     double_cnnc.extend(linear_cnnc)
     assert (double_cnnc.dihedrals == [(0,1,2,3), (4,5,6,7)]).all()
 
+
+def test_atoms_to_lammps_data__uio66_has_arrays_of_right_size():
+    with importlib.resources.open_text(tests, "uio66-F.lmp-dat") as f:
+        sin = StringIO(f.read())
+        atoms = Atoms.from_lammps_data(sin, atom_format="full", atom_type_labels=["H_", "C_R", "C_2", "O_1"])
+
+    assert len(atoms.atom_type_masses) == 4
+    assert len(atoms.pair_params) == 4
+    assert len(atoms.bond_type_params) == 2
+    assert len(atoms.angle_type_params) == 2
+    assert atoms.positions.shape == (16,3)
+    assert len(atoms.atom_groups) == 16
+    assert len(atoms.charges) == 16
+    assert len(atoms.atom_types) == 16
+    assert len(atoms.bonds) == 4
+    assert len(atoms.angles) == 8
+
 def test_atoms_to_lammps_data__output_file_identical_to_one_read():
     with importlib.resources.open_text(tests, "uio66-hydroxy.lmp-dat") as f:
         sin = StringIO(f.read())
