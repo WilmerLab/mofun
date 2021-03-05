@@ -80,7 +80,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             self.atom_groups = np.array(atom_groups, dtype=int)
 
-        self.atom_type_labels=atom_type_labels
+        self.atom_type_labels = atom_type_labels
         if len(atom_type_elements) > 0:
             # this is a __getitem__ subset
             self.atom_types = np.array(atom_types)
@@ -105,12 +105,12 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.atom_types = np.array([], ndmin=1)
 
         self.cell = np.array(cell)
-        self.bonds = np.array(bonds)
-        self.bond_types = np.array(bond_types)
-        self.angles = np.array(angles)
-        self.angle_types = np.array(angle_types)
-        self.dihedrals = np.array(dihedrals)
-        self.dihedral_types = np.array(dihedral_types)
+        self.bonds = np.array(bonds, dtype=int)
+        self.bond_types = np.array(bond_types, dtype=int)
+        self.angles = np.array(angles, dtype=int)
+        self.angle_types = np.array(angle_types, dtype=int)
+        self.dihedrals = np.array(dihedrals, dtype=int)
+        self.dihedral_types = np.array(dihedral_types, dtype=int)
 
         self.pair_params = np.array(pair_params)
         self.bond_type_params = np.array(bond_type_params)
