@@ -206,9 +206,11 @@ cell=[]: unit cell matrix (same definition as in ASE)
         # the bond pairs get a -1
         if atom_format == "atomic":
             atom_types = np.array(atoms[:, 1] - 1, dtype=int)
+            atom_groups = np.zeros(len(atom_types))
             charges = np.zeros(len(atom_types))
             atom_tups = atoms[:, 2:5]
         elif atom_format == "full":
+            atom_groups = np.array(atoms[:, 1] - 1, dtype=int)
             atom_types = np.array(atoms[:, 2] - 1, dtype=int)
             charges = np.array(atoms[:, 3], dtype=float)
             atom_tups = atoms[:, 4:7]
@@ -224,7 +226,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                    atom_type_masses=atom_type_masses,
                    pair_params=pair_coeffs, bond_type_params=bond_coeffs,
                    angle_type_params=angle_coeffs, dihedral_type_params=dihedral_coeffs,
-                   atom_type_labels=atom_type_labels)
+                   atom_type_labels=atom_type_labels, atom_groups=atom_groups)
 
     def to_lammps_data(self, f, atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
