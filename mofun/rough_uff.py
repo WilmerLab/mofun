@@ -1,3 +1,4 @@
+import math
 
 import networkx as nx
 
@@ -73,3 +74,47 @@ def assign_uff_atom_types(g, elements, override_rules=None):
         raise Exception("no appropriate UFF key that starts with %s" % uff_key)
 
     return atom_types
+
+def guess_bond_order(atom1, atom2):
+    # This method is 'hacky' at best and could be replaced by something more sophisticated.
+    # This is roughly the same as what is used in Pete Boyd's 'lammps-interface'.
+    bond_atom_types = {atom1, atom2}
+    if len({'H_', 'F_', 'Cl', 'Br', 'I_'}.intersection(bond_atom_types)) > 0:
+        return 1
+    elif len({'C_3', 'N_3', 'O_3'}.intersection(bond_atom_types)) > 0:
+        return 1
+    elif len(bond_atom_types) == 1 and bond_atom_types.issubset({'C_2', 'N_2', 'O_2'}):
+        return 2
+    elif len(bond_atom_types) == 1 and bond_atom_types.issubset({'C_R', 'N_R', 'O_R'}):
+        return 1.5
+    else:
+        print('%s %s Bond order not properly assigned. Using default value of 1.' % (atom1, atom2))
+        return 1
+
+def bond_params(b1type, b2type, bond_order=None):
+    """
+    Standard Natural Bond Length, rij
+      rij = ri + rj +r_BO - r_EN
+        ri, rj = atom-type-specific single bond radius
+        r_BO = Bond Order Correction - Value of n is non-obvious.
+        r_EN = Electronegativity Correction
+      N.B. Original paper says '+r_EN'. This is a mistake.
+    Force Constant K_ij
+
+    assumes harmonic Oscillator = f(rij, K_ij)
+    """
+
+    if bond_order is None:
+        bond_order = guess_bond_order(b1type, b2type)
+
+    # 1. Calculate rij and K_ij
+    ri, zi, chii = [UFF4MOF[b1type][k] for k in (0, 5, 8)]
+    rj, zj, chij = [UFF4MOF[b2type][k] for k in (0, 5, 8)]
+
+    r_BO = -0.1332 * (ri + rj) * math.log(bond_order)
+    r_EN = (ri * rj * (chii**0.5 - chij**0.5)**2) / (chii * ri + chij * rj)
+
+    rij = ri + rj + r_BO - r_EN
+    k_ij = 664.12 * zi * zj / (rij**3)
+
+    return (k_ij, rij)
