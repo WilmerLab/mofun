@@ -123,7 +123,7 @@ def bond_params(a1, a2, bond_order=None):
 
     return (kij, rij)
 
-def angle_params(a1, a2, a3, a2_coord_num, bond_orders=[None, None]):
+def angle_params(a1, a2, a3, bond_orders=[None, None]):
     """calculate the UFF angle parameters in a form suitable for calculations in LAMMPS.
 
     Args:
@@ -140,6 +140,8 @@ def angle_params(a1, a2, a3, a2_coord_num, bond_orders=[None, None]):
             ('fourier', K, c0, c1, c2) where the args are defined by
             https://lammps.sandia.gov/doc/angle_fourier.html
     """
+
+    a2_coord_is_4 = a2[2] == "3" if len(a2) > 2 else False
 
     theta0deg = UFF4MOF[a2][1]
     theta0rad = theta0deg * 2 * pi / 360
@@ -167,7 +169,7 @@ def angle_params(a1, a2, a3, a2_coord_num, bond_orders=[None, None]):
         elif theta0deg == 120.:
             n = 3
             b = -1
-        elif theta0deg == 90. and a2_coord_num == 4:
+        elif theta0deg == 90. and a2_coord_is_4:
             n = 2
             # use 1 + cos x
             b = -1
