@@ -263,8 +263,8 @@ def dihedral_params(a1, a2, a3, a4, bond_order=None):
     elif '1' in {h[1], h[2]}:
         # no dihedrals for "sp-hybridized centers X_1"
         return None
-    elif not {el[1], el[2]} <= MAIN_GROUP_ELEMENTS:
+    elif not {el[1], el[2]} <= set(MAIN_GROUP_ELEMENTS):
         # no dihedrals for non main group elements
         return None
     else:
-        raise Exception("we don't know how to handle this dihedral: %s-%s-%s-%s" % ut)
+        raise Exception("we don't know how to handle this dihedral: %s-%s-%s-%s" % tuple(ut))
