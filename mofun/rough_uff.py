@@ -25,7 +25,6 @@ def add_aromatic_flag(g):
             for n in cycle:
                 g.nodes[n]['aromatic'] = True
 
-
 def assign_uff_atom_types(g, elements, override_rules=None):
     """ g is a networkx Graph object
     """
@@ -188,7 +187,7 @@ def angle_params(a1, a2, a3, bond_orders=[None, None]):
         c0 = c2 * (2 * cos(theta0rad)**2 + 1)
         return ('fourier', kijk, c0, c1, c2)
 
-def dihedral_params(a1, a2, a3, a4, bond_order=None):
+def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None):
     """Use a small cosine Fourier expansion
 
     E_phi = 1/2*V_phi * [1 - cos(n*phi0)*cos(n*phi)]
@@ -211,7 +210,7 @@ def dihedral_params(a1, a2, a3, a4, bond_order=None):
     oxygen_group = {'O', 'S', 'Se', 'Te', 'Po'}
     #need bond order!
 
-    print("dihedral: %s-%s-%s-%s" % tuple(ut))
+    print("dihedral: %s-%s-%s-%s M=%d" % (*tuple(ut), num_dihedrals_about_bond))
     if {h[1], h[2]} <= {'3'}:
         print("sp3-sp3")
         # center atoms are sp3, use eq 16 from Rappe
@@ -227,13 +226,13 @@ def dihedral_params(a1, a2, a3, a4, bond_order=None):
             v1 = 2. if el[1] == "O" else 6.8
             v2 = 2. if el[2] == "O" else 6.8
 
-        v = sqrt(v1*v2)
+        v = sqrt(v1*v2) / num_dihedrals_about_bond
         return ("harmonic", v/2, 1, n)
 
     elif {h[1], h[2]} <= {'2', 'R'}:
         print("sp2-sp2")
         # center atoms are sp2 (or aromatic), use eq 17 from Rappe, theta0=180, hence d=1
-        v = 5.0 * sqrt(UFF4MOF[a2][7] * UFF4MOF[a3][7]) * (1. + 4.18 * log(bond_order))
+        v = 5.0 * sqrt(UFF4MOF[a2][7] * UFF4MOF[a3][7]) * (1. + 4.18 * log(bond_order)) / num_dihedrals_about_bond
         n = 2
         return ("harmonic", v/2, 1, n)
 
@@ -244,11 +243,11 @@ def dihedral_params(a1, a2, a3, a4, bond_order=None):
             print("exception: sp2 to another sp2")
             # exception for when the sp2 is bonded to another sp2, d=1
             n = 3
-            v = 2.
+            v = 2. / num_dihedrals_about_bon
             return ("harmonic", v/2, 1, n)
 
         # use eq 17 from rappe
-        v = 5.0 * sqrt(UFF4MOF[ut[1]][7] * UFF4MOF[ut[2]][7]) * (1. + 4.18 * log(bond_order))
+        v = 5.0 * sqrt(UFF4MOF[ut[1]][7] * UFF4MOF[ut[2]][7]) * (1. + 4.18 * log(bond_order)) / num_dihedrals_about_bond
 
         if (h[1] == '3' and el[1] in oxygen_group and el[2] not in oxygen_group) or \
              (h[2] == '3' and el[2] in oxygen_group and el[1] not in oxygen_group):
