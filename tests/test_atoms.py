@@ -61,6 +61,14 @@ def test_atoms_extend__reindexes_new_dihedrals_to_proper_atoms(linear_cnnc):
     double_cnnc.extend(linear_cnnc)
     assert (double_cnnc.dihedrals == [(0,1,2,3), (4,5,6,7)]).all()
 
+def test_atoms_to_lammps_data__from_cif_is_successful():
+    with importlib.resources.path(tests, "uio66.cif") as path:
+        uio66 = Atoms.from_cif(str(path))
+        uio66.atom_type_labels = uio66.atom_type_elements
+
+    sout = io.StringIO("")
+    uio66.to_lammps_data(sout)
+
 
 def test_atoms_to_lammps_data__uio66_has_arrays_of_right_size():
     with importlib.resources.open_text(tests, "uio66-F.lmp-dat") as f:
@@ -111,7 +119,6 @@ def test_find_unchanged_atom_pairs__different_position_is_changed(linear_cnnc):
 def test_atoms_elements__finds_cnnc_for_masses_12_14():
     atoms = Atoms(atom_type_masses=[12.0, 14.0], atom_types=[0, 1, 1, 0], positions=[[0,0,0]] * 4)
     linear_cnnc.elements = ["C", "N", "N", "C"]
-
 
 def test_atoms_getitem__has_all_atom_types_and_charges():
     atoms = Atoms(atom_type_masses=[12.0, 14.0], atom_types=[1, 0, 0, 1], positions=[[0,0,0]] * 4, charges=[1,2,3,4])
