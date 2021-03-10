@@ -1,8 +1,8 @@
-import math
+from math import sqrt, log, cos, sin, pi
 
 import networkx as nx
 
-from mofun.uff4mof import UFF4MOF, uff_key_starts_with
+from mofun.uff4mof import UFF4MOF, uff_key_starts_with, MAIN_GROUP_ELEMENTS
 
 def default_uff_rules():
     return {
@@ -110,7 +110,7 @@ def bond_params(a1, a2, bond_order=None):
     ri, zi, chii = [UFF4MOF[a1][k] for k in (0, 5, 8)]
     rj, zj, chij = [UFF4MOF[a2][k] for k in (0, 5, 8)]
 
-    rBO = -0.1332 * (ri + rj) * math.log(bond_order)
+    rBO = -0.1332 * (ri + rj) * log(bond_order)
     rEN = (ri * rj * (chii**0.5 - chij**0.5)**2) / (chii * ri + chij * rj)
 
     rij = ri + rj + rBO - rEN
@@ -137,17 +137,17 @@ def angle_params(a1, a2, a3, a2_coord_num, bond_orders=[None, None]):
     """
 
     theta0deg = UFF4MOF[a2][1]
-    theta0rad = theta0deg * 2 * math.pi / 360
+    theta0rad = theta0deg * 2 * pi / 360
 
     # Determine force constant
     rij = bond_params(a1, a2, bond_order=bond_orders[0])[1]
     rjk = bond_params(a2, a3, bond_order=bond_orders[1])[1]
-    rik = math.sqrt(rij**2 + rjk**2 - 2 * rij * rjk * math.cos(theta0rad))
+    rik = sqrt(rij**2 + rjk**2 - 2 * rij * rjk * cos(theta0rad))
 
     zi = UFF4MOF[a1][5]
     zk = UFF4MOF[a3][5]
-    kijk = 664.12 * (zi * zk / rik**5) * (3 * rij * rjk * (1 - math.cos(theta0rad)**2) -
-            (rik**2 * math.cos(theta0rad)))
+    kijk = 664.12 * (zi * zk / rik**5) * (3 * rij * rjk * (1 - cos(theta0rad)**2) -
+            (rik**2 * cos(theta0rad)))
 
     if theta0deg in [180., 120., 90.]:
         # Linear cases use a simplified fourier expansion. This is written in the Rappe paper as:
@@ -176,7 +176,88 @@ def angle_params(a1, a2, a3, a2_coord_num, bond_orders=[None, None]):
         # E = Kijk * [C0 + C1 cos(theta) + c2 cos(2*theta)]
         # The corresponding term in LAMMPS is a fourier term.
 
-        c2 = 1 / (4 * math.sin(theta0rad)**2)
-        c1 = -4 * c2 * math.cos(theta0rad)
-        c0 = c2 * (2 * math.cos(theta0rad)**2 + 1)
+        c2 = 1 / (4 * sin(theta0rad)**2)
+        c1 = -4 * c2 * cos(theta0rad)
+        c0 = c2 * (2 * cos(theta0rad)**2 + 1)
         return ('fourier', kijk, c0, c1, c2)
+
+def dihedral_params(a1, a2, a3, a4, bond_order=None):
+    """Use a small cosine Fourier expansion
+
+    E_phi = 1/2*V_phi * [1 - cos(n*phi0)*cos(n*phi)]
+
+
+    this is available in Lammps in the form of a harmonic potential
+    E = K * [1 + d*cos(n*phi)]
+
+    NB: the d term must be negated to recover the UFF potential.
+    """
+
+    # get the elements and hybridizations from each UFF atom type
+    ut = [a1, a2, a3, a4]
+    el = [s[0:2].strip('_') for s in ut]
+    h = [s[2] if len(s) > 2 else 0 for s in ut]
+
+    if bond_order is None:
+        bond_order = guess_bond_order(a2, a3)
+
+    oxygen_group = {'O', 'S', 'Se', 'Te', 'Po'}
+    #need bond order!
+
+    print("dihedral: %s-%s-%s-%s" % tuple(ut))
+    if {h[1], h[2]} <= {'3'}:
+        print("sp3-sp3")
+        # center atoms are sp3, use eq 16 from Rappe
+        # for both cases handled here, n*theta = 180, so cos(n*theta0)=-1, hence d=1
+        n = 3
+        v1 = UFF4MOF[ut[1]][6]
+        v2 = UFF4MOF[ut[2]][6]
+
+        # exception for when both atoms are from group 6
+        if {el[1], el[2]} <= oxygen_group:
+            print("exception: both oxys")
+            n = 2
+            v1 = 2. if el[1] == "O" else 6.8
+            v2 = 2. if el[2] == "O" else 6.8
+
+        v = sqrt(v1*v2)
+        return ("harmonic", v/2, 1, n)
+
+    elif {h[1], h[2]} <= {'2', 'R'}:
+        print("sp2-sp2")
+        # center atoms are sp2 (or aromatic), use eq 17 from Rappe, theta0=180, hence d=1
+        v = 5.0 * sqrt(UFF4MOF[a2][7] * UFF4MOF[a3][7]) * (1. + 4.18 * log(bond_order))
+        n = 2
+        return ("harmonic", v/2, 1, n)
+
+    elif {h[1], h[2]} <= {'2', 'R', '3'}:
+        print("sp2-sp3")
+        # mixed sp2 / sp3 / aromatic case
+        if {h[0], h[1]} <= {'2'} or {h[2], h[3]} <= {'2'}:
+            print("exception: sp2 to another sp2")
+            # exception for when the sp2 is bonded to another sp2, d=1
+            n = 3
+            v = 2.
+            return ("harmonic", v/2, 1, n)
+
+        # use eq 17 from rappe
+        v = 5.0 * sqrt(UFF4MOF[ut[1]][7] * UFF4MOF[ut[2]][7]) * (1. + 4.18 * log(bond_order))
+
+        if (h[1] == '3' and el[1] in oxygen_group and el[2] not in oxygen_group) or \
+             (h[2] == '3' and el[2] in oxygen_group and el[1] not in oxygen_group):
+            print("exception: sp3 oxy, sp2/resonant other")
+            # exception for sp3 from oxygen column and sp2 or resonant from another column, d=1
+            n = 2
+            return ("harmonic", v/2, 1, n)
+        else:
+            # default mixed sp2 / sp3 case
+            n = 6
+            return ("harmonic", v/2, -1, n)
+    elif '1' in {h[1], h[2]}:
+        # no dihedrals for "sp-hybridized centers X_1"
+        return None
+    elif not {el[1], el[2]} <= MAIN_GROUP_ELEMENTS:
+        # no dihedrals for non main group elements
+        return None
+    else:
+        raise Exception("we don't know how to handle this dihedral: %s-%s-%s-%s" % ut)

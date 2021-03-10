@@ -3,7 +3,8 @@ import os
 import networkx as nx
 
 from mofun import Atoms
-from mofun.rough_uff import assign_uff_atom_types, add_aromatic_flag, bond_params, angle_params
+from mofun.rough_uff import assign_uff_atom_types, add_aromatic_flag, \
+                            bond_params, angle_params, dihedral_params
 from tests.fixtures import uio66_linker_cml
 
 from pytest import approx
@@ -59,3 +60,33 @@ def test_angle_params__C_N_C_amide_is_105_5():
     print(angle_style, force_k, b, n)
     assert angle_style  == "cosine/periodic"
     assert force_k == approx(210.97397, 1e-5)
+
+def test_dihedral_params__force_constant_should_match_table_2_kind_of():
+    # Note that none of the calculated force constants match table 2 because the dihderal potential
+    # is ill-defined. The normative values here come from our attempt at calculating what they
+    # should be.
+
+    # test SP3-SP3
+    assert dihedral_params("H_", "C_3", "C_3", "H_")[1] * 2 == approx(2.119, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "Si3", "H_")[1] * 2 == approx(1.611, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "Ge3", "H_")[1] * 2 == approx(1.219, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "Sn3", "H_")[1] * 2 == approx(0.649, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "N_3", "H_")[1] * 2 == approx(0.977, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "P_3+3", "H_")[1] * 2 == approx(2.255, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "As3+3", "H_")[1] * 2 == approx(1.783, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "O_3", "H_")[1] * 2 == approx(0.195, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "S_3+2", "H_")[1] * 2 == approx(1.013, abs=1e-3)
+    assert dihedral_params("H_", "C_3", "Se3+2", "H_")[1] * 2 == approx(0.843, abs=1e-3)
+
+    # test SP3-SP3 exception for oxygen group elements
+    assert dihedral_params("H_", "O_3", "O_3", "H_")[1] * 2 == approx(2.0, abs=1e-3)
+    assert dihedral_params("H_", "S_3+2", "S_3+2", "H_")[1] * 2 == approx(6.8, abs=1e-3)
+
+    # test SP2-SP2
+    assert dihedral_params("C_", "O_2", "C_2", "C_")[1] * 2 == approx(10., abs=1e-3)
+    assert dihedral_params("C_", "O_2", "S_2", "C_")[1] * 2 == approx(7.906, abs=1e-3)
+
+    # test SP3-SP2
+    # propene
+    assert dihedral_params("H_", "C_3", "C_2", "C_2")[1] * 2 == approx(2., abs=1e-3)
+    assert dihedral_params("C_2", "C_2", "C_3", "H_")[1] * 2 == approx(2., abs=1e-3)
