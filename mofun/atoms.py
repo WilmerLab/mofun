@@ -242,7 +242,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         f.write('0 impropers\n')
         f.write("\n")
 
-        if (num_atom_types := len(set(self.atom_types))) > 0:
+        if (num_atom_types := len(self.atom_type_masses)) > 0:
             f.write('%d atom types\n' % num_atom_types)
         if (num_bond_types := len(set(self.bond_types))) > 0:
             f.write('%d bond types\n' % num_bond_types)
