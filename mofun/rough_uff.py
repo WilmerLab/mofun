@@ -140,7 +140,7 @@ def angle_params(a1, a2, a3, bond_orders=[None, None]):
             https://lammps.sandia.gov/doc/angle_fourier.html
     """
 
-    a2_coord_is_4 = a2[2] == "3" if len(a2) > 2 else False
+    a2_coord_is_4 = (a2[2] == "3") if len(a2) > 2 else False
 
     theta0deg = UFF4MOF[a2][1]
     theta0rad = theta0deg * 2 * pi / 360
@@ -243,7 +243,7 @@ def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None)
             print("exception: sp2 to another sp2")
             # exception for when the sp2 is bonded to another sp2, d=1
             n = 3
-            v = 2. / num_dihedrals_about_bon
+            v = 2. / num_dihedrals_about_bond
             return ("harmonic", v/2, 1, n)
 
         # use eq 17 from rappe

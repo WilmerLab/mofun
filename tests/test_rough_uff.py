@@ -56,7 +56,7 @@ def test_bond_params__C_N_amide_is_1293():
 
 def test_angle_params__C_N_C_amide_is_105_5():
     # normative values for force constant from Towhee
-    angle_style, force_k, b, n = angle_params("C_3", "N_R", "C_R", a2_coord_num=3, bond_orders=[None, 1.41])
+    angle_style, force_k, b, n = angle_params("C_3", "N_R", "C_R", bond_orders=[None, 1.41])
     print(angle_style, force_k, b, n)
     assert angle_style  == "cosine/periodic"
     assert force_k == approx(210.97397, 1e-5)
