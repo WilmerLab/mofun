@@ -133,7 +133,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
             raise Exception("len of dihedrals and dihedral_types must match")
 
     @classmethod
-    def from_lammps_data(cls, f, atom_format="full", atom_type_labels=[]):
+    def from_lammps_data(cls, f, atom_format="full", use_comment_for_type_labels=False):
         def get_types_tups(arr):
             types = tups = []
             if len(arr) > 0:
@@ -151,6 +151,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         bond_coeffs = []
         angle_coeffs = []
         dihedral_coeffs = []
+        atom_type_labels = []
 
         sections_handled = ["Pair Coeffs", "Bond Coeffs", "Angle Coeffs", "Dihedral Coeffs",
                             "Atoms", "Bonds", "Angles", "Dihedrals", "Masses"]
@@ -159,10 +160,11 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
         for unprocessed_line in f:
             # handle comments
-            comment = ""
+            comment_string = ""
             if "#" in unprocessed_line:
                 line, comment = unprocessed_line.split('#')
-                comment ="   #" + comment.rstrip()
+                comment = comment.strip()
+                comment_string ="   # " + comment
             else:
                 line = unprocessed_line.split('#')[0]
             line = line.strip()
@@ -179,14 +181,16 @@ cell=[]: unit cell matrix (same definition as in ASE)
             tup = line.split()
             if current_section == "Masses":
                 masses.append(tup[1])
+                if use_comment_for_type_labels:
+                    atom_type_labels.append(comment)
             elif current_section == "Pair Coeffs":
-                pair_coeffs.append("%s%s" % (" ".join(tup[1:]), comment))
+                pair_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
             elif current_section == "Bond Coeffs":
-                bond_coeffs.append("%s%s" % (" ".join(tup[1:]), comment))
+                bond_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
             elif current_section == "Angle Coeffs":
-                angle_coeffs.append("%s%s" % ("  ".join(tup[1:]), comment))
+                angle_coeffs.append("%s%s" % ("  ".join(tup[1:]), comment_string))
             elif current_section == "Dihedral Coeffs":
-                dihedral_coeffs.append("%s%s" % (" ".join(tup[1:]), comment))
+                dihedral_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
             elif current_section == "Atoms":
                 atoms.append(tup)
             elif current_section == "Bonds":

@@ -73,7 +73,7 @@ def test_atoms_to_lammps_data__from_cif_is_successful():
 def test_atoms_to_lammps_data__uio66_has_arrays_of_right_size():
     with importlib.resources.open_text(tests, "uio66-F.lmp-dat") as f:
         sin = StringIO(f.read())
-        atoms = Atoms.from_lammps_data(sin, atom_format="full", atom_type_labels=["H_", "C_R", "C_2", "O_1"])
+        atoms = Atoms.from_lammps_data(sin, atom_format="full", use_comment_for_type_labels=True)
 
     assert len(atoms.atom_type_masses) == 4
     assert len(atoms.pair_params) == 4
@@ -89,7 +89,7 @@ def test_atoms_to_lammps_data__uio66_has_arrays_of_right_size():
 def test_atoms_to_lammps_data__output_file_identical_to_one_read():
     with importlib.resources.open_text(tests, "uio66-hydroxy.lmp-dat") as f:
         sin = StringIO(f.read())
-        uio66_linker_ld = Atoms.from_lammps_data(sin, atom_format="full", atom_type_labels=["H_", "C_R", "C_2", "O_1"])
+        uio66_linker_ld = Atoms.from_lammps_data(sin, atom_format="full", use_comment_for_type_labels=True)
 
     sout = io.StringIO("")
     uio66_linker_ld.to_lammps_data(sout, file_comment="uio66-hydroxy.lmp-dat")
