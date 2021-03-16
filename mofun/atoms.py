@@ -152,6 +152,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         angle_coeffs = []
         dihedral_coeffs = []
         atom_type_labels = []
+        cellx = celly = cellz = 0.0
 
         sections_handled = ["Pair Coeffs", "Bond Coeffs", "Angle Coeffs", "Dihedral Coeffs",
                             "Atoms", "Bonds", "Angles", "Dihedrals", "Masses"]
@@ -199,7 +200,17 @@ cell=[]: unit cell matrix (same definition as in ASE)
                 angles.append(tup)
             elif current_section == "Dihedrals":
                 dihedrals.append(tup)
+            elif current_section is None:
+                if "xlo xhi" in line:
+                    cellx = float(tup[1]) - float(tup[0])
+                elif "ylo yhi" in line:
+                    celly = float(tup[1]) - float(tup[0])
+                elif "zlo zhi" in line:
+                    cellz = float(tup[1]) - float(tup[0])
 
+        cell = None
+        if cellx > 0. and celly > 0. and cellz > 0.:
+            cell = np.identity(3) * (cellx, celly, cellz)
         atom_type_masses = np.array(masses, dtype=float)
         atoms = np.array(atoms, dtype=float)
         bonds = np.array(bonds, dtype=int)
@@ -230,7 +241,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                    atom_type_masses=atom_type_masses,
                    pair_params=pair_coeffs, bond_type_params=bond_coeffs,
                    angle_type_params=angle_coeffs, dihedral_type_params=dihedral_coeffs,
-                   atom_type_labels=atom_type_labels, atom_groups=atom_groups)
+                   atom_type_labels=atom_type_labels, atom_groups=atom_groups, cell=cell)
 
     def to_lammps_data(self, f, atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
@@ -250,6 +261,12 @@ cell=[]: unit cell matrix (same definition as in ASE)
             f.write('%d angle types\n' % num_angle_types)
         if (num_dihedral_types := len(set(self.dihedral_types))) > 0:
             f.write('%d dihedral types\n' % num_dihedral_types)
+
+        if self.cell.shape == (3,3):
+            xlohi, ylohi, zlohi = zip([0,0,0], np.diag(self.cell))
+            f.write(" %10.6f %10.6f xlo xhi\n" % xlohi)
+            f.write(" %10.6f %10.6f ylo yhi\n" % ylohi)
+            f.write(" %10.6f %10.6f zlo zhi\n" % zlohi)
 
         f.write("\nMasses\n\n")
         for i, m in enumerate(self.atom_type_masses):
