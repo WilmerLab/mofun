@@ -120,7 +120,7 @@ def bond_params(a1, a2, bond_order=None):
     rij = ri + rj + rBO - rEN
     kij = 664.12 * zi * zj / (rij**3)
 
-    return (kij, rij)
+    return (kij / 2, rij)
 
 def angle_params(a1, a2, a3, bond_orders=[None, None]):
     """calculate the UFF angle parameters in a form suitable for calculations in LAMMPS.

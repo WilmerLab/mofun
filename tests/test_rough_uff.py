@@ -52,7 +52,8 @@ def test_bond_params__C_N_amide_is_1293():
     # normative values for bond length and force constant from Towhee
     force_k, bond_length = bond_params("C_R", "N_R", bond_order=1.41)
     assert bond_length == approx(1.3568, 1e-4)
-    assert force_k == approx(1293.18, 5e-2)
+    # /2 here because we are currently returning constants compatible with LAMMPS
+    assert force_k == approx(1293.18/2, 5e-2)
 
 def test_angle_params__C_N_C_amide_is_105_5():
     # normative values for force constant from Towhee
