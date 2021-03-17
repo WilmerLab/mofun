@@ -208,9 +208,12 @@ def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None)
 
     E_phi = 1/2*V_phi * [1 - cos(n*phi0)*cos(n*phi)]
 
-
     this is available in Lammps in the form of a harmonic potential
     E = K * [1 + d*cos(n*phi)]
+
+    K = V_phi / 2
+    d = -cos(n*phi0)
+    n = n
 
     NB: the d term must be negated to recover the UFF potential.
     """
@@ -224,13 +227,16 @@ def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None)
         bond_order = guess_bond_order(a2, a3)
 
     oxygen_group = {'O', 'S', 'Se', 'Te', 'Po'}
-    #need bond order!
 
     print("dihedral: %s-%s-%s-%s M=%d" % (*tuple(ut), num_dihedrals_about_bond))
     if {h[1], h[2]} <= {'3'}:
         print("sp3-sp3")
         # center atoms are sp3, use eq 16 from Rappe
-        # for both cases handled here, n*theta = 180, so cos(n*theta0)=-1, hence d=1
+        # n=3, phi0 = 180 or 60
+        # cos(n*phi0) = cos(3*180), cos(3*60) => cos(540), cos(180) = -1
+        # for oxy exception: cos(2*90) = cos(180) = -1
+        # hence, d = 1
+
         n = 3
         v1 = UFF4MOF[ut[1]][6]
         v2 = UFF4MOF[ut[2]][6]
@@ -247,34 +253,39 @@ def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None)
 
     elif {h[1], h[2]} <= {'2', 'R'}:
         print("sp2-sp2")
-        # center atoms are sp2 (or aromatic), use eq 17 from Rappe, theta0=180, hence d=1
+        # center atoms are sp2 (or aromatic), use eq 17 from Rappe,
+        # phi0=180, n=2, cos(2*180) = 1, hence d = -1
         v = 5.0 * sqrt(UFF4MOF[a2][7] * UFF4MOF[a3][7]) * (1. + 4.18 * log(bond_order)) / num_dihedrals_about_bond
         n = 2
-        return ("harmonic", v/2, 1, n)
+        return ("harmonic", v/2, -1, n)
 
     elif {h[1], h[2]} <= {'2', 'R', '3'}:
         print("sp2-sp3")
         # mixed sp2 / sp3 / aromatic case
         if {h[0], h[1]} <= {'2'} or {h[2], h[3]} <= {'2'}:
             print("exception: sp2 to another sp2")
-            # exception for when the sp2 is bonded to another sp2, d=1
+            # exception for when the sp2 is bonded to another sp2,
+            # n = 3, phi0 = 180, cos(3*180) = -1, d=1
+
             n = 3
             v = 2. / num_dihedrals_about_bond
             return ("harmonic", v/2, 1, n)
 
-        # use eq 17 from rappe
-        v = 5.0 * sqrt(UFF4MOF[ut[1]][7] * UFF4MOF[ut[2]][7]) * (1. + 4.18 * log(bond_order)) / num_dihedrals_about_bond
-
         if (h[1] == '3' and el[1] in oxygen_group and el[2] not in oxygen_group) or \
              (h[2] == '3' and el[2] in oxygen_group and el[1] not in oxygen_group):
             print("exception: sp3 oxy, sp2/resonant other")
-            # exception for sp3 from oxygen column and sp2 or resonant from another column, d=1
+            # exception for sp3 from oxygen column and sp2 or resonant from another column
+            # phi0=90, n=2, cos(2*90) = -1, d = 1
+            # use eq 17 from rappe
+            v = 5.0 * sqrt(UFF4MOF[ut[1]][7] * UFF4MOF[ut[2]][7]) * (1. + 4.18 * log(bond_order)) / num_dihedrals_about_bond
             n = 2
             return ("harmonic", v/2, 1, n)
-        else:
-            # default mixed sp2 / sp3 case
-            n = 6
-            return ("harmonic", v/2, -1, n)
+
+        # default mixed sp2 / sp3 case
+        # phi0 = 0, cos 6*0 = 1, d = -1
+        n = 6
+        v = 1. / num_dihedrals_about_bond
+        return ("harmonic", v/2, -1, n)
     elif '1' in {h[1], h[2]}:
         # no dihedrals for "sp-hybridized centers X_1"
         return None
