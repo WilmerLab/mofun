@@ -63,6 +63,9 @@ def assign_uff_atom_types(g, elements, override_rules=None):
                     continue
                 if "aromatic" in reqs and "aromatic" not in g.nodes[n]:
                     continue
+                if "neighbors" in reqs and \
+                        sorted([elements[i] for i in g.neighbors(n)]) != sorted(reqs['neighbors']):
+                    continue
                 found_type = True
                 atom_types.append(ufftype)
                 break

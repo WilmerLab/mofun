@@ -45,6 +45,18 @@ def test_assign_uff_atom_types__N_in_RNC4_ring_is_aromatic():
     uff_atom_types = assign_uff_atom_types(g, ["N", "C", "C", "C", "C", "C", "H"])
     assert uff_atom_types[0] == "N_R"
 
+def test_assign_uff_atom_types__NNN_override_rule_neighbors_assigns_N1():
+    override_rules = {
+        "N": [
+            ("N_1", dict(neighbors=("N","N"))),
+        ]
+    }
+
+    g = nx.Graph()
+    g.add_edges_from([(0,1), (1,2), (0,3), (3,4)])
+    uff_atom_types = assign_uff_atom_types(g, ["N", "N", "N", "C", "H"], override_rules=override_rules)
+    assert uff_atom_types[0:3] == ["N_2", "N_1", "N_1"]
+
 
 def test_assign_uff_atom_types__elements_with_only_one_uff_atom_type_wo_hybridization_get_that_type():
     g = nx.Graph()
