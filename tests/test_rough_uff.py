@@ -27,6 +27,25 @@ def test_assign_uff_atom_types__carbon_in_benzene_ring_is_aromatic():
     uff_atom_types = assign_uff_atom_types(g, ["C"] * 6)
     assert uff_atom_types == ["C_R"] * 6
 
+def test_assign_uff_atom_types__N_in_RNH2_is_tetrahedral():
+    g = nx.Graph()
+    g.add_edges_from([(0,1), (0,2), (0,3), (1,4)])
+    uff_atom_types = assign_uff_atom_types(g, ["N", "C", "H", "H", "H"])
+    assert uff_atom_types[0] == "N_3"
+
+def test_assign_uff_atom_types__N_in_RNNN_is_trigonal():
+    g = nx.Graph()
+    g.add_edges_from([(0,1), (1,2), (0,3), (3,4)])
+    uff_atom_types = assign_uff_atom_types(g, ["N", "N", "N", "C", "H"])
+    assert uff_atom_types[0] == "N_2"
+
+def test_assign_uff_atom_types__N_in_RNC4_ring_is_aromatic():
+    g = nx.Graph()
+    g.add_edges_from([(0,1), (1,2), (2,3), (3,4), (4,0), (0,5), (5,6)])
+    uff_atom_types = assign_uff_atom_types(g, ["N", "C", "C", "C", "C", "C", "H"])
+    assert uff_atom_types[0] == "N_R"
+
+
 def test_assign_uff_atom_types__elements_with_only_one_uff_atom_type_wo_hybridization_get_that_type():
     g = nx.Graph()
     g.add_edges_from([(0,1), (1,2), (2,3), (3,4), (4,5), (5,0)])
