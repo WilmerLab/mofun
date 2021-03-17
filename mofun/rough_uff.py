@@ -129,10 +129,10 @@ def guess_bond_order(a1, a2, rules=[]):
     elif len(bond_atom_types) == 1 and bond_atom_types <= {'C_R', 'N_R', 'O_R'}:
         return 1.5
     else:
-        print('%s %s Bond order not properly assigned. Using default value of 1.' % (a1, a2))
+        print('Warning: %s %s Bond order not explicitly assigned. Using default value of 1.' % (a1, a2))
         return 1
 
-def bond_params(a1, a2, bond_order=None):
+def bond_params(a1, a2, bond_order=None, bond_order_rules=[]):
     """calculate the UFF bond parameters in a form suitable for calculations in LAMMPS.
 
     Args:
@@ -145,7 +145,7 @@ def bond_params(a1, a2, bond_order=None):
     """
 
     if bond_order is None:
-        bond_order = guess_bond_order(a1, a2)
+        bond_order = guess_bond_order(a1, a2, bond_order_rules)
 
     # 1. Calculate rij and Kij
     ri, zi, chii = [UFF4MOF[a1][k] for k in (0, 5, 8)]
@@ -159,7 +159,7 @@ def bond_params(a1, a2, bond_order=None):
 
     return (kij / 2, rij)
 
-def angle_params(a1, a2, a3, bond_orders=[None, None]):
+def angle_params(a1, a2, a3, bond_orders=[None, None], bond_order_rules=[]):
     """calculate the UFF angle parameters in a form suitable for calculations in LAMMPS.
 
     Args:
@@ -183,8 +183,8 @@ def angle_params(a1, a2, a3, bond_orders=[None, None]):
     theta0rad = theta0deg * 2 * pi / 360
 
     # Determine force constant
-    rij = bond_params(a1, a2, bond_order=bond_orders[0])[1]
-    rjk = bond_params(a2, a3, bond_order=bond_orders[1])[1]
+    rij = bond_params(a1, a2, bond_order=bond_orders[0], bond_order_rules=bond_order_rules)[1]
+    rjk = bond_params(a2, a3, bond_order=bond_orders[1], bond_order_rules=bond_order_rules)[1]
     rik = sqrt(rij**2 + rjk**2 - 2 * rij * rjk * cos(theta0rad))
 
     zi = UFF4MOF[a1][5]
@@ -224,7 +224,7 @@ def angle_params(a1, a2, a3, bond_orders=[None, None]):
         c0 = c2 * (2 * cos(theta0rad)**2 + 1)
         return ('fourier', kijk, c0, c1, c2)
 
-def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None):
+def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None, bond_order_rules=[]):
     """Use a small cosine Fourier expansion
 
     E_phi = 1/2*V_phi * [1 - cos(n*phi0)*cos(n*phi)]
@@ -245,7 +245,7 @@ def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None)
     h = [s[2] if len(s) > 2 else 0 for s in ut]
 
     if bond_order is None:
-        bond_order = guess_bond_order(a2, a3)
+        bond_order = guess_bond_order(a2, a3, bond_order_rules)
 
     oxygen_group = {'O', 'S', 'Se', 'Te', 'Po'}
 
