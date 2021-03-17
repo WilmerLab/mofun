@@ -95,7 +95,6 @@ def test_assign_uff_atom_types__NNN_override_rule_neighbors_assigns_N1():
     uff_atom_types = assign_uff_atom_types(g, ["N", "N", "N", "C", "H"], override_rules=override_rules)
     assert uff_atom_types[0:3] == ["N_2", "N_1", "N_1"]
 
-
 def test_assign_uff_atom_types__elements_with_only_one_uff_atom_type_wo_hybridization_get_that_type():
     g = nx.Graph()
     g.add_edges_from([(0,1), (1,2), (2,3), (3,4), (4,5), (5,0)])
@@ -160,3 +159,6 @@ def test_dihedral_params__force_constant_should_match_table_2_kind_of():
     # propene
     assert dihedral_params("H_", "C_3", "C_2", "C_2")[1] * 2 == approx(2., abs=1e-3)
     assert dihedral_params("C_2", "C_2", "C_3", "H_")[1] * 2 == approx(2., abs=1e-3)
+
+def test_dihedral_params__X_1_is_none():
+    assert dihedral_params('C_R', 'N_2', 'N_1', 'N_1', 1) is None
