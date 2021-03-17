@@ -98,20 +98,33 @@ def pair_params(a1):
     lj_epsilon = UFF4MOF[a1][3]
     return [lj_epsilon, lj_sigma]
 
-def guess_bond_order(atom1, atom2):
-    # This method is 'hacky' at best and could be replaced by something more sophisticated.
-    # This is roughly the same as what is used in Pete Boyd's 'lammps-interface'.
-    bond_atom_types = {atom1, atom2}
-    if len({'H_', 'F_', 'Cl', 'Br', 'I_'}.intersection(bond_atom_types)) > 0:
+def guess_bond_order(a1, a2, rules=[]):
+    """
+    Args:
+        a1 (str): UFF atom type of atom 1 in bond 1-2, e.g. "C_R"
+        a2 (str): UFF atom type of atom 2 in bond 1-2, e.g. "C_R"
+        rules (optional): a list of tuple pairs where each pair contains a set of atom_types
+            representing a bond, and a bo. E.g.: [({N_1}, 2), ({N_1, N_2}, 2)] where that means a
+            bond between two N_1 atoms would have a bond order of 2, and a bond between an N_1 and a
+            N_2 would also have a bond_order of 2.
+
+    This method is 'hacky' at best and could be replaced by something more sophisticated.
+    This is roughly the same as what is used in Pete Boyd's 'lammps-interface'.
+    """
+    bond_atom_types = {a1, a2}
+
+    for rule_atom_types, bo  in rules:
+        if bond_atom_types == rule_atom_types:
+            return bo
+
+    if len({'H_', 'F_', 'Cl', 'Br', 'I_', 'C_3', 'N_3', 'O_3'} & bond_atom_types) > 0:
         return 1
-    elif len({'C_3', 'N_3', 'O_3'}.intersection(bond_atom_types)) > 0:
-        return 1
-    elif len(bond_atom_types) == 1 and bond_atom_types.issubset({'C_2', 'N_2', 'O_2'}):
+    elif len(bond_atom_types) == 1 and bond_atom_types <= {'C_2', 'N_2', 'O_2'}:
         return 2
-    elif len(bond_atom_types) == 1 and bond_atom_types.issubset({'C_R', 'N_R', 'O_R'}):
+    elif len(bond_atom_types) == 1 and bond_atom_types <= {'C_R', 'N_R', 'O_R'}:
         return 1.5
     else:
-        print('%s %s Bond order not properly assigned. Using default value of 1.' % (atom1, atom2))
+        print('%s %s Bond order not properly assigned. Using default value of 1.' % (a1, a2))
         return 1
 
 def bond_params(a1, a2, bond_order=None):

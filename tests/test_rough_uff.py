@@ -3,11 +3,49 @@ import os
 import networkx as nx
 
 from mofun import Atoms
-from mofun.rough_uff import assign_uff_atom_types, add_aromatic_flag, \
+from mofun.rough_uff import assign_uff_atom_types, add_aromatic_flag, guess_bond_order, \
                             bond_params, angle_params, dihedral_params
 from tests.fixtures import uio66_linker_cml
 
 from pytest import approx
+
+def test_guess_bond_order__two_tetrahedrals_is_1():
+    assert guess_bond_order('C_3', 'C_3') == 1
+    assert guess_bond_order('N_3', 'N_3') == 1
+    assert guess_bond_order('O_3', 'O_3') == 1
+    assert guess_bond_order('O_3', 'C_3') == 1
+    assert guess_bond_order('N_3', 'C_3') == 1
+    assert guess_bond_order('N_3', 'O_3') == 1
+
+def test_guess_bond_order__H_and_group_7_elements_is_1():
+    assert guess_bond_order('H_', 'C_3') == 1
+    assert guess_bond_order('F_', 'C_3') == 1
+    assert guess_bond_order('Cl', 'C_3') == 1
+    assert guess_bond_order('Br', 'C_3') == 1
+    assert guess_bond_order('I', 'C_3') == 1
+
+def test_guess_bond_order__CNO_trigonal_pairs_is_2():
+    assert guess_bond_order('C_2', 'C_2') == 2
+    assert guess_bond_order('N_2', 'N_2') == 2
+    assert guess_bond_order('O_2', 'O_2') == 2
+    assert guess_bond_order('C_2', 'N_2') == 1
+    assert guess_bond_order('N_2', 'O_2') == 1
+    assert guess_bond_order('O_2', 'C_2') == 1
+
+def test_guess_bond_order__CNO_aromatic_pairs_is_1_5():
+    assert guess_bond_order('C_R', 'C_R') == 1.5
+    assert guess_bond_order('N_R', 'N_R') == 1.5
+    assert guess_bond_order('O_R', 'O_R') == 1.5
+    assert guess_bond_order('C_R', 'N_2') == 1
+    assert guess_bond_order('N_R', 'O_2') == 1
+    assert guess_bond_order('O_R', 'C_2') == 1
+
+def test_guess_bond_order__rules_for_azido_is_2():
+    rules = [({'N_1'}, 2), ({'N_1', 'N_2'}, 2)]
+    assert guess_bond_order('N_1', 'N_1') == 1
+    assert guess_bond_order('N_1', 'N_1', rules) == 2
+    assert guess_bond_order('N_1', 'N_2') == 1
+    assert guess_bond_order('N_1', 'N_2', rules) == 2
 
 def test_assign_uff_atom_types__carbon_in_methane_is_tetrahedral():
     g = nx.Graph()
