@@ -7,7 +7,7 @@ from mofun.uff4mof import UFF4MOF, uff_key_starts_with, MAIN_GROUP_ELEMENTS
 def default_uff_rules():
     return {
         "H": [
-            ("H_b", dict(n=1)),
+            ("H_b", dict(n=2)),
             ("H_", {})
         ],
         "O": [
