@@ -42,10 +42,23 @@ def assign_uff_atom_types(g, elements, override_rules=None):
         # handle override rules
         el = elements[n]
         found_type = False
-        h = g.degree(n) - 1
+
+        if el == "C":
+            h = g.degree(n) - 1
+        elif el == "N":
+            h = g.degree(n)
+        elif el == "O":
+            if g.degree(n) == 1:
+                h = 2
+            else:
+                h = 3
+        else:
+            h = g.degree(n) - 1
 
         if el in override_rules:
             for ufftype, reqs in override_rules[el]:
+                if "n" in reqs and g.degree(n) != reqs['n']:
+                    continue
                 if "h" in reqs and h != reqs['h']:
                     continue
                 if "aromatic" in reqs and "aromatic" not in g.nodes[n]:
@@ -64,7 +77,7 @@ def assign_uff_atom_types(g, elements, override_rules=None):
             atom_types.append(possible_uff_keys[0])
             continue
         elif len(possible_uff_keys) >= 2:
-            raise Exception("too many possible UFF keys that starts with %s with no way of discerning which one: " % (uff_key, possible_uff_keys))
+            raise Exception("too many possible UFF keys that starts with %s with no way of discerning which one: %s" % (uff_key, possible_uff_keys))
 
         # 2: try element w/o hybridization
         # Note that UFF4MOF adds some fancy types, i.e. Li3f2, and if the hybridization doesn't match
