@@ -7,14 +7,17 @@ from mofun.uff4mof import UFF4MOF, uff_key_starts_with, MAIN_GROUP_ELEMENTS
 def default_uff_rules():
     return {
         "H": [
-            ("H_b", dict(h=2)),
+            ("H_b", dict(n=1)),
             ("H_", {})
         ],
         "O": [
-            ("O_1", dict(h=0))
+            ("O_1", dict(n=1))
         ],
         "C": [
             ("C_R", dict(aromatic=True))
+        ],
+        "N": [
+            ("N_R", dict(aromatic=True))
         ]
     }
 
