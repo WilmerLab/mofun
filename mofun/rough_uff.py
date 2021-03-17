@@ -80,7 +80,12 @@ def assign_uff_atom_types(g, elements, override_rules=None):
             atom_types.append(possible_uff_keys[0])
             continue
         elif len(possible_uff_keys) >= 2:
-            raise Exception("too many possible UFF keys that starts with %s with no way of discerning which one: %s" % (uff_key, possible_uff_keys))
+            if uff_key in UFF4MOF:
+                atom_types.append(uff_key)
+                print("Warning: multiple possible UFF keys: %s. Choosing the simplest one: %s" % (possible_uff_keys, uff_key))
+                continue
+            else:
+                raise Exception("Error: too many possible UFF keys that starts with %s with no way of discerning which one: %s" % (uff_key, possible_uff_keys))
 
         # 2: try element w/o hybridization
         # Note that UFF4MOF adds some fancy types, i.e. Li3f2, and if the hybridization doesn't match
