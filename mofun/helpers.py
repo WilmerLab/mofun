@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 from scipy.linalg import norm
 from scipy.spatial.transform import Rotation as R
@@ -14,15 +16,19 @@ def atoms_by_type_dict(atom_types):
         atoms_by_type[k].append(i)
     return atoms_by_type
 
-def remove_duplicates(match_indices, key=lambda m: tuple(sorted(m))):
-    found_tuples = set()
-    new_match_indices = []
+def remove_duplicates(match_indices, key=lambda m: tuple(sorted(m)), pick_random=False):
+    keyed_tuples = {}
     for m in match_indices:
         mkey = key(m)
-        if mkey not in found_tuples:
-            new_match_indices.append(m)
-            found_tuples.add(mkey)
-    return new_match_indices
+        if mkey not in keyed_tuples:
+            keyed_tuples[mkey] = [m]
+        else:
+            keyed_tuples[mkey].append(m)
+    if pick_random:
+        return [random.choice(matches) for _, matches in keyed_tuples.items()]
+    else: # pick first
+        return [matches[0] for _, matches in keyed_tuples.items()]
+
 
 def position_index_farthest_from_axis(axis, atoms):
     q = quaternion_from_two_vectors(axis, [1., 0., 0.])

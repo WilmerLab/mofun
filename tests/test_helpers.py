@@ -1,3 +1,4 @@
+import random
 
 from mofun.helpers import remove_duplicates, position_index_farthest_from_axis, guess_elements_from_masses
 from tests.fixtures import *
@@ -11,6 +12,12 @@ def test_remove_duplicates__with_constant_key_is_one_item():
 
 def test_remove_duplicates__with_no_key_uses_sorted_tuples():
     assert remove_duplicates([(3, 2, 1), (3, 6, 5), (3, 5, 6)]) == [(3, 2, 1), (3, 6, 5)]
+
+def test_remove_duplicates__pick_random_removes_at_random():
+    random.seed(1)
+    assert remove_duplicates([(3, 2, 1), (3, 6, 5), (3, 5, 6)], pick_random=True) == [(3, 2, 1), (3, 6, 5)]
+    random.seed(4)
+    assert remove_duplicates([(3, 2, 1), (3, 6, 5), (3, 5, 6)], pick_random=True) == [(3, 2, 1), (3, 5, 6)]
 
 def test_position_index_farthest_from_axis__for_octane_is_index_6_or_20(octane):
     # index 20 is one of the H on the benzene ring
