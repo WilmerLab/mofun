@@ -2,15 +2,17 @@
 
 from setuptools import setup, find_packages
 
-setup(name='functionaliseMOF',
+setup(name='mofun',
       version='0.1.0',
-      description='Search for pattern in Metal-organic framework and replace it',
-      author='Meiirbek Islamov',
-      author_email='mei12@pitt.edu',
-      url='https://github.com/meiirbek-islamov/functionaliseMOF.git',
-      packages=find_packages(include=['functionaliseMOF']),
+      description='Find and replace functional groups in any given periodic structure.',
+      author='Paul Boone and Meiirbek Islamov',
+      author_email='paulboone@pitt.edu mei12@pitt.edu',
+      url='https://github.com/wilmerlab/mofun.git',
+      packages=find_packages(include=['mofun']),
       install_requires=[
+          'ase',
           'numpy',
-          'matplotlib'
+          'scipy',
+          'PyCifRW'
       ],
 )
