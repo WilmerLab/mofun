@@ -17,7 +17,7 @@ indexed one per atom:
     atom_types=[], types for each atom
     positions=[]: coordinates (x,y,z) for each atom
     charges=[]: charges for each atom
-    atom_group=[]: which "group" atom is part of. For LAMMPS, gets mapped to a molecule id.
+    atom_groups=[]: which "group" atom is part of. For LAMMPS, gets mapped to a molecule id.
 
 indexed one per atom type:
     atom_type_masses=[]: mass for each atom type
