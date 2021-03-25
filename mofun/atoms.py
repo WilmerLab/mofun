@@ -316,6 +316,26 @@ cell=[]: unit cell matrix (same definition as in ASE)
             for i, tup in enumerate(self.dihedrals):
                 f.write(" %d %d %d %d %d %d   # %s\n" % (i + 1, self.dihedral_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
 
+    def to_mol(self, f, file_comment=""):
+        """Writes .mol file for structural information."""
+
+        f.write(" Molecule_name: %s\n" % file_comment)
+        f.write("\n")
+        f.write("  Coord_Info: Listed Cartesian None\n")
+        f.write("        %d\n" % len(self))
+
+        for i, (x, y, z) in enumerate(self.positions):
+            f.write("%6d %10.4f %10.4f %10.4f  %5s %10.8f  0  0\n" % (i + 1, x, y, z,
+                self.elements[i], self.charges[i]))
+
+        f.write("\n\n\n")
+        f.write("  Fundcell_Info: Listed\n")
+        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+        f.write("           90.0000          90.0000          90.0000\n")
+        f.write("           0.00000          0.00000          0.00000\n")
+        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+
+
     @classmethod
     def from_cif(cls, path):
         def has_all_tags(block, tags):
