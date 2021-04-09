@@ -517,7 +517,17 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.dihedrals = np.append(self.dihedrals, other.dihedrals + atom_idx_offset).reshape((-1,4))
         self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
 
+    def replicate(self, repldims=(1,1,1)):
+        repl_atoms = self.copy()
+        ucmults = np.array(np.meshgrid(*[range(r) for r in repldims])).T.reshape(-1, 3)
+        ucmults = ucmults[np.any(ucmults != 0, axis=1)] # remove [0,0,0] since in copy
+        for ucmult in ucmults:
+            transatoms = self.copy()
+            transatoms.translate(np.matmul(transatoms.cell, ucmult))
+            repl_atoms.extend(transatoms, offsets=(0,0,0,0))
 
+        repl_atoms.cell = self.cell * repldims
+        return repl_atoms
 
     def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices, secondary_arr=None):
         updated_arr = arr.copy()

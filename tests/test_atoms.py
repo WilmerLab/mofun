@@ -165,3 +165,62 @@ def test_atoms_calc_dihedrals__ethane_has_9_dihedrals():
     assert unique_dihedrals == {(0,3,4,5), (1,3,4,5), (2,3,4,5),
                                 (0,3,4,6), (1,3,4,6), (2,3,4,6),
                                 (0,3,4,7), (1,3,4,7), (2,3,4,7)}
+
+def test_atoms_replicate__111_is_unchanged(octane):
+    reploctane = octane.replicate((1,1,1))
+    assert np.array_equal(octane.positions, reploctane.positions)
+    assert np.array_equal(octane.atom_types, reploctane.atom_types)
+    assert np.array_equal(octane.charges, reploctane.charges)
+    assert np.array_equal(octane.atom_groups, reploctane.atom_groups)
+
+def test_atoms_replicate__211_has_replicate_in_x_dim(octane):
+    reploctane = octane.replicate((2,1,1))
+    assert (octane.positions == reploctane.positions[0:26, :]).all()
+    assert (octane.positions[:, 0] + 60 == reploctane.positions[26:52, 0]).all()
+    assert (octane.positions[:, 1:] == reploctane.positions[26:52, 1:]).all()
+
+    assert np.array_equal(np.tile(octane.atom_types,2), reploctane.atom_types)
+    assert np.array_equal(np.tile(octane.charges,2), reploctane.charges)
+    assert np.array_equal(np.tile(octane.atom_groups,2), reploctane.atom_groups)
+
+
+def test_atoms_replicate__213_has_replicates_in_xz_dims(octane):
+    reploctane = octane.replicate((2,1,3))
+    na = 26 # atoms in octane
+
+    # check [1, 1, 1]
+    assert (octane.positions == reploctane.positions[0:26, :]).all()
+
+    # check [2, 1, 1]
+    i = 1
+    assert (octane.positions[:, 0] + 60 == reploctane.positions[na*i:na*(i+1), 0]).all()
+    assert (octane.positions[:, 1] +  0 == reploctane.positions[na*i:na*(i+1), 1]).all()
+    assert (octane.positions[:, 2] +  0 == reploctane.positions[na*i:na*(i+1), 2]).all()
+
+    # check [1, 1, 2]
+    i = 2
+    assert (octane.positions[:, 0] +  0 == reploctane.positions[na*i:na*(i+1), 0]).all()
+    assert (octane.positions[:, 1] +  0 == reploctane.positions[na*i:na*(i+1), 1]).all()
+    assert (octane.positions[:, 2] + 60 == reploctane.positions[na*i:na*(i+1), 2]).all()
+
+    # check [2, 1, 2]
+    i = 3
+    assert (octane.positions[:, 0] + 60 == reploctane.positions[na*i:na*(i+1), 0]).all()
+    assert (octane.positions[:, 1] +  0 == reploctane.positions[na*i:na*(i+1), 1]).all()
+    assert (octane.positions[:, 2] + 60 == reploctane.positions[na*i:na*(i+1), 2]).all()
+
+    # check [1, 1, 3]
+    i = 4
+    assert (octane.positions[:, 0] +   0 == reploctane.positions[na*i:na*(i+1), 0]).all()
+    assert (octane.positions[:, 1] +   0 == reploctane.positions[na*i:na*(i+1), 1]).all()
+    assert (octane.positions[:, 2] + 120 == reploctane.positions[na*i:na*(i+1), 2]).all()
+
+    # check [2, 1, 3]
+    i = 5
+    assert (octane.positions[:, 0] +  60 == reploctane.positions[na*i:na*(i+1), 0]).all()
+    assert (octane.positions[:, 1] +   0 == reploctane.positions[na*i:na*(i+1), 1]).all()
+    assert (octane.positions[:, 2] + 120 == reploctane.positions[na*i:na*(i+1), 2]).all()
+
+    assert np.array_equal(np.tile(octane.atom_types, 6), reploctane.atom_types)
+    assert np.array_equal(np.tile(octane.charges, 6), reploctane.charges)
+    assert np.array_equal(np.tile(octane.atom_groups, 6), reploctane.atom_groups)
