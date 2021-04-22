@@ -270,7 +270,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
         f.write("\nMasses\n\n")
         for i, m in enumerate(self.atom_type_masses):
-            f.write(" %d %5.4f   # %s\n" % (i + 1, m, self.label_atoms(i)))
+            f.write(" %d %10.6f   # %s\n" % (i + 1, m, self.label_atoms(i)))
 
         if len(self.pair_params) > 0:
             f.write('\nPair Coeffs\n\n')
