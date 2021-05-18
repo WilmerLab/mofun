@@ -363,6 +363,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         positions = np.array([x,y,z], dtype=float).T
 
         atom_types = block['_atom_site_type_symbol']
+        charges =  block['_atom_site_charge']
 
         bonds = []
         bond_tags = ["_geom_bond_atom_site_label_1", "_geom_bond_atom_site_label_2"]
@@ -383,7 +384,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
             if use_fract_coords:
                 positions *= (a,b,c)
 
-        return cls(elements=atom_types, positions=positions, cell=cell)
+        return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
 
     @classmethod
     def from_cml(cls, path):
@@ -486,7 +487,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         return offsets
 
 
-    def extend(self, other, offsets=None):
+    def extend(self, other, offsets=None, verbose=False):
         """ adds other Atoms object's arrays to its own.
 
         The Default behavior is for all the types and params from other structure to be appended to
@@ -500,7 +501,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
         """
         atom_idx_offset = len(self.positions)
         if offsets is None:
-            print("auto offset: extending types")
+            if verbose:
+                print("auto offset: extending types")
             offsets = self.extend_types(other)
 
         self.positions = np.append(self.positions, other.positions, axis=0)
