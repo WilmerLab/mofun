@@ -363,7 +363,10 @@ cell=[]: unit cell matrix (same definition as in ASE)
         positions = np.array([x,y,z], dtype=float).T
 
         atom_types = block['_atom_site_type_symbol']
-        charges =  block['_atom_site_charge']
+
+        charges = []
+        if block.has_key('_atom_site_charge'):
+            charges = block['_atom_site_charge']
 
         bonds = []
         bond_tags = ["_geom_bond_atom_site_label_1", "_geom_bond_atom_site_label_2"]
