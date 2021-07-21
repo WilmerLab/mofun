@@ -86,7 +86,7 @@ def hkust1_3x3x3_xyz():
 @pytest.fixture
 def hkust1_3x3x3_cif():
     with importlib.resources.path(tests, "HKUST-1_3x3x3.cif") as path:
-        yield Atoms.from_cif(path)
+        yield Atoms.from_cif(str(path))
 
 @pytest.fixture
 def benzene():
