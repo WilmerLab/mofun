@@ -115,38 +115,29 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust
         pattern_found = hkust1_cif[indices]
         assert list(pattern_found.elements) == ['Cu']
 
-
 @pytest.mark.veryslow
-def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_cif, benzene):
-    match_indices = find_pattern_in_structure(hkust1_3x3x3_cif, benzene)
+def test_find_pattern_in_structure__hkust1_cif_2x2x2_supercell_has_256_benzene_rings(hkust1_cif, benzene):
+    hkust1_2x2x2 = hkust1_cif.replicate(repldims=(2,2,2))
+    match_indices = find_pattern_in_structure(hkust1_2x2x2, benzene)
 
     assert len(match_indices) == 864
     for indices in match_indices:
-        pattern_found = hkust1_3x3x3_cif[indices]
+        pattern_found = hkust1_2x2x2[indices]
         assert list(pattern_found.elements) == ['C','C','C','C','C','C','H','H','H']
         assert_benzene(pattern_found.positions)
 
-@pytest.mark.veryslow
-def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_xyz, benzene):
-    match_indices = find_pattern_in_structure(hkust1_3x3x3_xyz, benzene)
-
-    assert len(match_indices) == 864
-    for indices in match_indices:
-        pattern_found = hkust1_3x3x3_xyz[indices]
-        assert list(pattern_found.elements) == ['C','C','C','C','C','C','H','H','H']
-        assert_benzene(pattern_found.positions)
-
-@pytest.mark.veryslow
-def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_cif):
+@pytest.mark.slow
+def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_cif):
+    hkust1_3x3x3 = hkust1_cif.replicate(repldims=(3,3,3))
     pattern = Atoms(elements='Cu', positions=[(0, 0, 0)])
-    match_indices = find_pattern_in_structure(hkust1_3x3x3_cif, pattern)
+    match_indices = find_pattern_in_structure(hkust1_3x3x3, pattern)
 
     assert len(match_indices) == 1296
     for indices in match_indices:
-        pattern_found = hkust1_3x3x3_cif[indices]
+        pattern_found = hkust1_3x3x3[indices]
         assert list(pattern_found.elements) == ['Cu']
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_xyz):
     pattern = Atoms(elements='Cu', positions=[(0, 0, 0)])
     match_indices = find_pattern_in_structure(hkust1_3x3x3_xyz, pattern)
