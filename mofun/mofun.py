@@ -4,6 +4,8 @@ import random
 import numpy as np
 from scipy.spatial import distance
 
+from mofun.atoms import find_unchanged_atom_pairs
+
 from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_farthest_from_axis, \
                           quaternion_from_two_vectors, quaternion_from_two_vectors_around_axis, \
                           remove_duplicates
@@ -107,13 +109,15 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, rep
         match_indices = [match_indices[i] for i in replace_indices]
         match_positions = match_positions[replace_indices]
 
-    if verbose: print(match_indices)
+    if verbose: print(match_indices, match_positions)
 
     # translate both search and replace patterns so that first atom of search pattern is at the origin
     replace_pattern.translate(-search_pattern.positions[axis1a_idx])
     search_pattern.translate(-search_pattern.positions[axis1a_idx])
     search_axis = search_pattern.positions[axis1b_idx]
     if verbose: print("search_axis: ", search_axis)
+
+    replace2search_pattern_map = {k:v for (k,v) in find_unchanged_atom_pairs(replace_pattern, search_pattern)}
 
     if len(search_pattern) > 2:
         orientation_point_index = position_index_farthest_from_axis(search_axis, search_pattern)
@@ -122,9 +126,12 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, rep
         if verbose: print("orientation_axis: ", orientation_axis)
 
     new_structure = structure.copy()
-    if len(replace_pattern) > 0:
+    to_delete = set()
+    if len(replace_pattern) == 0:
+        to_delete |= set([idx for match in match_indices for idx in match])
+    else:
         offsets = new_structure.extend_types(replace_pattern)
-        for atom_positions in match_positions:
+        for m_i, atom_positions in enumerate(match_positions):
             new_atoms = replace_pattern.copy()
             if verbose:
                 print(atom_positions)
@@ -151,7 +158,6 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, rep
                     if q1 is not None:
                         q1_o_axis = q1.apply(q1_o_axis)
 
-
                     q2 = quaternion_from_two_vectors_around_axis(found_orientation_axis, q1_o_axis, found_axis)
                     if verbose:
                         print("(transformed) orientation_axis: ", q1_o_axis)
@@ -166,10 +172,15 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, rep
             # move replacement atoms into correct position
             new_atoms.translate(atom_positions[axis1a_idx])
             new_atoms.positions %= np.diag(new_structure.cell)
-            if verbose: print("new atoms after translate:\n", new_atoms.positions)
-            new_structure.extend(new_atoms, offsets=offsets)
 
-    indices_to_delete = [idx for match in match_indices for idx in match]
-    del(new_structure[indices_to_delete])
+            if verbose: print("new atoms after translate:\n", new_atoms.positions)
+
+            structure_index_map = {k: match_indices[m_i][v] for k,v in replace2search_pattern_map.items()}
+            new_structure.extend(new_atoms, offsets=offsets, structure_index_map=structure_index_map)
+
+            to_delete_linker = set(match_indices[m_i]) - set(structure_index_map.values())
+            to_delete |= set(to_delete_linker)
+
+    del(new_structure[list(to_delete)])
 
     return new_structure

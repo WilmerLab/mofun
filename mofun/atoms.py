@@ -490,7 +490,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         return offsets
 
 
-    def extend(self, other, offsets=None, verbose=False):
+    def extend(self, other, offsets=None, structure_index_map={}, verbose=False):
         """ adds other Atoms object's arrays to its own.
 
         The Default behavior is for all the types and params from other structure to be appended to
@@ -508,19 +508,43 @@ cell=[]: unit cell matrix (same definition as in ASE)
                 print("auto offset: extending types")
             offsets = self.extend_types(other)
 
-        self.positions = np.append(self.positions, other.positions, axis=0)
-        self.atom_types = np.append(self.atom_types, other.atom_types + offsets[0])
-        self.charges = np.append(self.charges, other.charges)
-        self.atom_groups = np.append(self.atom_groups, other.atom_groups)
+        atoms_to_add = [i for i in range(len(other)) if i not in structure_index_map.keys()]
+        self.positions = np.append(self.positions, other.positions[atoms_to_add], axis=0)
+        self.atom_types = np.append(self.atom_types, other.atom_types[atoms_to_add] + offsets[0])
+        self.charges = np.append(self.charges, other.charges[atoms_to_add])
+        self.atom_groups = np.append(self.atom_groups, other.atom_groups[atoms_to_add])
 
-        self.bonds = np.append(self.bonds, other.bonds + atom_idx_offset).reshape((-1,2))
-        self.bond_types = np.append(self.bond_types, other.bond_types + offsets[1])
+        structure_index_map2 = {a:i + atom_idx_offset for i,a in enumerate(atoms_to_add)}
+        structure_index_map2.update(structure_index_map)
+        convert2structureindex = np.vectorize(structure_index_map2.get)
 
-        self.angles = np.append(self.angles, other.angles + atom_idx_offset).reshape((-1,3))
-        self.angle_types = np.append(self.angle_types, other.angle_types + offsets[2])
+        def find_existing_topo(topo, new_topo):
+            existing_topo = [tuple(x) for x in topo]
+            new_topo_tuples = [tuple(x) for x in new_topo]
+            existing_topo_indices = [existing_topo.index(b) for b in new_topo_tuples if b in existing_topo]
+            return existing_topo_indices
 
-        self.dihedrals = np.append(self.dihedrals, other.dihedrals + atom_idx_offset).reshape((-1,4))
-        self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
+        if len(other.bonds) > 0:
+            new_bonds = convert2structureindex(other.bonds)
+            existing_bond_indices = find_existing_topo(self.bonds, new_bonds)
+            self.bonds = np.append(self.bonds, new_bonds).reshape((-1,2))
+            self.bond_types = np.append(self.bond_types, other.bond_types + offsets[1])
+            self.bonds = np.delete(self.bonds, existing_bond_indices, axis=0)
+            self.bond_types = np.delete(self.bond_types, existing_bond_indices)
+
+        if len(other.angles) > 0:
+            new_angles = convert2structureindex(other.angles)
+            existing_angle_indices = find_existing_topo(self.angles, new_angles)
+            self.angles = np.append(self.angles, new_angles).reshape((-1,3))
+            self.angle_types = np.append(self.angle_types, other.angle_types + offsets[2])
+            self.angles = np.delete(self.angles, existing_angle_indices, axis=0)
+            self.angle_types = np.delete(self.angle_types, existing_angle_indices)
+
+        if len(other.dihedrals) > 0:
+            new_dihedrals = convert2structureindex(other.dihedrals)
+            existing_dihedral_indices = find_existing_topo(self.dihedrals, new_dihedrals)
+            self.dihedrals = np.append(self.dihedrals, new_dihedrals).reshape((-1,4))
+            self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
 
     def replicate(self, repldims=(1,1,1)):
         repl_atoms = self.copy()
@@ -553,7 +577,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             return updated_arr
 
-
     def __delitem__(self, indices):
         self.positions = np.delete(self.positions, indices, axis=0)
         self.atom_types = np.delete(self.atom_types, indices, axis=0)
@@ -567,8 +590,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.angles, self.angle_types = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices, self.angle_types)
         if len(self.dihedrals) > 0:
             self.dihedrals, self.dihedral_types = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices, self.dihedral_types)
-
-
 
     def pop(self, pos=-1):
         del(self, pos)

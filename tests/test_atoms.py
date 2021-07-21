@@ -46,6 +46,18 @@ def test_atoms_extend__new_types_come_after_old_types(linear_cnnc):
     assert np.array_equal(double_cnnc.dihedral_types, [0, 1])
     assert np.array_equal(double_cnnc.elements, ["C", "N", "N", "C"] * 2)
 
+def test_atoms_extend__with_structure_map_reindexes_new_bonds_to_proper_atoms(linear_cnnc):
+    fn_pattern = Atoms(elements='NCH', positions=[(2.0, 0., 0.), (3.0, 0., 0.), (4.0, 0., 0.)],
+                bonds=[(0,1), (1,2)], bond_types=[0] * 2,
+                angles=[(0,1,2)], angle_types=[0])
+    fn_linear_cnnc = linear_cnnc.copy()
+    fn_linear_cnnc.extend(fn_pattern, structure_index_map={0:2, 1:3})
+
+    assert len(fn_linear_cnnc) == 5
+    print(fn_linear_cnnc.bonds)
+    assert (fn_linear_cnnc.bonds == [[0,1], [1,2], [2,3], [3,4]]).all()
+    assert (fn_linear_cnnc.angles == [[0,1,2], [1,2,3], [2,3,4]]).all()
+
 def test_atoms_extend__reindexes_new_bonds_to_proper_atoms(linear_cnnc):
     double_cnnc = linear_cnnc.copy()
     double_cnnc.extend(linear_cnnc)
