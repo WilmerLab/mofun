@@ -1,4 +1,5 @@
 import math
+import random
 
 import numpy as np
 from scipy.spatial import distance
@@ -96,11 +97,16 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, verbos
     else:
         return match_index_tuples_in_uc
 
-def replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=-1, verbose=False):
+def replace_pattern_in_structure(structure, search_pattern, replace_pattern, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, verbose=False):
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
     match_indices, match_positions = find_pattern_in_structure(structure, search_pattern, return_positions=True)
+    if replace_fraction < 1.0:
+        replace_indices = random.sample(list(range(len(match_positions))), k=round(replace_fraction * len(match_positions)))
+        match_indices = [match_indices[i] for i in replace_indices]
+        match_positions = match_positions[replace_indices]
+
     if verbose: print(match_indices)
 
     # translate both search and replace patterns so that first atom of search pattern is at the origin
