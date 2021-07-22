@@ -99,7 +99,9 @@ def uio66_linker_no_bonds():
         yield Atoms.from_lammps_data(fd, atom_format="atomic")
 
 @pytest.fixture
-def uio66_linker_w_bonds():
+def uio66_linker_some_bonds():
+    # this was a modified UIO-66-F linker with bonds defined for the C-F bond. The F's have been
+    # replaced by H's.
     with importlib.resources.open_text(tests, "uio66-linker.lammps-data") as fd:
         yield Atoms.from_lammps_data(fd, atom_format="atomic")
 
