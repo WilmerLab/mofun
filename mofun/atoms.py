@@ -80,7 +80,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             self.atom_groups = np.array(atom_groups, dtype=int)
 
-        self.atom_type_labels = atom_type_labels
         if len(atom_type_elements) > 0:
             # this is a __getitem__ subset
             self.atom_types = np.array(atom_types)
@@ -103,6 +102,13 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             # no atom_types, atom_type_elements or elements passed
             self.atom_types = np.array([], ndmin=1)
+            self.atom_type_elements = []
+
+        if len(atom_type_labels) > 0:
+            self.atom_type_labels = atom_type_labels
+        else:
+            # use default atom types equal to the element name
+            self.atom_type_labels = self.atom_type_elements
 
         self.cell = np.array(cell)
         self.bonds = np.array(bonds, dtype=int)
@@ -501,6 +507,13 @@ cell=[]: unit cell matrix (same definition as in ASE)
         value in the other Atoms object plus the offset. Use this when you are adding the same set
         of atoms multiple times, or if your other atoms already share the same type ids as this
         object. For the later case, the tuple (0,0,0,0) may be passed in.
+
+        Args:
+            other (Atoms): atoms to add to self
+            offsets: an offsets tuple with the results of calling extend_types().
+            structure_index_map: dictionary where key is an index in other and value is an index in
+                self, where entries only exist if the position and element of the entries are
+                identical and can be considered to be the same atom.
         """
         atom_idx_offset = len(self.positions)
         if offsets is None:
@@ -508,17 +521,28 @@ cell=[]: unit cell matrix (same definition as in ASE)
                 print("auto offset: extending types")
             offsets = self.extend_types(other)
 
+        # update atom types for atoms that are already part of self Atoms object
+        for other_index, self_index in structure_index_map.items():
+            self.atom_types[self_index] = other.atom_types[other_index] + offsets[0]
+
+        # add atoms that are not part of self Atoms object
         atoms_to_add = [i for i in range(len(other)) if i not in structure_index_map.keys()]
         self.positions = np.append(self.positions, other.positions[atoms_to_add], axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types[atoms_to_add] + offsets[0])
         self.charges = np.append(self.charges, other.charges[atoms_to_add])
         self.atom_groups = np.append(self.atom_groups, other.atom_groups[atoms_to_add])
 
+        # update structure index map
         structure_index_map2 = {a:i + atom_idx_offset for i,a in enumerate(atoms_to_add)}
         structure_index_map2.update(structure_index_map)
         convert2structureindex = np.vectorize(structure_index_map2.get)
 
         def find_existing_topo(topo, new_topo):
+            """ find existing topo tuples between the same atoms as a new topo set.
+
+            Used to allow an override of an existing force field term by finding old terms between
+            the same atoms to delete"""
+
             existing_topo = [tuple(x) for x in topo]
             new_topo_tuples = [tuple(x) for x in new_topo]
             existing_topo_indices = [existing_topo.index(b) for b in new_topo_tuples if b in existing_topo]
