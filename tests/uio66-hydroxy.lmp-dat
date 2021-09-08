@@ -12,10 +12,10 @@ uio66-hydroxy.lmp-dat (written by mofun)
 
 Masses
 
- 1 1.0079   # H_
- 2 12.0107   # C_R
- 3 12.0107   # C_2
- 4 15.9994   # O_1
+ 1   1.007900   # H_
+ 2  12.010700   # C_R
+ 3  12.010700   # C_2
+ 4  15.999400   # O_1
 
 Pair Coeffs
 

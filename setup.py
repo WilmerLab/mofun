@@ -13,6 +13,7 @@ setup(name='mofun',
           'ase',
           'numpy',
           'scipy',
-          'PyCifRW'
+          'PyCifRW',
+          'networkx'
       ],
 )

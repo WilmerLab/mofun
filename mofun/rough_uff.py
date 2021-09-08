@@ -118,7 +118,7 @@ def guess_bond_order(a1, a2, rules=[]):
     """
     bond_atom_types = {a1, a2}
 
-    for rule_atom_types, bo  in rules:
+    for rule_atom_types, bo in rules:
         if bond_atom_types == rule_atom_types:
             return bo
 

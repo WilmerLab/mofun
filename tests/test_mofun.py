@@ -115,38 +115,29 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust
         pattern_found = hkust1_cif[indices]
         assert list(pattern_found.elements) == ['Cu']
 
-
 @pytest.mark.veryslow
-def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_cif, benzene):
-    match_indices = find_pattern_in_structure(hkust1_3x3x3_cif, benzene)
+def test_find_pattern_in_structure__hkust1_cif_2x2x2_supercell_has_256_benzene_rings(hkust1_cif, benzene):
+    hkust1_2x2x2 = hkust1_cif.replicate(repldims=(2,2,2))
+    match_indices = find_pattern_in_structure(hkust1_2x2x2, benzene)
 
     assert len(match_indices) == 864
     for indices in match_indices:
-        pattern_found = hkust1_3x3x3_cif[indices]
+        pattern_found = hkust1_2x2x2[indices]
         assert list(pattern_found.elements) == ['C','C','C','C','C','C','H','H','H']
         assert_benzene(pattern_found.positions)
 
-@pytest.mark.veryslow
-def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_864_benzene_rings(hkust1_3x3x3_xyz, benzene):
-    match_indices = find_pattern_in_structure(hkust1_3x3x3_xyz, benzene)
-
-    assert len(match_indices) == 864
-    for indices in match_indices:
-        pattern_found = hkust1_3x3x3_xyz[indices]
-        assert list(pattern_found.elements) == ['C','C','C','C','C','C','H','H','H']
-        assert_benzene(pattern_found.positions)
-
-@pytest.mark.veryslow
-def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_cif):
+@pytest.mark.slow
+def test_find_pattern_in_structure__hkust1_cif_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_cif):
+    hkust1_3x3x3 = hkust1_cif.replicate(repldims=(3,3,3))
     pattern = Atoms(elements='Cu', positions=[(0, 0, 0)])
-    match_indices = find_pattern_in_structure(hkust1_3x3x3_cif, pattern)
+    match_indices = find_pattern_in_structure(hkust1_3x3x3, pattern)
 
     assert len(match_indices) == 1296
     for indices in match_indices:
-        pattern_found = hkust1_3x3x3_cif[indices]
+        pattern_found = hkust1_3x3x3[indices]
         assert list(pattern_found.elements) == ['Cu']
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal_nodes(hkust1_3x3x3_xyz):
     pattern = Atoms(elements='Cu', positions=[(0, 0, 0)])
     match_indices = find_pattern_in_structure(hkust1_3x3x3_xyz, pattern)
@@ -164,6 +155,21 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert list(final_structure.elements) == ["C"] * 8
 
+def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing_half_the_time(octane):
+    search_pattern = Atoms(elements='H', positions=[(0, 0, 0)])
+    final_structure = replace_pattern_in_structure(octane, search_pattern, Atoms(), replace_fraction=0.5)
+    assert Counter(final_structure.elements) == {"H": 9, "C": 8}
+
+def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing_never(octane):
+    search_pattern = Atoms(elements='H', positions=[(0, 0, 0)])
+    final_structure = replace_pattern_in_structure(octane, search_pattern, Atoms(), replace_fraction=0.0)
+    assert Counter(final_structure.elements) == {"H": 18, "C": 8}
+
+def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing_quarter_time(octane):
+    search_pattern = Atoms(elements='H', positions=[(0, 0, 0)])
+    final_structure = replace_pattern_in_structure(octane, search_pattern, Atoms(), replace_fraction=0.25)
+    assert Counter(final_structure.elements) == {"H": 14, "C": 8}
+
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_hydrogens(octane):
     search_pattern = Atoms(elements='H', positions=[(0, 0, 0)])
     replace_pattern = search_pattern
@@ -177,6 +183,14 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_fluorine
     match_indices = find_pattern_in_structure(octane, search_pattern)
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert Counter(final_structure.elements) == {"F": 18, "C": 8}
+    assert_positions_are_unchanged(octane, final_structure)
+
+def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_fluorines_half_the_time(octane):
+    search_pattern = Atoms(elements='H', positions=[(0, 0, 0)])
+    replace_pattern = Atoms(elements='F', positions=[(0, 0, 0)])
+    match_indices = find_pattern_in_structure(octane, search_pattern)
+    final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern, replace_fraction=0.5)
+    assert Counter(final_structure.elements) == {"H":9, "F": 9, "C": 8}
     assert_positions_are_unchanged(octane, final_structure)
 
 def test_replace_pattern_in_structure__replace_CH3_in_octane_with_fluorines(octane):
@@ -277,7 +291,7 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
 @pytest.mark.slow
 def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
     final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
-    assert Counter(final_structure.atom_types) == Counter(hkust1_cif.atom_types)
+    assert Counter(final_structure.elements) == Counter(hkust1_cif.elements)
     assert_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
 
 @pytest.mark.slow
@@ -285,7 +299,7 @@ def test_replace_pattern_in_structure__in_hkust1_offset_replacing_benzene_with_b
     hkust1_cif.translate((-4,-4,-4))
     hkust1_cif.positions = hkust1_cif.positions % np.diag(hkust1_cif.cell)
     final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
-    assert Counter(final_structure.atom_types) == Counter(hkust1_cif.atom_types)
+    assert Counter(final_structure.elements) == Counter(hkust1_cif.elements)
     assert_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
 
 @pytest.mark.slow
@@ -301,11 +315,15 @@ def test_replace_pattern_in_structure__in_uio66_replacing_linker_with_linker_doe
     assert Counter(final_structure.elements) == {'C': 192, 'O': 120, 'F': 96, 'Zr': 24}
     # assert_positions_are_unchanged(structure, final_structure, max_delta=0.25, verbose=True)
 
-def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_bonds_angles_has_bonds_angles(uio66_linker_no_bonds, uio66_linker_w_bonds):
+def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_bonds_angles_has_bonds_angles(uio66_linker_no_bonds, uio66_linker_some_bonds):
     structure = uio66_linker_no_bonds.copy()
     structure.cell = 100*np.identity(3)
-    final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_w_bonds, axis1a_idx=0, axis1b_idx=15)
+    final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_some_bonds, axis1a_idx=0, axis1b_idx=15)
     assert Counter(final_structure.elements) == {'C': 8, 'O': 4, 'H': 4}
     assert_positions_are_unchanged(structure, final_structure, max_delta=0.1)
-    assert np.array_equal(final_structure.bonds, [(6, 7), (4, 5), (9, 12), (10, 11)])
-    assert np.array_equal(final_structure.angles, [(7, 4, 5), (3, 4, 5), (8, 7, 6), (4, 7, 6), (8, 9, 12), (10, 9, 12), (9, 10, 11), (3, 10, 11)])
+    assert np.array_equal(final_structure.bonds, [(10, 11), (9, 12), (4, 5), (6, 7)])
+    assert np.array_equal(final_structure.angles, [(11, 10, 3), (11, 10, 9), (10, 9, 12), (12, 9, 8), (3, 4, 5), (5, 4, 7), (4, 7, 6), (8, 7, 6)])
+    assert np.array_equal(final_structure.dihedrals, [
+        (11, 10,  3,  0), (11, 10,  3,  4), (11, 10,  9, 12), (11, 10,  9,  8), ( 3, 10,  9, 12),
+        ( 0,  3,  4,  5), (10,  3,  4,  5), (12,  9,  8,  7), (12,  9,  8, 14), ( 3,  4,  7,  6),
+        ( 5,  4,  7,  8), ( 5,  4,  7,  6), ( 9,  8,  7,  6), (14,  8,  7,  6)])

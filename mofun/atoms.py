@@ -80,7 +80,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             self.atom_groups = np.array(atom_groups, dtype=int)
 
-        self.atom_type_labels = atom_type_labels
         if len(atom_type_elements) > 0:
             # this is a __getitem__ subset
             self.atom_types = np.array(atom_types)
@@ -103,6 +102,13 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             # no atom_types, atom_type_elements or elements passed
             self.atom_types = np.array([], ndmin=1)
+            self.atom_type_elements = []
+
+        if len(atom_type_labels) > 0:
+            self.atom_type_labels = atom_type_labels
+        else:
+            # use default atom types equal to the element name
+            self.atom_type_labels = self.atom_type_elements
 
         self.cell = np.array(cell)
         self.bonds = np.array(bonds, dtype=int)
@@ -270,7 +276,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
         f.write("\nMasses\n\n")
         for i, m in enumerate(self.atom_type_masses):
-            f.write(" %d %5.4f   # %s\n" % (i + 1, m, self.label_atoms(i)))
+            f.write(" %d %10.6f   # %s\n" % (i + 1, m, self.label_atoms(i)))
 
         if len(self.pair_params) > 0:
             f.write('\nPair Coeffs\n\n')
@@ -316,6 +322,26 @@ cell=[]: unit cell matrix (same definition as in ASE)
             for i, tup in enumerate(self.dihedrals):
                 f.write(" %d %d %d %d %d %d   # %s\n" % (i + 1, self.dihedral_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
 
+    def to_mol(self, f, file_comment=""):
+        """Writes .mol file for structural information."""
+
+        f.write(" Molecule_name: %s\n" % file_comment)
+        f.write("\n")
+        f.write("  Coord_Info: Listed Cartesian None\n")
+        f.write("        %d\n" % len(self))
+
+        for i, (x, y, z) in enumerate(self.positions):
+            f.write("%6d %10.4f %10.4f %10.4f  %5s %10.8f  0  0\n" % (i + 1, x, y, z,
+                self.elements[i], self.charges[i]))
+
+        f.write("\n\n\n")
+        f.write("  Fundcell_Info: Listed\n")
+        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+        f.write("           90.0000          90.0000          90.0000\n")
+        f.write("           0.00000          0.00000          0.00000\n")
+        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+
+
     @classmethod
     def from_cif(cls, path):
         def has_all_tags(block, tags):
@@ -344,6 +370,10 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
         atom_types = block['_atom_site_type_symbol']
 
+        charges = []
+        if block.has_key('_atom_site_charge'):
+            charges = block['_atom_site_charge']
+
         bonds = []
         bond_tags = ["_geom_bond_atom_site_label_1", "_geom_bond_atom_site_label_2"]
         if has_all_tags(block, bond_tags):
@@ -363,7 +393,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
             if use_fract_coords:
                 positions *= (a,b,c)
 
-        return cls(elements=atom_types, positions=positions, cell=cell)
+        return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
 
     @classmethod
     def from_cml(cls, path):
@@ -466,7 +496,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         return offsets
 
 
-    def extend(self, other, offsets=None):
+    def extend(self, other, offsets=None, structure_index_map={}, verbose=False):
         """ adds other Atoms object's arrays to its own.
 
         The Default behavior is for all the types and params from other structure to be appended to
@@ -477,27 +507,80 @@ cell=[]: unit cell matrix (same definition as in ASE)
         value in the other Atoms object plus the offset. Use this when you are adding the same set
         of atoms multiple times, or if your other atoms already share the same type ids as this
         object. For the later case, the tuple (0,0,0,0) may be passed in.
+
+        Args:
+            other (Atoms): atoms to add to self
+            offsets: an offsets tuple with the results of calling extend_types().
+            structure_index_map: dictionary where key is an index in other and value is an index in
+                self, where entries only exist if the position and element of the entries are
+                identical and can be considered to be the same atom.
         """
         atom_idx_offset = len(self.positions)
         if offsets is None:
-            print("auto offset: extending types")
+            if verbose:
+                print("auto offset: extending types")
             offsets = self.extend_types(other)
 
-        self.positions = np.append(self.positions, other.positions, axis=0)
-        self.atom_types = np.append(self.atom_types, other.atom_types + offsets[0])
-        self.charges = np.append(self.charges, other.charges)
-        self.atom_groups = np.append(self.atom_groups, other.atom_groups)
+        # update atom types for atoms that are already part of self Atoms object
+        for other_index, self_index in structure_index_map.items():
+            self.atom_types[self_index] = other.atom_types[other_index] + offsets[0]
 
-        self.bonds = np.append(self.bonds, other.bonds + atom_idx_offset).reshape((-1,2))
-        self.bond_types = np.append(self.bond_types, other.bond_types + offsets[1])
+        # add atoms that are not part of self Atoms object
+        atoms_to_add = [i for i in range(len(other)) if i not in structure_index_map.keys()]
+        self.positions = np.append(self.positions, other.positions[atoms_to_add], axis=0)
+        self.atom_types = np.append(self.atom_types, other.atom_types[atoms_to_add] + offsets[0])
+        self.charges = np.append(self.charges, other.charges[atoms_to_add])
+        self.atom_groups = np.append(self.atom_groups, other.atom_groups[atoms_to_add])
 
-        self.angles = np.append(self.angles, other.angles + atom_idx_offset).reshape((-1,3))
-        self.angle_types = np.append(self.angle_types, other.angle_types + offsets[2])
+        # update structure index map
+        structure_index_map2 = {a:i + atom_idx_offset for i,a in enumerate(atoms_to_add)}
+        structure_index_map2.update(structure_index_map)
+        convert2structureindex = np.vectorize(structure_index_map2.get)
 
-        self.dihedrals = np.append(self.dihedrals, other.dihedrals + atom_idx_offset).reshape((-1,4))
-        self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
+        def find_existing_topo(topo, new_topo):
+            """ find existing topo tuples between the same atoms as a new topo set.
 
+            Used to allow an override of an existing force field term by finding old terms between
+            the same atoms to delete"""
 
+            existing_topo = [tuple(x) for x in topo]
+            new_topo_tuples = [tuple(x) for x in new_topo]
+            existing_topo_indices = [existing_topo.index(b) for b in new_topo_tuples if b in existing_topo]
+            return existing_topo_indices
+
+        if len(other.bonds) > 0:
+            new_bonds = convert2structureindex(other.bonds)
+            existing_bond_indices = find_existing_topo(self.bonds, new_bonds)
+            self.bonds = np.append(self.bonds, new_bonds).reshape((-1,2))
+            self.bond_types = np.append(self.bond_types, other.bond_types + offsets[1])
+            self.bonds = np.delete(self.bonds, existing_bond_indices, axis=0)
+            self.bond_types = np.delete(self.bond_types, existing_bond_indices)
+
+        if len(other.angles) > 0:
+            new_angles = convert2structureindex(other.angles)
+            existing_angle_indices = find_existing_topo(self.angles, new_angles)
+            self.angles = np.append(self.angles, new_angles).reshape((-1,3))
+            self.angle_types = np.append(self.angle_types, other.angle_types + offsets[2])
+            self.angles = np.delete(self.angles, existing_angle_indices, axis=0)
+            self.angle_types = np.delete(self.angle_types, existing_angle_indices)
+
+        if len(other.dihedrals) > 0:
+            new_dihedrals = convert2structureindex(other.dihedrals)
+            existing_dihedral_indices = find_existing_topo(self.dihedrals, new_dihedrals)
+            self.dihedrals = np.append(self.dihedrals, new_dihedrals).reshape((-1,4))
+            self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
+
+    def replicate(self, repldims=(1,1,1)):
+        repl_atoms = self.copy()
+        ucmults = np.array(np.meshgrid(*[range(r) for r in repldims])).T.reshape(-1, 3)
+        ucmults = ucmults[np.any(ucmults != 0, axis=1)] # remove [0,0,0] since in copy
+        for ucmult in ucmults:
+            transatoms = self.copy()
+            transatoms.translate(np.matmul(transatoms.cell, ucmult))
+            repl_atoms.extend(transatoms, offsets=(0,0,0,0))
+
+        repl_atoms.cell = self.cell * repldims
+        return repl_atoms
 
     def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices, secondary_arr=None):
         updated_arr = arr.copy()
@@ -518,7 +601,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             return updated_arr
 
-
     def __delitem__(self, indices):
         self.positions = np.delete(self.positions, indices, axis=0)
         self.atom_types = np.delete(self.atom_types, indices, axis=0)
@@ -532,8 +614,6 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.angles, self.angle_types = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices, self.angle_types)
         if len(self.dihedrals) > 0:
             self.dihedrals, self.dihedral_types = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices, self.dihedral_types)
-
-
 
     def pop(self, pos=-1):
         del(self, pos)
