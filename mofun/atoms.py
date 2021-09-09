@@ -1,5 +1,7 @@
 import copy
 import itertools
+import os
+import pathlib
 import xml.etree.ElementTree as ET
 
 import ase
@@ -9,7 +11,7 @@ import networkx as nx
 import numpy as np
 from scipy.linalg import norm
 
-from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES
+from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES, use_or_open
 
 class Atoms:
     """
@@ -138,8 +140,48 @@ cell=[]: unit cell matrix (same definition as in ASE)
         if len(self.dihedrals) != len(self.dihedral_types):
             raise Exception("len of dihedrals and dihedral_types must match")
 
+
     @classmethod
-    def from_lammps_data(cls, f, atom_format="full", use_comment_for_type_labels=False):
+    def load(cls, path=None, f=None, filetype=None, **kwargs):
+        """Creates an Atoms object from either a path, or  a file object and filetype.
+
+        Can load any of the supported types:
+        - lammps data file: "lmpdat"
+        - cif
+        - cml
+        Only the lammps data file and cif support reading from a file object, presently, due to the
+        other formats depending on external library support.
+
+        Args:
+            path (Str or Path): path to file to load from
+            f (File): open File to load from
+            filetype (Str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
+                explicit filetype to override default filetype implied from file extension.
+            kwargs: keyword args passed on to individual load functions.
+
+        """
+        if path is None and (f is None or filetype is None):
+            raise Exception("either a path must be passed or a File object and a filetype")
+
+        if path is not None and filetype is None:
+            _, filetype = os.path.splitext(path)
+            filetype = filetype[1:]
+        if filetype == "lmpdat":
+            with use_or_open(f, path) as fh:
+                atoms = cls.load_lmpdat(fh, **kwargs)
+                return atoms
+        elif filetype == "cml":
+            if path is None:
+                raise Exception("Loading a cml file requires a path")
+            return cls.load_cml(path, **kwargs)
+        elif filetype == "cif":
+            with use_or_open(f, path) as fh:
+                return cls.load_cif(fh, **kwargs)
+        else:
+            raise Exception("Unsupported filetype")
+
+    @classmethod
+    def load_lmpdat(cls, f, atom_format="full", use_comment_for_type_labels=False):
         def get_types_tups(arr):
             types = tups = []
             if len(arr) > 0:
@@ -223,7 +265,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         angles = np.array(angles, dtype=int)
         dihedrals = np.array(dihedrals, dtype=int)
 
-        # note: bond indices in lammps-data file are 1-indexed and we are 0-indexed which is why
+        # note: bond indices in lmpdat file are 1-indexed and we are 0-indexed which is why
         # the bond pairs get a -1
         if atom_format == "atomic":
             atom_types = np.array(atoms[:, 1] - 1, dtype=int)
@@ -249,7 +291,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                    angle_type_params=angle_coeffs, dihedral_type_params=dihedral_coeffs,
                    atom_type_labels=atom_type_labels, atom_groups=atom_groups, cell=cell)
 
-    def to_lammps_data(self, f, atom_format="full", file_comment=""):
+    def to_lmpdat(self, f, atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
 
         f.write('%d atoms\n' % len(self.atom_types))
@@ -343,11 +385,15 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
 
     @classmethod
-    def from_cif(cls, path):
+    def load_cif(cls, f):
         def has_all_tags(block, tags):
             return np.array([block.has_key(tag) for tag in tags]).all()
 
-        cf = read_cif(path)
+        # PyCifRw supports file descriptors and path strings, but doesn't not support PathLib paths.
+        if isinstance(f, pathlib.PurePath):
+            f = str(f)
+
+        cf = read_cif(f)
         block = cf[cf.get_roots()[0][0]]
 
         cart_coord_tags = ["_atom_site_Cartn_x", "_atom_site_Cartn_y", "_atom_site_Cartn_z", "_atom_site_label"]
@@ -396,7 +442,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
 
     @classmethod
-    def from_cml(cls, path):
+    def load_cml(cls, path):
         tree = ET.parse(path)
         root = tree.getroot()
 

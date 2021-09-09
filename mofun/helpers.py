@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import random
 
 import numpy as np
@@ -76,3 +77,11 @@ def guess_elements_from_masses(masses, max_delta=1e-2):
         raise Exception("no element matching mass %8.5f in elements list. Please add one?")
 
     return [find_element(m) for m in masses]
+
+@contextmanager
+def use_or_open(fh, path):
+    if fh is None:
+        with open(path, 'r') as f:
+            yield f
+    else:
+        yield fh

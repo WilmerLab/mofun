@@ -74,7 +74,7 @@ def octane():
 @pytest.fixture
 def hkust1_cif():
     with importlib.resources.path(tests, "HKUST-1_withbonds.cif") as path:
-        yield Atoms.from_cif(str(path))
+        yield Atoms.load_cif(path)
 
 @pytest.fixture
 def hkust1_3x3x3_xyz():
@@ -86,7 +86,7 @@ def hkust1_3x3x3_xyz():
 @pytest.fixture
 def hkust1_3x3x3_cif():
     with importlib.resources.path(tests, "HKUST-1_3x3x3.cif") as path:
-        yield Atoms.from_cif(str(path))
+        yield Atoms.load_cif(path)
 
 @pytest.fixture
 def benzene():
@@ -95,17 +95,17 @@ def benzene():
 
 @pytest.fixture
 def uio66_linker_no_bonds():
-    with importlib.resources.open_text(tests, "uio66-linker-no-bonds.lammps-data") as fd:
-        yield Atoms.from_lammps_data(fd, atom_format="atomic")
+    with importlib.resources.open_text(tests, "uio66-linker-no-bonds.lmpdat") as fd:
+        yield Atoms.load_lmpdat(fd, atom_format="atomic")
 
 @pytest.fixture
 def uio66_linker_some_bonds():
     # this was a modified UIO-66-F linker with bonds defined for the C-F bond. The F's have been
     # replaced by H's.
-    with importlib.resources.open_text(tests, "uio66-linker.lammps-data") as fd:
-        yield Atoms.from_lammps_data(fd, atom_format="atomic")
+    with importlib.resources.open_text(tests, "uio66-linker.lmpdat") as fd:
+        yield Atoms.load_lmpdat(fd, atom_format="atomic")
 
 @pytest.fixture
 def uio66_linker_cml():
-    with importlib.resources.path(tests, "uio66.cml") as path:
-        yield Atoms.from_cml(path)
+    with importlib.resources.path(tests, "uio66-linker.cml") as path:
+        yield Atoms.load_cml(path)
