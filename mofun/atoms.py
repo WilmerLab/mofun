@@ -1,4 +1,5 @@
 import copy
+import io
 import itertools
 import os
 import pathlib
@@ -142,8 +143,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
 
     @classmethod
-    def load(cls, path=None, f=None, filetype=None, **kwargs):
-        """Creates an Atoms object from either a path, or  a file object and filetype.
+    def load(cls, f, filetype=None, **kwargs):
+        """Creates an Atoms object from either a path or a file object and filetype.
 
         Can load any of the supported types:
         - lammps data file: "lmpdat"
@@ -153,21 +154,28 @@ cell=[]: unit cell matrix (same definition as in ASE)
         other formats depending on external library support.
 
         Args:
-            path (Str or Path): path to file to load from
-            f (File): open File to load from
+            f (Str or Path or File): either a path to a file or an open File to load from
             filetype (Str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
                 explicit filetype to override default filetype implied from file extension.
             kwargs: keyword args passed on to individual load functions.
-
         """
-        if path is None and (f is None or filetype is None):
-            raise Exception("either a path must be passed or a File object and a filetype")
 
-        if path is not None and filetype is None:
-            _, filetype = os.path.splitext(path)
-            filetype = filetype[1:]
+        fd = None
+        path = None
+
+        if isinstance(f, io.TextIOBase):
+            fd = f
+            if filetype is None:
+                raise Exception("If a File object is passed, a filetype must be passed with it")
+        else:
+            # other cases are treated as either Pathlib path or strings
+            path = f
+            if filetype is None:
+                _, filetype = os.path.splitext(path)
+                filetype = filetype[1:]
+
         if filetype == "lmpdat":
-            with use_or_open(f, path) as fh:
+            with use_or_open(fd, path) as fh:
                 atoms = cls.load_lmpdat(fh, **kwargs)
                 return atoms
         elif filetype == "cml":
@@ -175,7 +183,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                 raise Exception("Loading a cml file requires a path")
             return cls.load_cml(path, **kwargs)
         elif filetype == "cif":
-            with use_or_open(f, path) as fh:
+            with use_or_open(fd, path) as fh:
                 return cls.load_cif(fh, **kwargs)
         else:
             raise Exception("Unsupported filetype")

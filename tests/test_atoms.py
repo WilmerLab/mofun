@@ -118,11 +118,11 @@ def test_atoms_to_lmpdat__output_file_identical_to_one_read():
 
 def test_atoms_load__loads_lmpdat_from_file_or_path():
     with importlib.resources.path(tests, "uio66-linker.lmpdat") as path:
-        atoms = Atoms.load(path=path, atom_format="atomic")
+        atoms = Atoms.load(path, atom_format="atomic")
         assert len(atoms) == 16
 
     with importlib.resources.open_text(tests, "uio66-linker.lmpdat") as fd:
-        atoms = Atoms.load(f=fd, filetype="lmpdat", atom_format="atomic")
+        atoms = Atoms.load(fd, filetype="lmpdat", atom_format="atomic")
         assert len(atoms) == 16
 
 def test_atoms_load__loads_cml():
@@ -136,7 +136,7 @@ def test_atoms_load__loads_cif_from_file_or_path():
         assert len(atoms) == 16
 
     with importlib.resources.open_text(tests, "uio66-linker.cif") as fd:
-        atoms = Atoms.load(f=fd, filetype="cif")
+        atoms = Atoms.load(fd, filetype="cif")
         assert len(atoms) == 16
 
 def test_find_unchanged_atom_pairs__same_structure_is_unchanged(linear_cnnc):
