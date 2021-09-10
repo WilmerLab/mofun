@@ -188,6 +188,45 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             raise Exception("Unsupported filetype")
 
+    def save(self, f, filetype=None, **kwargs):
+        """Saves an Atoms object to either a path or a file object and filetype.
+
+        Can save any of the supported types:
+        - lammps data file: "lmpdat"
+        - mol
+
+        Args:
+            f (Str or Path or File): either a path to a file or an open File to save to
+            filetype (Str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
+                explicit filetype to override default filetype implied from file extension.
+            kwargs: keyword args passed on to individual save functions.
+        """
+
+        fd = None
+        path = None
+
+        if isinstance(f, io.TextIOBase):
+            fd = f
+            if filetype is None:
+                raise Exception("If a File object is passed, a filetype must be passed with it")
+        else:
+            # other cases are treated as either Pathlib path or strings
+            path = f
+            if filetype is None:
+                _, filetype = os.path.splitext(path)
+                filetype = filetype[1:]
+
+        if filetype == "lmpdat":
+            with use_or_open(fd, path, mode='w') as fh:
+                atoms = self.save_lmpdat(fh, **kwargs)
+                return atoms
+        elif filetype == "mol":
+            with use_or_open(fd, path, mode='w') as fh:
+                return cls.save_mol(fh, **kwargs)
+        else:
+            raise Exception("Unsupported filetype")
+
+
     @classmethod
     def load_lmpdat(cls, f, atom_format="full", use_comment_for_type_labels=False):
         def get_types_tups(arr):
@@ -299,7 +338,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                    angle_type_params=angle_coeffs, dihedral_type_params=dihedral_coeffs,
                    atom_type_labels=atom_type_labels, atom_groups=atom_groups, cell=cell)
 
-    def to_lmpdat(self, f, atom_format="full", file_comment=""):
+    def save_lmpdat(self, f, atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
 
         f.write('%d atoms\n' % len(self.atom_types))
@@ -372,7 +411,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
             for i, tup in enumerate(self.dihedrals):
                 f.write(" %d %d %d %d %d %d   # %s\n" % (i + 1, self.dihedral_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
 
-    def to_mol(self, f, file_comment=""):
+    def save_mol(self, f, file_comment=""):
         """Writes .mol file for structural information."""
 
         f.write(" Molecule_name: %s\n" % file_comment)

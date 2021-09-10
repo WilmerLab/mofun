@@ -79,9 +79,9 @@ def guess_elements_from_masses(masses, max_delta=1e-2):
     return [find_element(m) for m in masses]
 
 @contextmanager
-def use_or_open(fh, path):
+def use_or_open(fh, path, mode='r'):
     if fh is None:
-        with open(path, 'r') as f:
+        with open(path, mode) as f:
             yield f
     else:
         yield fh

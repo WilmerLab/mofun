@@ -81,16 +81,16 @@ def test_atoms_extend__reindexes_new_dihedrals_to_proper_atoms(linear_cnnc):
     double_cnnc.extend(linear_cnnc)
     assert (double_cnnc.dihedrals == [(0,1,2,3), (4,5,6,7)]).all()
 
-def test_atoms_to_lmpdat__load_cif_is_successful():
+def test_atoms_save_lmpdat__from_load_cif_is_successful():
     with importlib.resources.path(tests, "uio66.cif") as path:
         uio66 = Atoms.load_cif(path)
         uio66.atom_type_labels = uio66.atom_type_elements
 
     sout = io.StringIO("")
-    uio66.to_lmpdat(sout)
+    uio66.save_lmpdat(sout)
 
 
-def test_atoms_to_lmpdat__uio66_has_arrays_of_right_size():
+def test_atoms_load_lmpdat__uio66_has_arrays_of_right_size():
     with importlib.resources.open_text(tests, "uio66-F.lmpdat") as f:
         atoms = Atoms.load_lmpdat(f, atom_format="full", use_comment_for_type_labels=True)
 
@@ -105,13 +105,13 @@ def test_atoms_to_lmpdat__uio66_has_arrays_of_right_size():
     assert len(atoms.bonds) == 4
     assert len(atoms.angles) == 8
 
-def test_atoms_to_lmpdat__output_file_identical_to_one_read():
+def test_atoms_save_lmpdat__output_file_identical_to_one_read():
     with importlib.resources.open_text(tests, "uio66-hydroxy.lmpdat") as f:
         sin = StringIO(f.read())
         uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full", use_comment_for_type_labels=True)
 
     sout = io.StringIO("")
-    uio66_linker_ld.to_lmpdat(sout, file_comment="uio66-hydroxy.lmpdat")
+    uio66_linker_ld.save_lmpdat(sout, file_comment="uio66-hydroxy.lmpdat")
 
     ## output file code, in case we need to update the lmpdat file because of new format changes
     # with open("uio66-hydroxy-text-x.lmpdat", "w") as f:
