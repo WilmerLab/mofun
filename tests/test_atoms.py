@@ -6,6 +6,12 @@ from tests.fixtures import *
 from mofun import Atoms
 from mofun.atoms import find_unchanged_atom_pairs
 
+
+def test__delete_and_reindex_atom_index_array():
+    a = np.array([[1,2], [3,4], [5,6], [1,6]])
+    updated_atoms = Atoms()._delete_and_reindex_atom_index_array(a, [3])
+    assert(updated_atoms == np.array([[1,2],[4,5],[1,5]])).all()
+
 def test_atoms_del__deletes_bonds_attached_to_atoms(linear_cnnc):
     del(linear_cnnc[[1]])
     assert list(linear_cnnc.elements) == ["C", "N", "C"]

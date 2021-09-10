@@ -646,7 +646,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
         # reindex
         for i in sorted_deleted_indices:
-            updated_arr = np.subtract(updated_arr, 1, where=updated_arr>i)
+            np.subtract(updated_arr, 1, out=updated_arr, where=updated_arr>i)
 
         if secondary_arr is not None:
             # remove same indices from secondary array; this is used for types arrays
