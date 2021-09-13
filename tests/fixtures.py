@@ -14,6 +14,9 @@ from mofun import Atoms
 sqrt2_2 = sqrt(2) / 2
 sqrt3_2 = sqrt(3) / 2
 
+def random_positions(num):
+    return np.random.rand(num, 3) * 100
+
 def assert_positions_are_unchanged(orig_structure, final_structure, max_delta=1e-5, verbose=False):
     p = orig_structure.positions
     p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]

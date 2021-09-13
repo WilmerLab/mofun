@@ -7,6 +7,14 @@ from mofun import Atoms
 from mofun.atoms import find_unchanged_atom_pairs
 
 
+def test_atoms__type_labels_are_inferred_from_elements():
+    atoms = Atoms(elements="CNZrPt", positions=random_positions(4))
+    assert np.array_equal(atoms.atom_type_labels, ["C", "N", "Zr", "Pt"])
+
+def test_atoms__masses_are_inferred_from_elements():
+    atoms = Atoms(elements="CNZrPt", positions=random_positions(4))
+    assert np.allclose(atoms.atom_type_masses, [12, 14, 91.2, 195.1], atol=0.1)
+
 def test__delete_and_reindex_atom_index_array():
     a = np.array([[1,2], [3,4], [5,6], [1,6]])
     updated_atoms = Atoms()._delete_and_reindex_atom_index_array(a, [3])
