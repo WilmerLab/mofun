@@ -679,7 +679,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
     def extend(self, other, offsets=None, structure_index_map={}, verbose=False):
         """ adds other Atoms object's arrays to its own.
 
-        The Default behavior is for all the types and params from other structure to be appended to
+        The default behavior is for all the types and params from other structure to be appended to
         this structure.
 
         Alternatively, an offsets tuple may be passed with the results of calling extend_types(). No
@@ -750,6 +750,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.dihedrals = np.append(self.dihedrals, new_dihedrals).reshape((-1,4))
             self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
 
+        self.assert_arrays_are_consistent_sizes()
+
     def replicate(self, repldims=(1,1,1)):
         repl_atoms = self.copy()
         ucmults = np.array(np.meshgrid(*[range(r) for r in repldims])).T.reshape(-1, 3)
@@ -794,6 +796,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.angles, self.angle_types = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices, self.angle_types)
         if len(self.dihedrals) > 0:
             self.dihedrals, self.dihedral_types = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices, self.dihedral_types)
+
+        self.assert_arrays_are_consistent_sizes()
 
     def pop(self, pos=-1):
         del(self, pos)
