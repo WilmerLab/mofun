@@ -26,13 +26,17 @@ def test_atoms_del__deletes_bonds_attached_to_atoms(linear_cnnc):
     assert (linear_cnnc.bonds == [[1,2]]).all()
 
 def test_atoms_del__deletes_types_with_all_topologies(linear_cnnc):
+    linear_cnnc.impropers = [(0,1,2,3)]
+
     linear_cnnc.bond_types = [0, 1, 2]
     linear_cnnc.angle_types = [0, 1]
     linear_cnnc.dihedral_types = [0]
+    linear_cnnc.improper_types = [0]
     del(linear_cnnc[[0]])
     assert (linear_cnnc.bond_types == (1, 2)).all()
     assert linear_cnnc.angle_types == (1)
     assert len(linear_cnnc.dihedral_types) == 0
+    assert len(linear_cnnc.improper_types) == 0
 
 def test_atoms_del__deletes_angles_attached_to_atoms(linear_cnnc):
     del(linear_cnnc[[0]])
@@ -41,6 +45,11 @@ def test_atoms_del__deletes_angles_attached_to_atoms(linear_cnnc):
 def test_atoms_del__deletes_dihedrals_attached_to_atoms(linear_cnnc):
     del(linear_cnnc[[1]])
     assert len(linear_cnnc.dihedrals) == 0
+
+def test_atoms_del__deletes_impropers_attached_to_atoms():
+    atoms = Atoms(elements="HCHH", positions=random_positions(4), impropers=[(0,1,2,3)], improper_types=[0])
+    del(atoms[[1]])
+    assert len(atoms.impropers) == 0
 
 def test_atoms_extend__on_nonbonded_structure_reindexes_new_bonds_to_proper_atoms(linear_cnnc):
     linear_cnnc_no_bonds = Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)])
@@ -54,16 +63,20 @@ def test_atoms_extend__new_types_come_after_old_types1(linear_cnnc):
     assert np.array_equal(a.elements, ["C", "H"])
 
 def test_atoms_extend__new_types_come_after_old_types(linear_cnnc):
+    linear_cnnc.impropers = [(0,1,2,3)]
+
     linear_cnnc.atom_types = np.array([0,1,1,0])
     linear_cnnc.bond_types = np.array([0,1,0])
     linear_cnnc.angle_types = np.array([0,1])
     linear_cnnc.dihedral_types = np.array([0])
+    linear_cnnc.improper_types = np.array([0])
     double_cnnc = linear_cnnc.copy()
     double_cnnc.extend(linear_cnnc)
     assert np.array_equal(double_cnnc.atom_types, [0, 1, 1, 0, 2, 3, 3, 2])
     assert np.array_equal(double_cnnc.bond_types, [0, 1, 0, 2, 3, 2])
     assert np.array_equal(double_cnnc.angle_types, [0, 1, 2, 3])
     assert np.array_equal(double_cnnc.dihedral_types, [0, 1])
+    assert np.array_equal(double_cnnc.improper_types, [0, 1])
     assert np.array_equal(double_cnnc.elements, ["C", "N", "N", "C"] * 2)
 
 def test_atoms_extend__with_structure_map_reindexes_new_bonds_to_proper_atoms(linear_cnnc):
@@ -95,6 +108,13 @@ def test_atoms_extend__reindexes_new_dihedrals_to_proper_atoms(linear_cnnc):
     double_cnnc.extend(linear_cnnc)
     assert (double_cnnc.dihedrals == [(0,1,2,3), (4,5,6,7)]).all()
 
+def test_atoms_extend__reindexes_new_impropers_to_proper_atoms(linear_cnnc):
+    linear_cnnc.impropers = [(0,1,2,3)]
+    linear_cnnc.improper_types = [0]
+    double_cnnc = linear_cnnc.copy()
+    double_cnnc.extend(linear_cnnc)
+    assert (double_cnnc.impropers == [(0,1,2,3), (4,5,6,7)]).all()
+
 def test_atoms_save_lmpdat__from_load_cif_is_successful():
     with importlib.resources.path(tests, "uio66.cif") as path:
         uio66 = Atoms.load_cif(path)
@@ -102,7 +122,6 @@ def test_atoms_save_lmpdat__from_load_cif_is_successful():
 
     sout = io.StringIO("")
     uio66.save_lmpdat(sout)
-
 
 def test_atoms_load_lmpdat__uio66_has_arrays_of_right_size():
     with importlib.resources.open_text(tests, "uio66-F.lmpdat") as f:
@@ -120,15 +139,15 @@ def test_atoms_load_lmpdat__uio66_has_arrays_of_right_size():
     assert len(atoms.angles) == 8
 
 def test_atoms_save_lmpdat__output_file_identical_to_one_read():
-    with importlib.resources.open_text(tests, "uio66-hydroxy.lmpdat") as f:
+    with importlib.resources.open_text(tests, "uio66-linker-arb-terms.lmpdat") as f:
         sin = StringIO(f.read())
         uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full", use_comment_for_type_labels=True)
 
     sout = io.StringIO("")
-    uio66_linker_ld.save_lmpdat(sout, file_comment="uio66-hydroxy.lmpdat")
+    uio66_linker_ld.save_lmpdat(sout, file_comment="uio66-linker-arb-terms.lmpdat")
 
-    ## output file code, in case we need to update the lmpdat file because of new format changes
-    # with open("uio66-hydroxy-text-x.lmpdat", "w") as f:
+    # output file code, in case we need to update the lmpdat file because of new format changes
+    # with open("uio66-linker-arb-terms.lmpdat", "w") as f:
     #     sout.seek(0)
     #     f.write(sout.read())
 

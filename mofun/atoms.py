@@ -39,6 +39,11 @@ per dihedral arrays:
     dihedrals=[]: atom index tuple for each dihedral, i.e. (1,2,3,4)
     dihedral_types=[]: type of the dihedral
 
+per improper arrays:
+    impropers=[]: atom index tuple for each improper, i.e. (1,2,3,4)
+    improper_types=[]: type of the improper
+
+
 cell=[]: unit cell matrix (same definition as in ASE)
 
 
@@ -48,6 +53,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
     bond_type_coeffs=[]
     angle_type_coeffs=[]
     dihedral_type_coeffs=[]
+    improper_type_coeffs=[]
 
     The *_coeffs variables are lists of strings, where the item index corresponds to the *_type, and
     the string is the full LAMMPS coeffs definition string. we do not interpret any of the LAMMPS
@@ -68,9 +74,10 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
     def __init__(self, atom_types=[], positions=[], charges=[], groups=[],
                     elements=[], atom_type_masses=[], atom_type_elements=[], atom_type_labels=[],
-                    bonds=[], bond_types=[], angles=[], angle_types=[], dihedrals=[], dihedral_types=[],
+                    bonds=[], bond_types=[], angles=[], angle_types=[],
+                    dihedrals=[], dihedral_types=[], impropers=[], improper_types=[],
                     pair_coeffs=[], bond_type_coeffs=[], angle_type_coeffs=[],
-                    dihedral_type_coeffs=[], cell=[]):
+                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=[]):
         """
 
         An Atoms object can be created without any atoms using `Atoms()`. For creating more
@@ -127,10 +134,13 @@ cell=[]: unit cell matrix (same definition as in ASE)
             angle_types(List[int]): list of angle type id ints for each angle defined in `angles`.
             dihedrals(List[Tuple[int, int, int, int]]): list of dihedral tuples where each dihedral defines a quartet of atoms making up the dihedral. Each value in the tuple is an index of an atom in the atom_* lists.
             dihedral_types(List[int]): list of dihedral type id ints for each dihedral defined in `dihedrals`.
+            impropers(List[Tuple[int, int, int, int]]): list of improper tuples where each improper defines a quartet of atoms making up the improper. Each value in the tuple is an index of an atom in the atom_* lists.
+            improper_types(List[int]): list of improper type id ints for each improper defined in `impropers`.
             pair_coeffs(List[str]): pair coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per atom type.
             bond_type_coeffs(List[str]): bond coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per bond type.
             angle_type_coeffs(List[str]): angle coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per angle type.
             dihedral_type_coeffs(List[str]): dihedral coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per dihedral type.
+            improper_type_coeffs(List[str]): improper coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per improper type.
             cell(Array(3x3)): 3x3 array of unit cell vectors.
 
         Returns:
@@ -148,11 +158,14 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.angle_types = np.array(angle_types, dtype=int)
         self.dihedrals = np.array(dihedrals, dtype=int)
         self.dihedral_types = np.array(dihedral_types, dtype=int)
+        self.impropers = np.array(impropers, dtype=int)
+        self.improper_types = np.array(improper_types, dtype=int)
 
         self.pair_coeffs = np.array(pair_coeffs)
         self.bond_type_coeffs = np.array(bond_type_coeffs)
         self.angle_type_coeffs = np.array(angle_type_coeffs)
         self.dihedral_type_coeffs = np.array(dihedral_type_coeffs)
+        self.improper_type_coeffs = np.array(improper_type_coeffs)
 
         if len(charges) > 0:
             self.charges = np.array(charges, dtype=float)
@@ -214,6 +227,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
             raise Exception("len of angles and angle types must match")
         if len(self.dihedrals) != len(self.dihedral_types):
             raise Exception("len of dihedrals and dihedral_types must match")
+        if len(self.impropers) != len(self.improper_types):
+            raise Exception("len of impropers and improper_types must match")
 
         # these lists are optional, but if they exist, there must be at least as many atom_type_*
         # entries as the num_atom_types. The reason they do not have to match _exactly_ is because
@@ -326,22 +341,26 @@ cell=[]: unit cell matrix (same definition as in ASE)
         bonds = []
         angles = []
         dihedrals = []
+        impropers = []
 
         pair_coeffs = []
         bond_coeffs = []
         angle_coeffs = []
         dihedral_coeffs = []
+        improper_coeffs = []
         atom_type_labels = []
         cellx = celly = cellz = 0.0
 
         sections_handled = ["Pair Coeffs", "Bond Coeffs", "Angle Coeffs", "Dihedral Coeffs",
-                            "Atoms", "Bonds", "Angles", "Dihedrals", "Masses"]
+                            "Improper Coeffs", "Atoms", "Bonds", "Angles", "Dihedrals", "Impropers",
+                            "Masses"]
         current_section = None
         start_section = False
 
         for unprocessed_line in f:
             # handle comments
             comment_string = ""
+            comment = None
             if "#" in unprocessed_line:
                 line, comment = unprocessed_line.split('#')
                 comment = comment.strip()
@@ -372,6 +391,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
                 angle_coeffs.append("%s%s" % ("  ".join(tup[1:]), comment_string))
             elif current_section == "Dihedral Coeffs":
                 dihedral_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
+            elif current_section == "Improper Coeffs":
+                improper_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
             elif current_section == "Atoms":
                 atoms.append(tup)
             elif current_section == "Bonds":
@@ -380,6 +401,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
                 angles.append(tup)
             elif current_section == "Dihedrals":
                 dihedrals.append(tup)
+            elif current_section == "Impropers":
+                impropers.append(tup)
             elif current_section is None:
                 if "xlo xhi" in line:
                     cellx = float(tup[1]) - float(tup[0])
@@ -396,6 +419,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         bonds = np.array(bonds, dtype=int)
         angles = np.array(angles, dtype=int)
         dihedrals = np.array(dihedrals, dtype=int)
+        impropers = np.array(impropers, dtype=int)
 
         # note: bond indices in lmpdat file are 1-indexed and we are 0-indexed which is why
         # the bond pairs get a -1
@@ -415,15 +439,18 @@ cell=[]: unit cell matrix (same definition as in ASE)
         bond_types, bond_tups = get_types_tups(bonds)
         angle_types, angle_tups = get_types_tups(angles)
         dihedral_types, dihedral_tups = get_types_tups(dihedrals)
+        improper_types, improper_tups = get_types_tups(impropers)
 
         return cls(atom_types=atom_types, positions=atom_tups, charges=charges,
                    atom_type_masses=atom_type_masses, atom_type_elements=atom_type_elements,
                    bond_types=bond_types, bonds=bond_tups,
                    angle_types=angle_types, angles=angle_tups,
                    dihedral_types=dihedral_types, dihedrals=dihedral_tups,
+                   improper_types=improper_types, impropers=improper_tups,
                    pair_coeffs=pair_coeffs, bond_type_coeffs=bond_coeffs,
                    angle_type_coeffs=angle_coeffs, dihedral_type_coeffs=dihedral_coeffs,
-                   atom_type_labels=atom_type_labels, groups=groups, cell=cell)
+                   improper_type_coeffs=improper_coeffs, atom_type_labels=atom_type_labels,
+                   groups=groups, cell=cell)
 
     def save_lmpdat(self, f, atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
@@ -432,7 +459,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         f.write('%d bonds\n' % len(self.bond_types))
         f.write('%d angles\n' % len(self.angle_types))
         f.write('%d dihedrals\n' % len(self.dihedral_types))
-        f.write('0 impropers\n')
+        f.write('%d impropers\n' % len(self.improper_types))
         f.write("\n")
 
         if (num_atom_types := len(self.atom_type_masses)) > 0:
@@ -443,6 +470,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
             f.write('%d angle types\n' % num_angle_types)
         if (num_dihedral_types := len(set(self.dihedral_types))) > 0:
             f.write('%d dihedral types\n' % num_dihedral_types)
+        if (num_improper_types := len(set(self.improper_types))) > 0:
+            f.write('%d improper types\n' % num_improper_types)
 
         if self.cell.shape == (3,3):
             xlohi, ylohi, zlohi = zip([0,0,0], np.diag(self.cell))
@@ -474,6 +503,11 @@ cell=[]: unit cell matrix (same definition as in ASE)
             for i, coeffs in enumerate(self.dihedral_type_coeffs):
                 f.write(' %d %s\n' % (i + 1, coeffs))
 
+        if len(self.improper_type_coeffs) > 0:
+            f.write('\nImproper Coeffs\n\n')
+            for i, coeffs in enumerate(self.improper_type_coeffs):
+                f.write(' %d %s\n' % (i + 1, coeffs))
+
         f.write("\nAtoms\n\n")
         if atom_format == "atomic":
             for i, (x, y, z) in enumerate(self.positions):
@@ -497,6 +531,12 @@ cell=[]: unit cell matrix (same definition as in ASE)
             f.write("\nDihedrals\n\n")
             for i, tup in enumerate(self.dihedrals):
                 f.write(" %d %d %d %d %d %d   # %s\n" % (i + 1, self.dihedral_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
+
+        if len(self.impropers) > 0:
+            f.write("\nImpropers\n\n")
+            for i, tup in enumerate(self.impropers):
+                f.write(" %d %d %d %d %d %d   # %s\n" % (i + 1, self.improper_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
+
 
     def save_mol(self, f, file_comment=""):
         """Writes .mol file for structural information."""
@@ -750,6 +790,12 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.dihedrals = np.append(self.dihedrals, new_dihedrals).reshape((-1,4))
             self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
 
+        if len(other.impropers) > 0:
+            new_impropers = convert2structureindex(other.impropers)
+            existing_improper_indices = find_existing_topo(self.impropers, new_impropers)
+            self.impropers = np.append(self.impropers, new_impropers).reshape((-1,4))
+            self.improper_types = np.append(self.improper_types, other.improper_types + offsets[3])
+
         self.assert_arrays_are_consistent_sizes()
 
     def replicate(self, repldims=(1,1,1)):
@@ -796,6 +842,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.angles, self.angle_types = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices, self.angle_types)
         if len(self.dihedrals) > 0:
             self.dihedrals, self.dihedral_types = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices, self.dihedral_types)
+        if len(self.impropers) > 0:
+            self.impropers, self.improper_types = self._delete_and_reindex_atom_index_array(self.impropers, sorted_indices, self.improper_types)
 
         self.assert_arrays_are_consistent_sizes()
 
