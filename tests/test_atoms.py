@@ -39,6 +39,12 @@ def test_atoms_extend__on_nonbonded_structure_reindexes_new_bonds_to_proper_atom
     linear_cnnc_no_bonds.extend(linear_cnnc)
     assert np.array_equal(linear_cnnc_no_bonds.bonds, [(4,5), (5,6), (6,7)])
 
+def test_atoms_extend__new_types_come_after_old_types1(linear_cnnc):
+    a = Atoms(elements="C", positions=[[0, 0, 0]])
+    b = Atoms(elements="H", positions=[[1, 1, 1]])
+    a.extend(b)
+    assert np.array_equal(a.elements, ["C", "H"])
+
 def test_atoms_extend__new_types_come_after_old_types(linear_cnnc):
     linear_cnnc.atom_types = np.array([0,1,1,0])
     linear_cnnc.bond_types = np.array([0,1,0])
@@ -61,15 +67,15 @@ def test_atoms_extend__with_structure_map_reindexes_new_bonds_to_proper_atoms(li
     fn_linear_cnnc.extend(fn_pattern, structure_index_map={0:2, 1:3})
 
     assert len(fn_linear_cnnc) == 5
-    assert (fn_linear_cnnc.bonds == [[0,1], [1,2], [2,3], [3,4]]).all()
-    assert (fn_linear_cnnc.angles == [[0,1,2], [1,2,3], [2,3,4]]).all()
-    assert (fn_linear_cnnc.atom_types == [0, 1, 2, 3, 4]).all()
-    assert (fn_linear_cnnc.atom_type_labels == ["C", "N", "Nx", "Cx", "Hx"]).all()
+    assert np.array_equal(fn_linear_cnnc.bonds, [[0,1], [1,2], [2,3], [3,4]])
+    assert np.array_equal(fn_linear_cnnc.angles, [[0,1,2], [1,2,3], [2,3,4]])
+    assert np.array_equal(fn_linear_cnnc.atom_types, [0, 1, 2, 3, 4])
+    assert np.array_equal(fn_linear_cnnc.atom_type_labels, ["C", "N", "Nx", "Cx", "Hx"])
 
 def test_atoms_extend__reindexes_new_bonds_to_proper_atoms(linear_cnnc):
     double_cnnc = linear_cnnc.copy()
     double_cnnc.extend(linear_cnnc)
-    assert (double_cnnc.bonds == [(0,1), (1,2), (2,3), (4,5), (5,6), (6,7)]).all()
+    assert np.array_equal(double_cnnc.bonds, [(0,1), (1,2), (2,3), (4,5), (5,6), (6,7)])
 
 def test_atoms_extend__reindexes_new_angles_to_proper_atoms(linear_cnnc):
     double_cnnc = linear_cnnc.copy()
@@ -95,11 +101,11 @@ def test_atoms_load_lmpdat__uio66_has_arrays_of_right_size():
         atoms = Atoms.load_lmpdat(f, atom_format="full", use_comment_for_type_labels=True)
 
     assert len(atoms.atom_type_masses) == 4
-    assert len(atoms.pair_params) == 4
-    assert len(atoms.bond_type_params) == 2
-    assert len(atoms.angle_type_params) == 2
+    assert len(atoms.pair_coeffs) == 4
+    assert len(atoms.bond_type_coeffs) == 2
+    assert len(atoms.angle_type_coeffs) == 2
     assert atoms.positions.shape == (16,3)
-    assert len(atoms.atom_groups) == 16
+    assert len(atoms.groups) == 16
     assert len(atoms.charges) == 16
     assert len(atoms.atom_types) == 16
     assert len(atoms.bonds) == 4
@@ -158,13 +164,8 @@ def test_find_unchanged_atom_pairs__different_position_is_changed(linear_cnnc):
     offset_linear_cnns.positions[2] += 0.5
     assert find_unchanged_atom_pairs(linear_cnnc, offset_linear_cnns) == [(0,0), (1,1), (3,3)]
 
-def test_atoms_elements__finds_cnnc_for_masses_12_14():
-    atoms = Atoms(atom_type_masses=[12.0, 14.0], atom_types=[0, 1, 1, 0], positions=[[0,0,0]] * 4)
-    linear_cnnc.elements = ["C", "N", "N", "C"]
-
 def test_atoms_getitem__has_all_atom_types_and_charges():
-    atoms = Atoms(atom_type_masses=[12.0, 14.0], atom_types=[1, 0, 0, 1], positions=[[0,0,0]] * 4, charges=[1,2,3,4])
-    atoms.assert_arrays_are_consistent_sizes()
+    atoms = Atoms(atom_type_elements=["C", "N"], atom_types=[1, 0, 0, 1], positions=[[0,0,0]] * 4, charges=[1,2,3,4])
     assert atoms[0].elements[0] == "N"
     assert atoms[1].elements[0] == "C"
     assert atoms[0].charges[0] == 1
@@ -213,7 +214,7 @@ def test_atoms_replicate__111_is_unchanged(octane):
     assert np.array_equal(octane.positions, reploctane.positions)
     assert np.array_equal(octane.atom_types, reploctane.atom_types)
     assert np.array_equal(octane.charges, reploctane.charges)
-    assert np.array_equal(octane.atom_groups, reploctane.atom_groups)
+    assert np.array_equal(octane.groups, reploctane.groups)
 
 def test_atoms_replicate__211_has_replicate_in_x_dim(octane):
     reploctane = octane.replicate((2,1,1))
@@ -223,7 +224,7 @@ def test_atoms_replicate__211_has_replicate_in_x_dim(octane):
 
     assert np.array_equal(np.tile(octane.atom_types,2), reploctane.atom_types)
     assert np.array_equal(np.tile(octane.charges,2), reploctane.charges)
-    assert np.array_equal(np.tile(octane.atom_groups,2), reploctane.atom_groups)
+    assert np.array_equal(np.tile(octane.groups,2), reploctane.groups)
 
 
 def test_atoms_replicate__213_has_replicates_in_xz_dims(octane):
@@ -265,4 +266,4 @@ def test_atoms_replicate__213_has_replicates_in_xz_dims(octane):
 
     assert np.array_equal(np.tile(octane.atom_types, 6), reploctane.atom_types)
     assert np.array_equal(np.tile(octane.charges, 6), reploctane.charges)
-    assert np.array_equal(np.tile(octane.atom_groups, 6), reploctane.atom_groups)
+    assert np.array_equal(np.tile(octane.groups, 6), reploctane.groups)

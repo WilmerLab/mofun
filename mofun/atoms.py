@@ -16,41 +16,42 @@ from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES, use_or_open
 
 class Atoms:
     """
-indexed one per atom:
+per atom arrays:
     atom_types=[], types for each atom
     positions=[]: coordinates (x,y,z) for each atom
     charges=[]: charges for each atom
-    atom_groups=[]: which "group" atom is part of. For LAMMPS, gets mapped to a molecule id.
+    groups=[]: which "group" atom is part of. For LAMMPS, gets mapped to a molecule id.
 
-indexed one per atom type:
+per atom type arrays:
     atom_type_masses=[]: mass for each atom type
     atom_type_elements=[]: periodic table element for each atom type
     atom_type_labels=[]: (optional) type labels to be output in line comments for lammps output.
 
-indexed one per bond:
+per bond arrays:
     bonds=[]: atom index tuple for each bond, i.e. (1,2) would be a bond connecting atoms 1 and 2.
     bond_types=[]: type of the bond
 
-indexed one per angle:
+per angle arrays:
     angles=[]: atom index tuple for each angle, i.e. (1,2,3 )
     angle_types=[]: type of the angle
 
-indexed one per dihedral:
+per dihedral arrays:
     dihedrals=[]: atom index tuple for each dihedral, i.e. (1,2,3,4)
     dihedral_types=[]: type of the dihedral
 
 cell=[]: unit cell matrix (same definition as in ASE)
 
-*_params:
 
-    pair_params=[]
-    bond_type_params=[]
-    angle_type_params=[]
-    dihedral_type_params=[]
+*_coeffs:
 
-    The *_params variables are lists of strings, where the item index corresponds to the atom type, and
-    the string is the full lampps coeffs def string. we do not interpret any of the LAMMPS coefficient
-    specifics, we just store it in its original form, i.e. this Angle Coeffs section
+    pair_coeffs=[]
+    bond_type_coeffs=[]
+    angle_type_coeffs=[]
+    dihedral_type_coeffs=[]
+
+    The *_coeffs variables are lists of strings, where the item index corresponds to the *_type, and
+    the string is the full LAMMPS coeffs definition string. we do not interpret any of the LAMMPS
+    coefficient specifics, we just store it in its original form, i.e. this Angle Coeffs section:
 
     ```
     Angle Coeffs
@@ -61,59 +62,86 @@ cell=[]: unit cell matrix (same definition as in ASE)
     would be interpreted like this:
 
     ```
-    angle_type_params= ["cosine/periodic  72.500283  -1  1   # C_R O_1 H_",
+    angle_type_coeffs= ["cosine/periodic  72.500283  -1  1   # C_R O_1 H_",
                         "cosine/periodic  277.164705  -1  3   # C_R C_R O_1"]
     ```"""
 
-    def __init__(self, atom_types=[], positions=[], charges=[], bond_types=[], bonds=[],
-                    angle_types=[], angles=[], dihedrals=[], dihedral_types=[],
-                    atom_type_masses=[], cell=[], elements=[], atom_type_elements=[],
-                    pair_params=[], bond_type_params=[], angle_type_params=[],
-                    dihedral_type_params=[], atom_type_labels=[], atom_groups=[]):
+    def __init__(self, atom_types=[], positions=[], charges=[], groups=[],
+                    elements=[], atom_type_masses=[], atom_type_elements=[], atom_type_labels=[],
+                    bonds=[], bond_types=[], angles=[], angle_types=[], dihedrals=[], dihedral_types=[],
+                    pair_coeffs=[], bond_type_coeffs=[], angle_type_coeffs=[],
+                    dihedral_type_coeffs=[], cell=[]):
+        """
+
+        An Atoms object can be created without any atoms using `Atoms()`. For creating more
+        interesting Atoms objects, there are a few rules to keep in mind. The parameters
+        `atom_types`, `positions`, `charges`, and `groups`  are all lists that should have a
+        size equal to the number of atoms in the system. `positions` is mandatory; `charges`, and
+        `groups` are optional (both default to 0 for each atom) and there are two ways to
+        specify atom types: 1) specify the atom_types and atom_type_elements explicitly, which is
+        how the `load_lmpdat` method loads Atoms objects from a LAMMPS data file, or 2) specify
+        per-atom elements and and have MOFUN auto-number the atom types for you, which is more
+        convenient when specifying small molecules in code or when loading from other file formats
+        such as CML or CIF which may store element information but not type information.
+
+        When explicitly setting the types, you must pass `atom_types` and `atom_type_elements`.
+        `atom_types` is a list of int type ids >= 0, one for each atom in the system.
+        `atom_type_elements` is a list of element names (e.g. "C", "N", "Zr") per _atom type_. For
+        example, if your system is propane, your atom_types list could be [0, 1, 1, 1] and your
+        atom_type_elements list would then be ["C", "H"].
+
+        To specify per-atom elements, you must pass `elements` with either a list of elements, such
+        as `Atoms(elements=["C", "C"], ...)` or with a string `Atoms(elements="CC", ...)`. If you
+        use the `elements` parameter, then type ids are automatically generated.
+
+        Passing `atom_type_masses` is optional, and masses will be inferred from the elements if
+        missing. If you are using atom types with masses that do not correspond to periodic table
+        elements, then you will need to specify the masses explicitly.
+
+        Passing force field term information for `bonds`, `angles`, `dihedrals` is optional, as well
+        as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_coeffs`,
+        `angle_coeffs`, and `dihedral_coeffs`.
+
+        Examples:
+
+        ```
+         a = Atoms() # create an empty Atoms object with no atoms
+         a = Atoms(atom_types=[0], positions=[[0,0,0]]) # create one atom of type 0
+         a = Atoms(elements=["C"], positions=[[0,0,0]]) # create one Carbon
+         a = Atoms(elements=["C", "C"], positions=[[0,0,0], [1,0,0]]) # create two Carbons
+         a = Atoms(elements="CC", positions=[[0,0,0], [1,0,0]]) # create two Carbons using shorthand element notation
+        ```
+
+        Args:
+            atom_types (List[int]): list of integer type ids, one per atom.
+            positions (List[Tuple[float,float,float]]): list of tuple atom x,y,z coordinates, one per atom.
+            charges (List[float]): list of integer charges, one per atom. Defaults to 0 for each atom if not passed.
+            groups (List[int]): list of integer groups, one per atom. Defaults to 0 for each atom if not passed.
+            elements (List[str], str): either a list of elements, (e.g. ["C", "H", "H", "H"]) or an element string (e.g. "CHHH")
+            atom_type_masses (List[float]): list of atom type masses, one per atom type. If masses are not passed, they will be inferred from the `atom_type_elements`.
+            atom_type_elements (List[str]): list of atom type elements, one per atom type.
+            atom_type_labels (List[str]):  list of atom type labels, one per atom type.
+            bonds(List[Tuple[int, int]]): list of bond tuples where each tuple defines a pair of atoms that are bonded. Each value in the tuple is an index of an atom in the atom_* lists.
+            bond_types(List[int]): list of bond type id ints for each bond defined in `bonds`.
+            angles(List[Tuple[int, int, int]]): list of angle tuples where each tuple defines a triplet of atoms making up the angle. Each value in the tuple is an index of an atom in the atom_* lists.
+            angle_types(List[int]): list of angle type id ints for each angle defined in `angles`.
+            dihedrals(List[Tuple[int, int, int, int]]): list of dihedral tuples where each dihedral defines a quartet of atoms making up the dihedral. Each value in the tuple is an index of an atom in the atom_* lists.
+            dihedral_types(List[int]): list of dihedral type id ints for each dihedral defined in `dihedrals`.
+            pair_coeffs(List[str]): pair coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per atom type.
+            bond_type_coeffs(List[str]): bond coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per bond type.
+            angle_type_coeffs(List[str]): angle coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per angle type.
+            dihedral_type_coeffs(List[str]): dihedral coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per dihedral type.
+            cell(Array(3x3)): 3x3 array of unit cell vectors.
+
+        Returns:
+            Atoms: the atoms object.
+
+        """
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
-        if len(charges) == 0:
-            self.charges = np.zeros(len(self.positions), dtype=float)
-        else:
-            self.charges = np.array(charges, dtype=float)
-
-        if len(atom_groups) == 0:
-            self.atom_groups = np.zeros(len(self.positions), dtype=int)
-        else:
-            self.atom_groups = np.array(atom_groups, dtype=int)
-
-        if len(atom_type_elements) > 0:
-            # this is a __getitem__ subset
-            self.atom_types = np.array(atom_types)
-            self.atom_type_elements = atom_type_elements
-        elif len(atom_types) > 0:
-            # from atom type ids and masses, such as from LAMMPS:
-            self.atom_types = np.array(atom_types, ndmin=1)
-            self.atom_type_elements = guess_elements_from_masses(self.atom_type_masses)
-        elif len(elements) > 0:
-            # from element array, such as from ASE atoms or read CML
-            # i.e. Propane ['C', 'H', 'H', 'H', 'C', 'H', 'H', 'C', 'H', 'H', 'H']:
-            if isinstance(elements, str):
-                # from element string, i.e. Propane "CHHHCHHCHHH" (shorthand):
-                elements = list(Formula(elements))
-
-            # preserve order of types
-            self.atom_type_elements = list(dict.fromkeys(elements).keys())
-            self.atom_types = np.array([self.atom_type_elements.index(s) for s in elements])
-            self.atom_type_masses = [ATOMIC_MASSES[s] for s in self.atom_type_elements]
-        else:
-            # no atom_types, atom_type_elements or elements passed
-            self.atom_types = np.array([], ndmin=1)
-            self.atom_type_elements = []
-
-        if len(atom_type_labels) > 0:
-            self.atom_type_labels = atom_type_labels
-        else:
-            # use default atom types equal to the element name
-            self.atom_type_labels = self.atom_type_elements
-
         self.cell = np.array(cell)
+
         self.bonds = np.array(bonds, dtype=int)
         self.bond_types = np.array(bond_types, dtype=int)
         self.angles = np.array(angles, dtype=int)
@@ -121,19 +149,65 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.dihedrals = np.array(dihedrals, dtype=int)
         self.dihedral_types = np.array(dihedral_types, dtype=int)
 
-        self.pair_params = np.array(pair_params)
-        self.bond_type_params = np.array(bond_type_params)
-        self.angle_type_params = np.array(angle_type_params)
-        self.dihedral_type_params = np.array(dihedral_type_params)
+        self.pair_coeffs = np.array(pair_coeffs)
+        self.bond_type_coeffs = np.array(bond_type_coeffs)
+        self.angle_type_coeffs = np.array(angle_type_coeffs)
+        self.dihedral_type_coeffs = np.array(dihedral_type_coeffs)
+
+        if len(charges) > 0:
+            self.charges = np.array(charges, dtype=float)
+        else:
+            self.charges = np.zeros(len(self.positions), dtype=float)
+
+        if len(groups) > 0:
+            self.groups = np.array(groups, dtype=int)
+        else:
+            self.groups = np.zeros(len(self.positions), dtype=int)
+
+        # load atom_types and atom_type_elements
+        if len(atom_type_elements) > 0:
+            # default case or a __getitem__ subset
+            self.atom_types = np.array(atom_types)
+            self.atom_type_elements = atom_type_elements
+        elif len(elements) > 0:
+            # from element array, such as from ASE atoms or read CML
+            # i.e. Propane ['C', 'H', 'H', 'H', 'C', 'H', 'H', 'C', 'H', 'H', 'H']:
+            # or from element string, i.e. Propane "CHHHCHHCHHH" (shorthand):
+            if isinstance(elements, str):
+                elements = list(Formula(elements))
+
+            # preserve order of types
+            self.atom_type_elements = list(dict.fromkeys(elements).keys())
+            self.atom_types = np.array([self.atom_type_elements.index(s) for s in elements])
+        else:
+            # no atom_type_elements or elements passed
+            # this should be the `Atoms()` case; if not, it will fail the asserts below
+            self.atom_types = np.array([], ndmin=1)
+            self.atom_type_elements = []
+
+        # automatically determine masses from elements if masses are not passed
+        if len(self.atom_type_masses) == 0 and len(self.atom_type_elements) > 0:
+            self.atom_type_masses = [ATOMIC_MASSES[s] for s in self.atom_type_elements]
+
+        if len(atom_type_labels) > 0:
+            self.atom_type_labels = atom_type_labels
+        else:
+            print("WARNING: using the atom elements as the atom_type_labels since labels were not supplied.")
+            # use default atom types equal to the element; this may not be unique!
+            self.atom_type_labels = self.atom_type_elements
 
         self.assert_arrays_are_consistent_sizes()
 
     def assert_arrays_are_consistent_sizes(self):
+        # we always should have these lists, though charges and groups may be zero defaults
         if len(self.positions) != len(self.atom_types):
             raise Exception("len of positions (%d) and atom types (%d) must match" % (len(self.positions), len(self.atom_types)))
         if len(self.positions) != len(self.charges):
             raise Exception("len of positions (%d) and charges (%d) must match" % (len(self.positions), len(self.charges)))
+        if len(self.positions) != len(self.groups):
+            raise Exception("len of positions (%d) and groups (%d) must match" % (len(self.positions), len(self.groups)))
 
+        # these list pairs should always match
         if len(self.bonds) != len(self.bond_types):
             raise Exception("len of bonds and bond types must match")
         if len(self.angles) != len(self.angle_types):
@@ -141,6 +215,17 @@ cell=[]: unit cell matrix (same definition as in ASE)
         if len(self.dihedrals) != len(self.dihedral_types):
             raise Exception("len of dihedrals and dihedral_types must match")
 
+        # these lists are optional, but if they exist, there must be at least as many atom_type_*
+        # entries as the num_atom_types. The reason they do not have to match _exactly_ is because
+        # a subset of an Atoms object gets _all_ the atom_type_* arrays and does not reindex the
+        # atom_types array, so the num_atom_types may be fewer than the number of atom types in the
+        # atom_type_* arrays.
+        if len(self.atom_type_labels) < self.num_atom_types:
+            raise Exception("len of atom_type_labels (%d) must be >= num_atom_types (%d)" % (len(self.atom_type_labels), self.num_atom_types))
+        if len(self.atom_type_elements) < self.num_atom_types:
+            raise Exception("len of atom_type_elements (%d) must be >= num_atom_types (%d)" % (len(self.atom_type_elements), self.num_atom_types))
+        if len(self.atom_type_masses) < self.num_atom_types:
+            raise Exception("len of atom_type_masses (%d) must be >= num_atom_types (%d)" % (len(self.atom_type_masses), self.num_atom_types))
 
     @classmethod
     def load(cls, f, filetype=None, **kwargs):
@@ -316,27 +401,29 @@ cell=[]: unit cell matrix (same definition as in ASE)
         # the bond pairs get a -1
         if atom_format == "atomic":
             atom_types = np.array(atoms[:, 1] - 1, dtype=int)
-            atom_groups = np.zeros(len(atom_types))
+            groups = np.zeros(len(atom_types))
             charges = np.zeros(len(atom_types))
             atom_tups = atoms[:, 2:5]
         elif atom_format == "full":
-            atom_groups = np.array(atoms[:, 1] - 1, dtype=int)
+            groups = np.array(atoms[:, 1] - 1, dtype=int)
             atom_types = np.array(atoms[:, 2] - 1, dtype=int)
             charges = np.array(atoms[:, 3], dtype=float)
             atom_tups = atoms[:, 4:7]
+
+        atom_type_elements = guess_elements_from_masses(atom_type_masses)
 
         bond_types, bond_tups = get_types_tups(bonds)
         angle_types, angle_tups = get_types_tups(angles)
         dihedral_types, dihedral_tups = get_types_tups(dihedrals)
 
         return cls(atom_types=atom_types, positions=atom_tups, charges=charges,
+                   atom_type_masses=atom_type_masses, atom_type_elements=atom_type_elements,
                    bond_types=bond_types, bonds=bond_tups,
                    angle_types=angle_types, angles=angle_tups,
                    dihedral_types=dihedral_types, dihedrals=dihedral_tups,
-                   atom_type_masses=atom_type_masses,
-                   pair_params=pair_coeffs, bond_type_params=bond_coeffs,
-                   angle_type_params=angle_coeffs, dihedral_type_params=dihedral_coeffs,
-                   atom_type_labels=atom_type_labels, atom_groups=atom_groups, cell=cell)
+                   pair_coeffs=pair_coeffs, bond_type_coeffs=bond_coeffs,
+                   angle_type_coeffs=angle_coeffs, dihedral_type_coeffs=dihedral_coeffs,
+                   atom_type_labels=atom_type_labels, groups=groups, cell=cell)
 
     def save_lmpdat(self, f, atom_format="full", file_comment=""):
         f.write("%s (written by mofun)\n\n" % file_comment)
@@ -367,25 +454,25 @@ cell=[]: unit cell matrix (same definition as in ASE)
         for i, m in enumerate(self.atom_type_masses):
             f.write(" %d %10.6f   # %s\n" % (i + 1, m, self.label_atoms(i)))
 
-        if len(self.pair_params) > 0:
+        if len(self.pair_coeffs) > 0:
             f.write('\nPair Coeffs\n\n')
-            for i, params in enumerate(self.pair_params):
-                f.write(' %d %s\n' % (i + 1, params))
+            for i, coeffs in enumerate(self.pair_coeffs):
+                f.write(' %d %s\n' % (i + 1, coeffs))
 
-        if len(self.bond_type_params) > 0:
+        if len(self.bond_type_coeffs) > 0:
             f.write('\nBond Coeffs\n\n')
-            for i, params in enumerate(self.bond_type_params):
-                f.write(' %d %s\n' % (i + 1, params))
+            for i, coeffs in enumerate(self.bond_type_coeffs):
+                f.write(' %d %s\n' % (i + 1, coeffs))
 
-        if len(self.angle_type_params) > 0:
+        if len(self.angle_type_coeffs) > 0:
             f.write('\nAngle Coeffs\n\n')
-            for i, params in enumerate(self.angle_type_params):
-                f.write(' %d %s\n' % (i + 1, params))
+            for i, coeffs in enumerate(self.angle_type_coeffs):
+                f.write(' %d %s\n' % (i + 1, coeffs))
 
-        if len(self.dihedral_type_params) > 0:
+        if len(self.dihedral_type_coeffs) > 0:
             f.write('\nDihedral Coeffs\n\n')
-            for i, params in enumerate(self.dihedral_type_params):
-                f.write(' %d %s\n' % (i + 1, params))
+            for i, coeffs in enumerate(self.dihedral_type_coeffs):
+                f.write(' %d %s\n' % (i + 1, coeffs))
 
         f.write("\nAtoms\n\n")
         if atom_format == "atomic":
@@ -394,7 +481,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         elif atom_format == "full":
             for i, (x, y, z) in enumerate(self.positions):
                 f.write(" %d %d %d %10.6f %10.6f %10.6f %10.6f   # %s\n" %
-                    (i + 1, self.atom_groups[i] + 1, self.atom_types[i] + 1, self.charges[i], x, y, z, self.label_atoms(self.atom_types[i])))
+                    (i + 1, self.groups[i] + 1, self.atom_types[i] + 1, self.charges[i], x, y, z, self.label_atoms(self.atom_types[i])))
 
         if len(self.bonds) > 0:
             f.write("\nBonds\n\n")
@@ -580,11 +667,11 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
         self.atom_type_masses = np.append(self.atom_type_masses, other.atom_type_masses)
         self.atom_type_labels = np.append(self.atom_type_labels, other.atom_type_labels)
-        self.pair_params = np.append(self.pair_params, other.pair_params)
+        self.pair_coeffs = np.append(self.pair_coeffs, other.pair_coeffs)
 
-        self.bond_type_params = np.append(self.bond_type_params, other.bond_type_params)
-        self.angle_type_params = np.append(self.angle_type_params, other.angle_type_params)
-        self.dihedral_type_params = np.append(self.dihedral_type_params, other.dihedral_type_params)
+        self.bond_type_coeffs = np.append(self.bond_type_coeffs, other.bond_type_coeffs)
+        self.angle_type_coeffs = np.append(self.angle_type_coeffs, other.angle_type_coeffs)
+        self.dihedral_type_coeffs = np.append(self.dihedral_type_coeffs, other.dihedral_type_coeffs)
 
         return offsets
 
@@ -623,7 +710,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.positions = np.append(self.positions, other.positions[atoms_to_add], axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types[atoms_to_add] + offsets[0])
         self.charges = np.append(self.charges, other.charges[atoms_to_add])
-        self.atom_groups = np.append(self.atom_groups, other.atom_groups[atoms_to_add])
+        self.groups = np.append(self.groups, other.groups[atoms_to_add])
 
         # update structure index map
         structure_index_map2 = {a:i + atom_idx_offset for i,a in enumerate(atoms_to_add)}
@@ -698,7 +785,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.positions = np.delete(self.positions, indices, axis=0)
         self.atom_types = np.delete(self.atom_types, indices, axis=0)
         self.charges = np.delete(self.charges, indices, axis=0)
-        self.atom_groups = np.delete(self.atom_groups, indices, axis=0)
+        self.groups = np.delete(self.groups, indices, axis=0)
 
         sorted_indices = sorted(indices, reverse=True)
         if len(self.bonds) > 0:
@@ -718,7 +805,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                      charges=np.take(self.charges, idx, axis=0),
                      atom_type_masses=self.atom_type_masses,
                      atom_type_elements=self.atom_type_elements,
-                     atom_groups=self.atom_groups,
+                     groups=np.take(self.groups, idx, axis=0),
                      cell=self.cell)
 
     def to_ase(self):

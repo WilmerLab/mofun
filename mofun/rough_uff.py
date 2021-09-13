@@ -98,7 +98,7 @@ def assign_uff_atom_types(g, elements, override_rules=None):
 
     return atom_types
 
-def pair_params(a1):
+def pair_coeffs(a1):
     lj_sigma = UFF4MOF[a1][2] * (2**(-1./6.))
     lj_epsilon = UFF4MOF[a1][3]
     return [lj_epsilon, lj_sigma]
