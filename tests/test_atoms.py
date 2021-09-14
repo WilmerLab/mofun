@@ -138,6 +138,33 @@ def test_atoms_load_lmpdat__uio66_has_arrays_of_right_size():
     assert len(atoms.bonds) == 4
     assert len(atoms.angles) == 8
 
+
+def test_atoms_save_lmpdat__with_no_atom_type_labels_outputs_file_with_type_id_labels():
+    with importlib.resources.open_text(tests, "uio66-linker-arb-terms-no-labels.lmpdat") as f:
+        atoms = Atoms.load_lmpdat(f, atom_format="full", use_ids_for_type_labels_and_elements=True)
+
+    sout = io.StringIO("")
+    atoms.save_lmpdat(sout, file_comment="uio66-linker-arb-terms-no-labels.lmpdat")
+
+    # output file code, in case we need to update the lmpdat file because of new format changes
+    # with open("uio66-linker.lmpdat", "w") as f:
+    #     sout.seek(0)
+    #     f.write(sout.read())
+
+    with importlib.resources.open_text(tests, "uio66-linker-arb-terms-atom-type-id-labels.lmpdat") as f:
+        sout.seek(0)
+        assert sout.read() == f.read()
+
+def test_atoms_load_lmpdat__no_atom_type_labels():
+    with importlib.resources.open_text(tests, "uio66-linker-arb-terms-no-labels.lmpdat") as f:
+        atoms = Atoms.load_lmpdat(f, atom_format="full", use_ids_for_type_labels_and_elements=True)
+
+
+def test_atoms_load_lmpdat__use_comment_for_type_labels_with_no_atom_type_labels_raises_exception():
+    with importlib.resources.open_text(tests, "uio66-linker-arb-terms-no-labels.lmpdat") as f:
+        with pytest.raises(Exception):
+            atoms = Atoms.load_lmpdat(f, atom_format="full", use_comment_for_type_labels=True)
+
 def test_atoms_save_lmpdat__output_file_identical_to_one_read():
     with importlib.resources.open_text(tests, "uio66-linker-arb-terms.lmpdat") as f:
         sin = StringIO(f.read())

@@ -178,7 +178,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
             self.groups = np.zeros(len(self.positions), dtype=int)
 
         # load atom_types and atom_type_elements
-        if len(atom_type_elements) > 0:
+        if len(atom_types) > 0:
             # default case or a __getitem__ subset
             self.atom_types = np.array(atom_types)
             self.atom_type_elements = atom_type_elements
@@ -230,11 +230,10 @@ cell=[]: unit cell matrix (same definition as in ASE)
         if len(self.impropers) != len(self.improper_types):
             raise Exception("len of impropers and improper_types must match")
 
-        # these lists are optional, but if they exist, there must be at least as many atom_type_*
-        # entries as the num_atom_types. The reason they do not have to match _exactly_ is because
-        # a subset of an Atoms object gets _all_ the atom_type_* arrays and does not reindex the
-        # atom_types array, so the num_atom_types may be fewer than the number of atom types in the
-        # atom_type_* arrays.
+        # these arrays must have at least as many atom_type_* entries as the num_atom_types. The
+        # reason they do not have to match _exactly_ is because a subset of an Atoms object gets
+        # _all_ the atom_type_* arrays and does not reindex the atom_types array, so the
+        # num_atom_types may be fewer than the number of atom types in the atom_type_* arrays.
         if len(self.atom_type_labels) < self.num_atom_types:
             raise Exception("len of atom_type_labels (%d) must be >= num_atom_types (%d)" % (len(self.atom_type_labels), self.num_atom_types))
         if len(self.atom_type_elements) < self.num_atom_types:
@@ -327,8 +326,27 @@ cell=[]: unit cell matrix (same definition as in ASE)
             raise Exception("Unsupported filetype")
 
 
+
+
     @classmethod
-    def load_lmpdat(cls, f, atom_format="full", use_comment_for_type_labels=False):
+    def load_lmpdat(cls, f, atom_format="full", use_ids_for_type_labels_and_elements=False,
+            use_comment_for_type_labels=False, guess_elements=True):
+        """ load Atoms object from lammps data file (.lmpdat) format.
+
+        Args:
+            f (File): File-like object to read from.
+            atom_format(str): atom format of lammps data file. Currently supported atom formats are
+                'full' and 'atomic'.
+            use_ids_for_type_labels_and_elements(bool): use the int type ids defined under the
+                Masses section as both the atom type element and the atom type label. If used,
+                overrides guess_elements. Default: False.
+            use_comment_for_type_labels(bool): uses the comments defined on each line of the Masses
+                section as the atom_type_labels. Comments _MUST_ exist or an exception will be
+                thrown. Typically would be used with guess_elements=True. Default: False.
+            guess_elements(bool): guesses the elements from the masses, assuming the defined masses
+                are within 1e-2 g/mol of a periodic table element. Will raise an exception if this
+                is not the case. Default: True.
+        """
         def get_types_tups(arr):
             types = tups = []
             if len(arr) > 0:
@@ -349,6 +367,8 @@ cell=[]: unit cell matrix (same definition as in ASE)
         dihedral_coeffs = []
         improper_coeffs = []
         atom_type_labels = []
+        atom_type_elements = []
+
         cellx = celly = cellz = 0.0
 
         sections_handled = ["Pair Coeffs", "Bond Coeffs", "Angle Coeffs", "Dihedral Coeffs",
@@ -382,7 +402,10 @@ cell=[]: unit cell matrix (same definition as in ASE)
             if current_section == "Masses":
                 masses.append(tup[1])
                 if use_comment_for_type_labels:
+                    if comment == None:
+                        raise Exception("use_comment_for_type_labels was passed, but not all entries under Masses have atom type names in the line comment.")
                     atom_type_labels.append(comment)
+
             elif current_section == "Pair Coeffs":
                 pair_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
             elif current_section == "Bond Coeffs":
@@ -434,7 +457,12 @@ cell=[]: unit cell matrix (same definition as in ASE)
             charges = np.array(atoms[:, 3], dtype=float)
             atom_tups = atoms[:, 4:7]
 
-        atom_type_elements = guess_elements_from_masses(atom_type_masses)
+        if use_ids_for_type_labels_and_elements:
+            atom_type_elements = [str(i + 1) for i in range(len(masses))]
+            atom_type_labels = [str(i + 1) for i in range(len(masses))]
+        elif guess_elements:
+            atom_type_elements = guess_elements_from_masses(atom_type_masses)
+
 
         bond_types, bond_tups = get_types_tups(bonds)
         angle_types, angle_tups = get_types_tups(angles)
