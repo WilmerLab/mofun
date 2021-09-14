@@ -25,7 +25,7 @@ def check_uio66_arb_terms_arrays(atoms):
     assert len(atoms.impropers) == 2
 
 def test_atoms_load_lmpdat__has_arrays_of_right_size():
-    with importlib.resources.open_text(tests, "uio66-linker-arb-terms.lmpdat") as f:
+    with Path("tests/uio66/uio66-linker-arb-terms.lmpdat").open() as f:
         atoms = Atoms.load_lmpdat(f, atom_format="full")
 
     check_uio66_arb_terms_arrays(atoms)
@@ -62,7 +62,7 @@ def test_atoms_load_lmpdat__if_masses_are_nonatomic_with_no_comments_then_elemen
     assert np.array_equal(atoms.atom_type_labels, ["1", "2"])
 
 def test_atoms_save_lmpdat__outputs_file_identical_to_input_file():
-    with importlib.resources.open_text(tests, "uio66-linker-arb-terms.lmpdat") as f:
+    with Path("tests/uio66/uio66-linker-arb-terms.lmpdat").open() as f:
         sin = StringIO(f.read())
         uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full")
 
@@ -80,7 +80,7 @@ def test_atoms_save_lmpdat__outputs_file_identical_to_input_file():
 
 ###### load CML format
 def test_atoms_load_cml__loads_elements_bonds():
-    with importlib.resources.path(tests, "uio66-linker.cml") as path:
+    with Path("tests/uio66/uio66-linker.cml") as path:
         atoms = Atoms.load_cml(path)
 
     assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
@@ -89,7 +89,7 @@ def test_atoms_load_cml__loads_elements_bonds():
 
 ###### load CIF format
 def test_atoms_load_cif__loads_elements():
-    with importlib.resources.open_text(tests, "uio66-linker.cif") as fd:
+    with Path("tests/uio66/uio66-linker.cif").open() as fd:
         atoms = Atoms.load_cif(fd)
 
     assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
@@ -97,24 +97,24 @@ def test_atoms_load_cif__loads_elements():
 
 ###### load method
 def test_atoms_load__loads_lmpdat_from_file_or_path():
-    with importlib.resources.path(tests, "uio66-linker.lmpdat") as path:
+    with Path("tests/uio66/uio66-linker.lmpdat") as path:
         atoms = Atoms.load(path, atom_format="atomic")
         assert len(atoms) == 16
 
-    with importlib.resources.open_text(tests, "uio66-linker.lmpdat") as fd:
+    with Path("tests/uio66/uio66-linker.lmpdat").open() as fd:
         atoms = Atoms.load(fd, filetype="lmpdat", atom_format="atomic")
         assert len(atoms) == 16
 
 def test_atoms_load__loads_cml():
-    with importlib.resources.path(tests, "uio66-linker.cml") as path:
+    with Path("tests/uio66/uio66-linker.cml") as path:
         atoms = Atoms.load(path)
         assert len(atoms) == 16
 
 def test_atoms_load__loads_cif_from_file_or_path():
-    with importlib.resources.path(tests, "uio66-linker.cif") as path:
+    with Path("tests/uio66/uio66-linker.cif") as path:
         atoms = Atoms.load(path)
         assert len(atoms) == 16
 
-    with importlib.resources.open_text(tests, "uio66-linker.cif") as fd:
+    with Path("tests/uio66/uio66-linker.cif").open() as fd:
         atoms = Atoms.load(fd, filetype="cif")
         assert len(atoms) == 16

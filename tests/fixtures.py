@@ -1,6 +1,6 @@
-import importlib
-from importlib import resources
+
 from math import sqrt
+from pathlib import Path
 
 import ase.io
 import numpy as np
@@ -68,7 +68,7 @@ def linear_cnnc():
 @pytest.fixture
 def octane():
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
-    with importlib.resources.path(tests, "octane.xyz") as path:
+    with Path("tests/molecules/octane.xyz") as path:
         structure = Atoms.from_ase_atoms(ase.io.read(path))
         structure.cell = 60 * np.identity(3)
         structure.translate((30., 30., 30.))
@@ -76,39 +76,39 @@ def octane():
 
 @pytest.fixture
 def hkust1_cif():
-    with importlib.resources.path(tests, "HKUST-1_withbonds.cif") as path:
+    with Path("tests/hkust-1/hkust-1-with-bonds.cif") as path:
         yield Atoms.load_cif(path)
 
 @pytest.fixture
 def hkust1_3x3x3_xyz():
-    with importlib.resources.path(tests, "HKUST-1_3x3x3.xyz") as path:
+    with Path("tests/hkust-1/hkust-1-3x3x3.xyz") as path:
         structure = Atoms.from_ase_atoms(ase.io.read(path))
         structure.cell = 79.0290 * np.identity(3)
         yield structure
 
 @pytest.fixture
 def hkust1_3x3x3_cif():
-    with importlib.resources.path(tests, "HKUST-1_3x3x3.cif") as path:
+    with Path("tests/hkust-1/hkust-1-3x3x3.cif") as path:
         yield Atoms.load_cif(path)
 
 @pytest.fixture
 def benzene():
-    with importlib.resources.path(tests, "benzene.xyz") as path:
+    with Path("tests/molecules/benzene.xyz") as path:
         yield Atoms.from_ase_atoms(ase.io.read(path))
 
 @pytest.fixture
 def uio66_linker_no_bonds():
-    with importlib.resources.open_text(tests, "uio66-linker-no-bonds.lmpdat") as fd:
+    with Path("tests/uio66/uio66-linker-no-bonds.lmpdat").open() as fd:
         yield Atoms.load_lmpdat(fd, atom_format="atomic")
 
 @pytest.fixture
 def uio66_linker_some_bonds():
     # this was a modified UIO-66-F linker with bonds defined for the C-F bond. The F's have been
     # replaced by H's.
-    with importlib.resources.open_text(tests, "uio66-linker.lmpdat") as fd:
+    with Path("tests/uio66/uio66-linker.lmpdat").open() as fd:
         yield Atoms.load_lmpdat(fd, atom_format="atomic")
 
 @pytest.fixture
 def uio66_linker_cml():
-    with importlib.resources.path(tests, "uio66-linker.cml") as path:
+    with Path("tests/uio66/uio66-linker.cml") as path:
         yield Atoms.load_cml(path)

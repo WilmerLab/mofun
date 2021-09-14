@@ -304,11 +304,11 @@ def test_replace_pattern_in_structure__in_hkust1_offset_replacing_benzene_with_b
 
 @pytest.mark.slow
 def test_replace_pattern_in_structure__in_uio66_replacing_linker_with_linker_does_not_change_positions():
-    with importlib.resources.path(tests, "uio66.cif") as path:
+    with Path("tests/uio66/uio66.cif") as path:
         structure = Atoms.load_cif(path)
-    with importlib.resources.path(tests, "uio66-linker.cif") as path:
+    with Path("tests/uio66/uio66-linker.cif") as path:
         search_pattern = Atoms.load_cif(path)
-    with importlib.resources.path(tests, "uio66-linker-fluorinated.cif") as path:
+    with Path("tests/uio66/uio66-linker-fluorinated.cif") as path:
         replace_pattern = Atoms.load_cif(path)
 
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
