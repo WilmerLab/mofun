@@ -10,8 +10,8 @@ nonatomic-masses.lmpdat (written by mofun)
 
 Masses
 
- 1  12.0 # C1
- 2  1000 # BIG
+ 1  12.0
+ 2  14.0
 
 Atoms
 

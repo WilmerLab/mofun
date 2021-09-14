@@ -329,23 +329,35 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
 
     @classmethod
-    def load_lmpdat(cls, f, atom_format="full", use_ids_for_type_labels_and_elements=False,
-            use_comment_for_type_labels=False, guess_elements=True):
+    def load_lmpdat(cls, f, atom_format="full", guess_atol=0.1):
         """ load Atoms object from lammps data file (.lmpdat) format.
+
+        LAMMPS data files store only atom ids and masses, but do not store two other things we need:
+        elements and atom type labels. These are the rules for inferring atom type labels and elements.
+
+        In priority order, for elements, we:
+
+        1. guess the elements using the masses by seeing if there is a periodic table element within
+        0.1 g/mol of the mass. If any atom types doe not match to an existing periodic table
+        element, this method fails.
+
+        2. use the atom ids as the elements (and print a warning).
+
+        In priority order, for atom type labels, we:
+
+        1. use the comments after each line in the Masses section as the atom type. If any line is
+        missing a comment, this method fails.
+
+        2. use the elements, if we have them.
+
+        3. use the atom ids (and print a warning).
 
         Args:
             f (File): File-like object to read from.
             atom_format(str): atom format of lammps data file. Currently supported atom formats are
                 'full' and 'atomic'.
-            use_ids_for_type_labels_and_elements(bool): use the int type ids defined under the
-                Masses section as both the atom type element and the atom type label. If used,
-                overrides guess_elements. Default: False.
-            use_comment_for_type_labels(bool): uses the comments defined on each line of the Masses
-                section as the atom_type_labels. Comments _MUST_ exist or an exception will be
-                thrown. Typically would be used with guess_elements=True. Default: False.
-            guess_elements(bool): guesses the elements from the masses, assuming the defined masses
-                are within 1e-2 g/mol of a periodic table element. Will raise an exception if this
-                is not the case. Default: True.
+            guess_atol(float): absolute tolerance a read mass can differ from a periodic table mass
+                and still be considered that element. Default: 0.1.
         """
         def get_types_tups(arr):
             types = tups = []
@@ -401,10 +413,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
             tup = line.split()
             if current_section == "Masses":
                 masses.append(tup[1])
-                if use_comment_for_type_labels:
-                    if comment == None:
-                        raise Exception("use_comment_for_type_labels was passed, but not all entries under Masses have atom type names in the line comment.")
-                    atom_type_labels.append(comment)
+                atom_type_labels.append(comment)
 
             elif current_section == "Pair Coeffs":
                 pair_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
@@ -457,11 +466,20 @@ cell=[]: unit cell matrix (same definition as in ASE)
             charges = np.array(atoms[:, 3], dtype=float)
             atom_tups = atoms[:, 4:7]
 
-        if use_ids_for_type_labels_and_elements:
+        # guess the atom elements; if this fails, use the atoms ids as the elements
+        try:
+            atom_type_elements = guess_elements_from_masses(atom_type_masses, max_delta=guess_atol)
+        except Exception:
+            print("Warning: using type ids for elements since some masses do not correspond to periodic table elements within the set tolerance.")
             atom_type_elements = [str(i + 1) for i in range(len(masses))]
-            atom_type_labels = [str(i + 1) for i in range(len(masses))]
-        elif guess_elements:
-            atom_type_elements = guess_elements_from_masses(atom_type_masses)
+
+        # infer the atom type labels
+        if (atom_type_labels.count(None) == 0):
+            # then loading atom types from the labels worked
+            pass
+        else:
+            print("Warning: using elements for atom type labels since there is not an atom type label comment for every atom type in the Masses section.")
+            atom_type_labels = atom_type_elements.copy()
 
 
         bond_types, bond_tups = get_types_tups(bonds)

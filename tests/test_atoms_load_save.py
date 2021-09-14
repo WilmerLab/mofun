@@ -26,39 +26,45 @@ def check_uio66_arb_terms_arrays(atoms):
 
 def test_atoms_load_lmpdat__has_arrays_of_right_size():
     with importlib.resources.open_text(tests, "uio66-linker-arb-terms.lmpdat") as f:
-        atoms = Atoms.load_lmpdat(f, atom_format="full", use_comment_for_type_labels=True)
+        atoms = Atoms.load_lmpdat(f, atom_format="full")
 
     check_uio66_arb_terms_arrays(atoms)
 
-def test_atoms_load_lmpdat__no_atom_type_labels_uses_type_ids():
-    with importlib.resources.open_text(tests, "uio66-linker-arb-terms-no-labels.lmpdat") as f:
-        atoms = Atoms.load_lmpdat(f, atom_format="full", use_ids_for_type_labels_and_elements=True)
 
-    check_uio66_arb_terms_arrays(atoms)
-    assert np.array_equal(atoms.atom_type_labels, ["1", "2", "3", "4"])
-    assert np.array_equal(atoms.atom_type_elements, ["1", "2", "3", "4"])
+def test_atoms_load_lmpdat__atomic_masses_are_guessed_correctly():
+    with Path("tests/test_atoms_load_save/atomic-masses.lmpdat").open() as f:
+        atoms = Atoms.load_lmpdat(f, atom_format="full")
+    assert np.array_equal(atoms.atom_type_elements, ["C", "N"])
 
-def test_atoms_load_lmpdat__when_no_atom_type_labels_use_comment_for_type_labels_raises_exception():
+def test_atoms_load_lmpdat__if_masses_are_nonatomic_then_elements_are_type_ids():
     with Path("tests/test_atoms_load_save/nonatomic-masses.lmpdat").open() as f:
-        with pytest.raises(Exception):
-            atoms = Atoms.load_lmpdat(f, atom_format="full", use_comment_for_type_labels=True)
-
-def test_atoms_load_lmpdat__nonatomic_masses_raise_exception():
-    with Path("tests/test_atoms_load_save/nonatomic-masses.lmpdat").open() as f:
-        with pytest.raises(Exception):
-            atoms = Atoms.load_lmpdat(f, atom_format="full")
-
-def test_atoms_load_lmpdat__nonatomic_masses_with_use_ids_for_type_labels_and_elements_is_OK():
-    with Path("tests/test_atoms_load_save/nonatomic-masses.lmpdat").open() as f:
-        atoms = Atoms.load_lmpdat(f, atom_format="full", use_ids_for_type_labels_and_elements=True)
-
+        atoms = Atoms.load_lmpdat(f, atom_format="full")
     assert np.array_equal(atoms.atom_type_masses, [12., 1000.])
+    assert np.array_equal(atoms.atom_type_elements, ["1", "2"])
 
+def test_atoms_load_lmpdat__atom_type_labels_are_loaded_from_comments():
+    with Path("tests/test_atoms_load_save/atomic-masses.lmpdat").open() as f:
+        atoms = Atoms.load_lmpdat(f, atom_format="full")
+    assert np.array_equal(atoms.atom_type_masses, [12., 14.])
+    assert np.array_equal(atoms.atom_type_labels, ["C1", "N1"])
+
+def test_atoms_load_lmpdat__atom_type_labels_are_loaded_from_elements_if_no_comments():
+    with Path("tests/test_atoms_load_save/atomic-masses-no-comments.lmpdat").open() as f:
+        atoms = Atoms.load_lmpdat(f, atom_format="full")
+    assert np.array_equal(atoms.atom_type_masses, [12., 14.])
+    assert np.array_equal(atoms.atom_type_labels, ["C", "N"])
+
+def test_atoms_load_lmpdat__if_masses_are_nonatomic_with_no_comments_then_elements_and_labels_are_type_ids():
+    with Path("tests/test_atoms_load_save/nonatomic-masses-no-comments.lmpdat").open() as f:
+        atoms = Atoms.load_lmpdat(f, atom_format="full")
+    assert np.array_equal(atoms.atom_type_masses, [12., 1000.])
+    assert np.array_equal(atoms.atom_type_elements, ["1", "2"])
+    assert np.array_equal(atoms.atom_type_labels, ["1", "2"])
 
 def test_atoms_save_lmpdat__outputs_file_identical_to_input_file():
     with importlib.resources.open_text(tests, "uio66-linker-arb-terms.lmpdat") as f:
         sin = StringIO(f.read())
-        uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full", use_comment_for_type_labels=True)
+        uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full")
 
     sout = io.StringIO("")
     uio66_linker_ld.save_lmpdat(sout, file_comment="uio66-linker-arb-terms.lmpdat")
