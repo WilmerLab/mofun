@@ -8,7 +8,7 @@ uio66-linker-arb-terms.lmpdat (written by mofun)
 
 4 atom types
 1 bond types
-1 angle types
+2 angle types
 3 dihedral types
 1 improper types
 
@@ -33,6 +33,7 @@ Bond Coeffs
 Angle Coeffs
 
  1 cosine/periodic  72.500283  -1  1
+ 2 cosine/periodic  172.500283  -1  1
 
 Dihedral Coeffs
 
@@ -72,7 +73,7 @@ Bonds
 
 Angles
 
- 1 1 12 11 4   # C_2 C_2 C_R
+ 1 2 12 11 4   # C_2 C_2 C_R
  2 1 12 11 10   # C_2 C_2 C_2
  3 1 11 10 13   # C_2 C_2 C_2
  4 1 13 10 9   # C_2 C_2 C_2

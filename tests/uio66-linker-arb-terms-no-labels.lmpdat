@@ -33,6 +33,7 @@ Bond Coeffs
 Angle Coeffs
 
  1 cosine/periodic  72.500283  -1  1
+ 2 cosine/periodic  172.500283  -1  1
 
 Dihedral Coeffs
 
@@ -72,7 +73,7 @@ Bonds
 
 Angles
 
- 1 1 12 11 4
+ 1 2 12 11 4
  2 1 12 11 10
  3 1 11 10 13
  4 1 13 10 9
