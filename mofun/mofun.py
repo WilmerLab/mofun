@@ -55,12 +55,14 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
     return s_types_view, s_ss, index_mapper, s_positions
 
-def find_pattern_in_structure(structure, pattern, return_positions=False, verbose=False):
+def find_pattern_in_structure(structure, pattern, return_positions=False, rel_tol=5e-2, verbose=False):
     """find pattern in structure, where both are ASE atoms objects
 
     Returns:
         a list of indice lists for each set of matched atoms found
     """
+    # the relative tolerance needs adjusted to squared relative tolerance
+    rel_tol_sq = 1 - (1 - rel_tol)**2
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
     s_types_view, s_ss, index_mapper, s_positions = get_types_ss_map_limited_near_uc(structure, p_ss.max() ** 0.5, structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
@@ -79,7 +81,8 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, verbos
             for atom_idx in atoms_by_type[pattern.elements[i]]:
                 found_match = True
                 for j in range(i):
-                    if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=5e-2):
+
+                    if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=rel_tol_sq):
                         found_match = False
                         break
 
