@@ -62,7 +62,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, verbos
         a list of indice lists for each set of matched atoms found
     """
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
-    s_types_view, s_ss, index_mapper, s_positions = get_types_ss_map_limited_near_uc(structure, p_ss.max(), structure.cell)
+    s_types_view, s_ss, index_mapper, s_positions = get_types_ss_map_limited_near_uc(structure, p_ss.max() ** 0.5, structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
     for i in range(len(pattern)):
         # Search instances of first atom in a search pattern
