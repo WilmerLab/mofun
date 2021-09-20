@@ -1,0 +1,13 @@
+site_name: MOFUN
+
+theme:
+  name: material
+
+plugins:
+- search
+# - gen-files:
+#     scripts:
+#     - docs/gen_doc_stubs.py
+- mkdocstrings:
+    watch:
+      - mofun

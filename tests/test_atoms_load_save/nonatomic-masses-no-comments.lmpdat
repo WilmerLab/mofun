@@ -1,0 +1,19 @@
+nonatomic-masses.lmpdat (written by mofun)
+
+2 atoms
+0 bonds
+0 angles
+0 dihedrals
+0 impropers
+
+2 atom types
+
+Masses
+
+ 1  12.0
+ 2  1000.0
+
+Atoms
+
+ 1 1 1   0.000000   0.000000   0.000000   0.000000
+ 2 2 1   0.000000   0.349000   0.000000  -1.207000
