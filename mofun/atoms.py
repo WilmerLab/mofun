@@ -979,7 +979,7 @@ def find_unchanged_atom_pairs(orig_structure, final_structure, max_delta=1e-5):
     """Returns array of tuple pairs, where each pair contains the indices in the original and the final
     structure that match.
 
-    does not work across pbcs"""
+    Does not work across PBCs."""
     match_pairs = []
     for i, p1 in enumerate(orig_structure.positions):
         for j, p2 in enumerate(final_structure.positions):

@@ -29,7 +29,6 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     #     raise Exception("Currently optimizations do not support unit cell angles != 90")
 
     uc_offsets = uc_neighbor_offsets(structure.cell)
-
     # move (0., 0., 0.) to be at the 0 index
     uc_offsets[np.where(np.all(uc_offsets == (0,0,0), axis=1))[0][0]] = uc_offsets[0]
     uc_offsets[0] = (0.0, 0.0, 0.0)
@@ -56,23 +55,38 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     return s_types_view, s_ss, index_mapper, s_positions
 
 def find_pattern_in_structure(structure, pattern, return_positions=False, rel_tol=5e-2, verbose=False):
-    """find pattern in structure, where both are ASE atoms objects
+    """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number
+    of atoms, the same elements and the same relative coordinates as in `pattern`.
 
+    Returns a list of tuples, one tuple per match found in `structure` where each tuple has the size
+    `len(pattern)` and contains the indices in the structure that matched the pattern. If
+    `return_postions=True` then  an additional list is returned containing positions for each
+    matched index for each match.
+
+    Args:
+        structure (Atoms): an Atoms object to search in.
+        pattern (Atoms): an Atoms object to search for.
+        return_positions (bool): additionally returns the positions for each index
+        rel_tol (float): the relative tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).
+        verbose (bool): print debugging info.
     Returns:
-        a list of indice lists for each set of matched atoms found
+        List [tuple(len(pattern))]: returns a tuple of size `len(pattern)` containing the indices in structure that matched the pattern, one tuple per each match.
     """
     # the relative tolerance needs adjusted to squared relative tolerance
     rel_tol_sq = 1 - (1 - rel_tol)**2
+    if verbose:
+        print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
     s_types_view, s_ss, index_mapper, s_positions = get_types_ss_map_limited_near_uc(structure, p_ss.max() ** 0.5, structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
+
     for i in range(len(pattern)):
         # Search instances of first atom in a search pattern
         if i == 0:
             # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
             match_index_tuples = [[idx] for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.elements[0])]
             if verbose:
-                print("round %d (%d): " % (i, len(match_index_tuples)), match_index_tuples)
+                print("round %d (%d) [%s]: " % (i, len(match_index_tuples), pattern.elements[0]), match_index_tuples)
             continue
 
         last_match_index_tuples = match_index_tuples
@@ -90,7 +104,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
                 if found_match:
                     match_index_tuples.append(match + [atom_idx])
         if verbose:
-            print("round %d: (%d) " % (i, len(match_index_tuples)), match_index_tuples)
+            print("round %d (%d) [%s]: " % (i, len(match_index_tuples), pattern.elements[i]), match_index_tuples)
 
     match_index_tuples = remove_duplicates(match_index_tuples,
         key=lambda m: tuple(sorted([index_mapper[i] % len(structure) for i in m])))
@@ -103,6 +117,26 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
         return match_index_tuples_in_uc
 
 def replace_pattern_in_structure(structure, search_pattern, replace_pattern, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, verbose=False):
+    """Replaces all instances of `pattern` in `structure` with the `replace_pattern`.
+
+    Works across periodic boundary conditions.
+
+    WARNING: the replace pattern _MUST_ be on the same coordinate system as the search_pattern. If
+    there are atoms that remain the same between the search and replace patterns, they must have the
+    exact same coordinates. If these were to be offset, or moved, then when the replacement pattern
+    gets inserted into the structure, then the replacement will also be offset.
+
+    Args:
+        structure (Atoms): an Atoms object to search in.
+        search_pattern (Atoms): an Atoms object to search for.
+        replace_pattern (Atoms): an Atoms object to search for.
+        replace_fraction (float): how many instances of the search_pattern found in the structure get replaced by the replace pattern.
+        axis1a_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.
+        axis1b_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.
+        verbose (bool): print debugging info.
+    Returns:
+        Atoms: the structure after search_pattern is replaced by replace_pattern.
+    """
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
