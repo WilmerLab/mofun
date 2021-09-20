@@ -16,55 +16,41 @@ from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES, use_or_open
 
 class Atoms:
     """
-per atom arrays:
-    atom_types=[], types for each atom
-    positions=[]: coordinates (x,y,z) for each atom
-    charges=[]: charges for each atom
-    groups=[]: which "group" atom is part of. For LAMMPS, gets mapped to a molecule id.
+    An Atoms object is a container for all the information required to keep track of a structure and
+    the structure's force field.
 
-per atom type arrays:
-    atom_type_masses=[]: mass for each atom type
-    atom_type_elements=[]: periodic table element for each atom type
-    atom_type_labels=[]: (optional) type labels to be output in line comments for lammps output.
+    See the documentation on `__init__` or `load` to see how to create an Atoms object.
 
-per bond arrays:
-    bonds=[]: atom index tuple for each bond, i.e. (1,2) would be a bond connecting atoms 1 and 2.
-    bond_types=[]: type of the bond
+    An Atoms object is made up primarily of numpy arrays and a couple normal lists.
 
-per angle arrays:
-    angles=[]: atom index tuple for each angle, i.e. (1,2,3 )
-    angle_types=[]: type of the angle
+    Some arrays are per-atom (one entry per atom): `atom_types`, `positions`, `charges`, and
+    `groups`.
 
-per dihedral arrays:
-    dihedrals=[]: atom index tuple for each dihedral, i.e. (1,2,3,4)
-    dihedral_types=[]: type of the dihedral
+    Some arrays are per-atom-type (one entry per atom type): `atom_type_masses`, `atom_type_elements`, and
+    `atom_type_labels`.
 
-per improper arrays:
-    impropers=[]: atom index tuple for each improper, i.e. (1,2,3,4)
-    improper_types=[]: type of the improper
+    Some arrays are per-bond (one entry per bond): `bonds`, and `bond_types`.
 
+    Some arrays are per-angle (one entry per angle): `angles`, and `angle_types`.
 
-cell=[]: unit cell matrix (same definition as in ASE)
+    Some arrays are per-dihedral (one entry per dihedral): `dihedrals`, and `dihedral_types`.
 
+    Some arrays are per-improper (one entry per improper): `impropers`, and `improper_types`.
 
-*_coeffs:
-
-    pair_coeffs=[]
-    bond_type_coeffs=[]
-    angle_type_coeffs=[]
-    dihedral_type_coeffs=[]
-    improper_type_coeffs=[]
-
-    The *_coeffs variables are lists of strings, where the item index corresponds to the *_type, and
-    the string is the full LAMMPS coeffs definition string. we do not interpret any of the LAMMPS
-    coefficient specifics, we just store it in its original form, i.e. this Angle Coeffs section:
+    Atoms also stores information on the coefficients needed to define each force field term:
+    `pair_coeffs`, `bond_type_coeffs`, `angle_type_coeffs`, `dihedral_type_coeffs`, and
+    `improper_type_coeffs`. The \*\_coeffs variables are lists of strings, where the item index
+    corresponds to the \*\_type, and the string is the full LAMMPS coeffs definition string. we do
+    not interpret any of the LAMMPS coefficient specifics, we just store it in its original form,
+    i.e. this Angle Coeffs section:
 
     ```
     Angle Coeffs
 
-     1 cosine/periodic  72.500283  -1  1   # C_R O_1 H_
-     2 cosine/periodic  277.164705  -1  3   # C_R C_R O_1
-     ```
+    1 cosine/periodic  72.500283  -1  1   # C_R O_1 H_
+    2 cosine/periodic  277.164705  -1  3   # C_R C_R O_1
+    ```
+
     would be interpreted like this:
 
     ```
@@ -78,7 +64,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
                     dihedrals=[], dihedral_types=[], impropers=[], improper_types=[],
                     pair_coeffs=[], bond_type_coeffs=[], angle_type_coeffs=[],
                     dihedral_type_coeffs=[], improper_type_coeffs=[], cell=[]):
-        """
+        """Create an Atoms object.
 
         An Atoms object can be created without any atoms using `Atoms()`. For creating more
         interesting Atoms objects, there are a few rules to keep in mind. The parameters
@@ -121,31 +107,30 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
         Args:
             atom_types (List[int]): list of integer type ids, one per atom.
-            positions (List[Tuple[float,float,float]]): list of tuple atom x,y,z coordinates, one per atom.
-            charges (List[float]): list of integer charges, one per atom. Defaults to 0 for each atom if not passed.
-            groups (List[int]): list of integer groups, one per atom. Defaults to 0 for each atom if not passed.
+            positions (List[Tuple[float, float, float]]): list of tuple atom x,y,z coordinates, one per atom.
+            charges (List[float]): list of charges, one per atom. Defaults to 0 for each atom if not passed.
+            groups (List[int]): list of integer groups, one per atom. For LAMMPS this gets mapped to a "molecule id". Defaults to 0 for each atom if not passed.
             elements (List[str], str): either a list of elements, (e.g. ["C", "H", "H", "H"]) or an element string (e.g. "CHHH")
             atom_type_masses (List[float]): list of atom type masses, one per atom type. If masses are not passed, they will be inferred from the `atom_type_elements`.
             atom_type_elements (List[str]): list of atom type elements, one per atom type.
-            atom_type_labels (List[str]):  list of atom type labels, one per atom type.
-            bonds(List[Tuple[int, int]]): list of bond tuples where each tuple defines a pair of atoms that are bonded. Each value in the tuple is an index of an atom in the atom_* lists.
-            bond_types(List[int]): list of bond type id ints for each bond defined in `bonds`.
-            angles(List[Tuple[int, int, int]]): list of angle tuples where each tuple defines a triplet of atoms making up the angle. Each value in the tuple is an index of an atom in the atom_* lists.
-            angle_types(List[int]): list of angle type id ints for each angle defined in `angles`.
-            dihedrals(List[Tuple[int, int, int, int]]): list of dihedral tuples where each dihedral defines a quartet of atoms making up the dihedral. Each value in the tuple is an index of an atom in the atom_* lists.
-            dihedral_types(List[int]): list of dihedral type id ints for each dihedral defined in `dihedrals`.
-            impropers(List[Tuple[int, int, int, int]]): list of improper tuples where each improper defines a quartet of atoms making up the improper. Each value in the tuple is an index of an atom in the atom_* lists.
-            improper_types(List[int]): list of improper type id ints for each improper defined in `impropers`.
-            pair_coeffs(List[str]): pair coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per atom type.
-            bond_type_coeffs(List[str]): bond coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per bond type.
-            angle_type_coeffs(List[str]): angle coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per angle type.
-            dihedral_type_coeffs(List[str]): dihedral coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per dihedral type.
-            improper_type_coeffs(List[str]): improper coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per improper type.
-            cell(Array(3x3)): 3x3 array of unit cell vectors.
+            atom_type_labels (List[str]):  list of atom type labels, one per atom type. Used in LAMMPS data file line comments as type labels.
+            bonds (List[Tuple[int, int]]): list of bond tuples where each tuple defines a pair of atoms that are bonded. Each value in the tuple is an index of an atom in the atom_* lists.
+            bond_types (List[int]): list of bond type id ints for each bond defined in `bonds`.
+            angles (List[Tuple[int, int, int]]): list of angle tuples where each tuple defines a triplet of atoms making up the angle. Each value in the tuple is an index of an atom in the atom_* lists.
+            angle_types (List[int]): list of angle type id ints for each angle defined in `angles`.
+            dihedrals (List[Tuple[int, int, int, int]]): list of dihedral tuples where each dihedral defines a quartet of atoms making up the dihedral. Each value in the tuple is an index of an atom in the atom_* lists.
+            dihedral_types (List[int]): list of dihedral type id ints for each dihedral defined in `dihedrals`.
+            impropers (List[Tuple[int, int, int, int]]): list of improper tuples where each improper defines a quartet of atoms making up the improper. Each value in the tuple is an index of an atom in the atom_* lists.
+            improper_types (List[int]): list of improper type id ints for each improper defined in `impropers`.
+            pair_coeffs (List[str]): pair coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per atom type.
+            bond_type_coeffs (List[str]): bond coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per bond type.
+            angle_type_coeffs (List[str]): angle coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per angle type.
+            dihedral_type_coeffs (List[str]): dihedral coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per dihedral type.
+            improper_type_coeffs (List[str]): improper coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per improper type.
+            cell (Array(3x3)): 3x3 array of unit cell vectors.
 
         Returns:
             Atoms: the atoms object.
-
         """
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
@@ -246,9 +231,11 @@ cell=[]: unit cell matrix (same definition as in ASE)
         """Creates an Atoms object from either a path or a file object and filetype.
 
         Can load any of the supported types:
+
         - lammps data file: "lmpdat"
         - cif
         - cml
+
         Only the lammps data file and cif support reading from a file object, presently, due to the
         other formats depending on external library support.
 
@@ -291,6 +278,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         """Saves an Atoms object to either a path or a file object and filetype.
 
         Can save any of the supported types:
+
         - lammps data file: "lmpdat"
         - mol
 
@@ -325,12 +313,9 @@ cell=[]: unit cell matrix (same definition as in ASE)
         else:
             raise Exception("Unsupported filetype")
 
-
-
-
     @classmethod
     def load_lmpdat(cls, f, atom_format="full", guess_atol=0.1):
-        """ load Atoms object from lammps data file (.lmpdat) format.
+        """Load Atoms object from lammps data file (.lmpdat) format.
 
         LAMMPS data files store only atom ids and masses, but do not store two other things we need:
         elements and atom type labels. These are the rules for inferring atom type labels and elements.
@@ -340,24 +325,24 @@ cell=[]: unit cell matrix (same definition as in ASE)
         1. guess the elements using the masses by seeing if there is a periodic table element within
         0.1 g/mol of the mass. If any atom types doe not match to an existing periodic table
         element, this method fails.
-
         2. use the atom ids as the elements (and print a warning).
 
         In priority order, for atom type labels, we:
 
         1. use the comments after each line in the Masses section as the atom type. If any line is
         missing a comment, this method fails.
-
         2. use the elements, if we have them.
-
         3. use the atom ids (and print a warning).
 
         Args:
             f (File): File-like object to read from.
-            atom_format(str): atom format of lammps data file. Currently supported atom formats are
+            atom_format (str): atom format of lammps data file. Currently supported atom formats are
                 'full' and 'atomic'.
-            guess_atol(float): absolute tolerance a read mass can differ from a periodic table mass
+            guess_atol (float): absolute tolerance a read mass can differ from a periodic table mass
                 and still be considered that element. Default: 0.1.
+
+        Returns:
+            Atoms: loaded Atoms object
         """
         def get_types_tups(arr):
             types = tups = []
@@ -499,6 +484,14 @@ cell=[]: unit cell matrix (same definition as in ASE)
                    groups=groups, cell=cell)
 
     def save_lmpdat(self, f, atom_format="full", file_comment=""):
+        """Saves a lmpdat file
+
+        Args:
+            f (File): an open file to write to
+            atom_format (str): LAMMPS atom format. Supports only 'atomic' and 'full'.
+            file_comment (str): written in first line of output file.
+        """
+
         f.write("%s (written by mofun)\n\n" % file_comment)
 
         f.write('%d atoms\n' % len(self.atom_types))
@@ -606,6 +599,15 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
     @classmethod
     def load_cif(cls, f):
+        """Loads a CIF file, including bonding information.
+
+        Args:
+            f (File): File-like object to read from.
+
+        Returns:
+            Atoms: loaded Atoms object
+        """
+
         def has_all_tags(block, tags):
             return np.array([block.has_key(tag) for tag in tags]).all()
 
@@ -663,6 +665,15 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
     @classmethod
     def load_cml(cls, path):
+        """Loads a CML file, including bonding information.
+
+        Args:
+            f (File): File-like object to read from.
+
+        Returns:
+            Atoms: loaded Atoms object
+        """
+
         tree = ET.parse(path)
         root = tree.getroot()
 
@@ -682,6 +693,16 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
     @classmethod
     def from_ase_atoms(cls, atoms):
+        """Create an Atoms object from an ASE Atoms object.
+
+        Only supports importing the atom positions, elements, and the unit cell.
+
+        Args:
+            atoms (ASE Atoms object): atoms to load from
+
+        Returns:
+            Atoms: atoms loaded from an ASE Atoms object.
+        """
         return cls(elements=atoms.symbols, positions=atoms.positions, cell=atoms.cell)
 
 
@@ -695,7 +716,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
         return " ".join([self.atom_type_labels[x] for x in atoms])
 
     def retype_atoms_from_uff_types(self, new_types):
-        """ takes a list of new_types that are strings, converts to integer types, and populates
+        """Takes a list of new_types that are strings, converts to integer types, and populates
         atom_type_labels"""
 
         ptable_order = lambda x: list(ATOMIC_MASSES.keys()).index(x.split("_")[0])
@@ -763,7 +784,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
 
     def extend(self, other, offsets=None, structure_index_map={}, verbose=False):
-        """ adds other Atoms object's arrays to its own.
+        """Adds other Atoms object's arrays to its own.
 
         The default behavior is for all the types and params from other structure to be appended to
         this structure.
@@ -780,6 +801,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
             structure_index_map: dictionary where key is an index in other and value is an index in
                 self, where entries only exist if the position and element of the entries are
                 identical and can be considered to be the same atom.
+            verbose (bool): print debugging info.
         """
         atom_idx_offset = len(self.positions)
         if offsets is None:
@@ -845,6 +867,19 @@ cell=[]: unit cell matrix (same definition as in ASE)
         self.assert_arrays_are_consistent_sizes()
 
     def replicate(self, repldims=(1,1,1)):
+        """Replicate atoms object across xyz dimensions
+
+        Warnings:
+
+        * only works for orthorhombic at the moment!
+        * does not magically handle any bonds that may cross periodic boundary conditions!
+
+        Args:
+            repldims (Tuple(int, int, int)): number of times to replicate in each dimension
+
+        Returns:
+            Atoms: replicated atoms.
+        """
         repl_atoms = self.copy()
         ucmults = np.array(np.meshgrid(*[range(r) for r in repldims])).T.reshape(-1, 3)
         ucmults = ucmults[np.any(ucmults != 0, axis=1)] # remove [0,0,0] since in copy
@@ -907,6 +942,10 @@ cell=[]: unit cell matrix (same definition as in ASE)
                      cell=self.cell)
 
     def to_ase(self):
+        """Convert to ASE atoms object.
+
+        Only supports export of the positions and elements.
+        """
         kwargs = dict(positions=self.positions)
         if self.cell is not None and len(self.cell) > 0:
             kwargs['cell'] = self.cell
@@ -937,7 +976,7 @@ cell=[]: unit cell matrix (same definition as in ASE)
 
 
 def find_unchanged_atom_pairs(orig_structure, final_structure, max_delta=1e-5):
-    """returns array of tuple pairs, where each pair contains the indices in the original and the final
+    """Returns array of tuple pairs, where each pair contains the indices in the original and the final
     structure that match.
 
     does not work across pbcs"""
