@@ -309,7 +309,7 @@ class Atoms:
                 return atoms
         elif filetype == "mol":
             with use_or_open(fd, path, mode='w') as fh:
-                return cls.save_mol(fh, **kwargs)
+                return self.save_mol(fh, **kwargs)
         else:
             raise Exception("Unsupported filetype")
 
