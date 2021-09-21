@@ -28,6 +28,24 @@ def add_aromatic_flag(g):
             for n in cycle:
                 g.nodes[n]['aromatic'] = True
 
+def retype_atoms_from_uff_types(atoms, new_types):
+    """Takes a list of new_types that are strings, converts to integer types, and populates
+    atom_type_labels"""
+
+    ptable_order = lambda x: list(ATOMIC_MASSES.keys()).index(x.split("_")[0])
+    unique_types = list(set(new_types))
+
+    # sort by string ordering, so types like 'C_1', 'C_2', 'C_3', 'C_R' will show up in order
+    unique_types.sort()
+    # sort by periodic element # order
+    unique_types.sort(key=ptable_order)
+
+    atoms.atom_type_labels = unique_types
+    atoms.atom_type_elements = [s.split("_")[0] for s in unique_types]
+    atoms.atom_type_masses = [ATOMIC_MASSES[s] for s in atoms.atom_type_elements]
+
+    atoms.atom_types = [unique_types.index(s) for s in new_types]
+
 def assign_uff_atom_types(g, elements, override_rules=None):
     """ g is a networkx Graph object
     """
