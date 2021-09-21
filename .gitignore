@@ -13,3 +13,4 @@ MANIFEST
 *.npy
 .DS_Store
 *.egg-info
+site
