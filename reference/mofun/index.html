@@ -14,7 +14,7 @@
     
     
       
-        <title>Mofun - My Docs</title>
+        <title>Mofun - MOFUN</title>
       
     
     
@@ -74,7 +74,7 @@
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="My Docs" class="md-header__button md-logo" aria-label="My Docs" data-md-component="logo">
+    <a href="../.." title="MOFUN" class="md-header__button md-logo" aria-label="MOFUN" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
@@ -87,7 +87,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            My Docs
+            MOFUN
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -158,13 +158,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="My Docs" class="md-nav__button md-logo" aria-label="My Docs" data-md-component="logo">
+    <a href="../.." title="MOFUN" class="md-nav__button md-logo" aria-label="MOFUN" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
 
     </a>
-    My Docs
+    MOFUN
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -276,6 +276,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#mofun.mofun.replace_pattern_in_structure" class="md-nav__link">
+    replace_pattern_in_structure()
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -334,6 +341,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#mofun.mofun.replace_pattern_in_structure" class="md-nav__link">
+    replace_pattern_in_structure()
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -378,8 +392,56 @@
 
     <div class="doc doc-contents ">
 
-      <p>find pattern in structure, where both are ASE atoms objects</p>
+      <p>Looks for instances of <code>pattern</code> in <code>structure</code>, where a match in the structure has the same number
+of atoms, the same elements and the same relative coordinates as in <code>pattern</code>.</p>
+<p>Returns a list of tuples, one tuple per match found in <code>structure</code> where each tuple has the size
+<code>len(pattern)</code> and contains the indices in the structure that matched the pattern. If
+<code>return_postions=True</code> then  an additional list is returned containing positions for each
+matched index for each match.</p>
 
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>structure</code></td>
+        <td><code>Atoms</code></td>
+        <td><p>an Atoms object to search in.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>pattern</code></td>
+        <td><code>Atoms</code></td>
+        <td><p>an Atoms object to search for.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>return_positions</code></td>
+        <td><code>bool</code></td>
+        <td><p>additionally returns the positions for each index</p></td>
+        <td><code>False</code></td>
+      </tr>
+      <tr>
+        <td><code>rel_tol</code></td>
+        <td><code>float</code></td>
+        <td><p>the relative tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).</p></td>
+        <td><code>0.05</code></td>
+      </tr>
+      <tr>
+        <td><code>verbose</code></td>
+        <td><code>bool</code></td>
+        <td><p>print debugging info.</p></td>
+        <td><code>False</code></td>
+      </tr>
+  </tbody>
+</table>
 <p><strong>Returns:</strong></p>
 <table>
   <thead>
@@ -390,18 +452,30 @@
   </thead>
   <tbody>
     <tr>
-      <td><code></code></td>
-      <td><p>a list of indice lists for each set of matched atoms found</p></td>
+      <td><code>List [tuple(len(pattern))]</code></td>
+      <td><p>returns a tuple of size <code>len(pattern)</code> containing the indices in structure that matched the pattern, one tuple per each match.</p></td>
     </tr>
   </tbody>
 </table>
         <details class="quote">
           <summary>Source code in <code>mofun/mofun.py</code></summary>
           <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">find_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">return_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="mf">5e-2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;find pattern in structure, where both are ASE atoms objects</span>
+    <span class="sd">&quot;&quot;&quot;Looks for instances of `pattern` in `structure`, where a match in the structure has the same number</span>
+<span class="sd">    of atoms, the same elements and the same relative coordinates as in `pattern`.</span>
 
+<span class="sd">    Returns a list of tuples, one tuple per match found in `structure` where each tuple has the size</span>
+<span class="sd">    `len(pattern)` and contains the indices in the structure that matched the pattern. If</span>
+<span class="sd">    `return_postions=True` then  an additional list is returned containing positions for each</span>
+<span class="sd">    matched index for each match.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        structure (Atoms): an Atoms object to search in.</span>
+<span class="sd">        pattern (Atoms): an Atoms object to search for.</span>
+<span class="sd">        return_positions (bool): additionally returns the positions for each index</span>
+<span class="sd">        rel_tol (float): the relative tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).</span>
+<span class="sd">        verbose (bool): print debugging info.</span>
 <span class="sd">    Returns:</span>
-<span class="sd">        a list of indice lists for each set of matched atoms found</span>
+<span class="sd">        List [tuple(len(pattern))]: returns a tuple of size `len(pattern)` containing the indices in structure that matched the pattern, one tuple per each match.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># the relative tolerance needs adjusted to squared relative tolerance</span>
     <span class="n">rel_tol_sq</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rel_tol</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
@@ -491,8 +565,6 @@ boundary than this will never match the search pattern).</p>
     <span class="c1">#     raise Exception(&quot;Currently optimizations do not support unit cell angles != 90&quot;)</span>
 
     <span class="n">uc_offsets</span> <span class="o">=</span> <span class="n">uc_neighbor_offsets</span><span class="p">(</span><span class="n">structure</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">uc_offsets</span><span class="p">)</span>
     <span class="c1"># move (0., 0., 0.) to be at the 0 index</span>
     <span class="n">uc_offsets</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">uc_offsets</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">uc_offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">uc_offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
@@ -500,14 +572,12 @@ boundary than this will never match the search pattern).</p>
     <span class="n">s_positions</span> <span class="o">=</span> <span class="p">[</span><span class="n">structure</span><span class="o">.</span><span class="n">positions</span> <span class="o">+</span> <span class="n">uc_offset</span> <span class="k">for</span> <span class="n">uc_offset</span> <span class="ow">in</span> <span class="n">uc_offsets</span><span class="p">]</span>
     <span class="n">s_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">s_positions</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">y</span><span class="p">])</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;len(s_positions) = &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s_positions</span><span class="p">))</span>
     <span class="n">s_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">structure</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">uc_offsets</span><span class="p">)</span>
     <span class="n">cell</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">cell</span><span class="p">))</span>
     <span class="n">index_mapper</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">s_pos_view</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">s_types_view</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;2)&quot;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">s_positions</span><span class="p">):</span>
         <span class="c1"># only currently works for orthorhombic crystals</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="n">length</span> <span class="ow">and</span> <span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">length</span> <span class="o">+</span> <span class="n">cell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span>
@@ -517,8 +587,6 @@ boundary than this will never match the search pattern).</p>
             <span class="n">s_pos_view</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
             <span class="n">s_types_view</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s_types</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;len(s_pos_view) = &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s_pos_view</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cdist...&quot;</span><span class="p">)</span>
     <span class="n">s_ss</span> <span class="o">=</span> <span class="n">distance</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">s_pos_view</span><span class="p">,</span> <span class="n">s_pos_view</span><span class="p">,</span> <span class="s2">&quot;sqeuclidean&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">s_types_view</span><span class="p">,</span> <span class="n">s_ss</span><span class="p">,</span> <span class="n">index_mapper</span><span class="p">,</span> <span class="n">s_positions</span>
 </code></pre></div>
@@ -527,6 +595,209 @@ boundary than this will never match the search pattern).</p>
 
   </div>
 
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="mofun.mofun.replace_pattern_in_structure" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">search_pattern</span><span class="p">,</span> <span class="n">replace_pattern</span><span class="p">,</span> <span class="n">replace_fraction</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">axis1a_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis1b_idx</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Replaces all instances of <code>pattern</code> in <code>structure</code> with the <code>replace_pattern</code>.</p>
+<p>Works across periodic boundary conditions.</p>
+<p>WARNING: the replace pattern <em>MUST</em> be on the same coordinate system as the search_pattern. If
+there are atoms that remain the same between the search and replace patterns, they must have the
+exact same coordinates. If these were to be offset, or moved, then when the replacement pattern
+gets inserted into the structure, then the replacement will also be offset.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>structure</code></td>
+        <td><code>Atoms</code></td>
+        <td><p>an Atoms object to search in.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>search_pattern</code></td>
+        <td><code>Atoms</code></td>
+        <td><p>an Atoms object to search for.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>replace_pattern</code></td>
+        <td><code>Atoms</code></td>
+        <td><p>an Atoms object to search for.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>replace_fraction</code></td>
+        <td><code>float</code></td>
+        <td><p>how many instances of the search_pattern found in the structure get replaced by the replace pattern.</p></td>
+        <td><code>1.0</code></td>
+      </tr>
+      <tr>
+        <td><code>axis1a_idx</code></td>
+        <td><code>float</code></td>
+        <td><p>index in search_pattern of first point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.</p></td>
+        <td><code>0</code></td>
+      </tr>
+      <tr>
+        <td><code>axis1b_idx</code></td>
+        <td><code>float</code></td>
+        <td><p>index in search_pattern of second point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.</p></td>
+        <td><code>-1</code></td>
+      </tr>
+      <tr>
+        <td><code>verbose</code></td>
+        <td><code>bool</code></td>
+        <td><p>print debugging info.</p></td>
+        <td><code>False</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Atoms</code></td>
+      <td><p>the structure after search_pattern is replaced by replace_pattern.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>mofun/mofun.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">search_pattern</span><span class="p">,</span> <span class="n">replace_pattern</span><span class="p">,</span> <span class="n">replace_fraction</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">axis1a_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis1b_idx</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replaces all instances of `pattern` in `structure` with the `replace_pattern`.</span>
+
+<span class="sd">    Works across periodic boundary conditions.</span>
+
+<span class="sd">    WARNING: the replace pattern _MUST_ be on the same coordinate system as the search_pattern. If</span>
+<span class="sd">    there are atoms that remain the same between the search and replace patterns, they must have the</span>
+<span class="sd">    exact same coordinates. If these were to be offset, or moved, then when the replacement pattern</span>
+<span class="sd">    gets inserted into the structure, then the replacement will also be offset.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        structure (Atoms): an Atoms object to search in.</span>
+<span class="sd">        search_pattern (Atoms): an Atoms object to search for.</span>
+<span class="sd">        replace_pattern (Atoms): an Atoms object to search for.</span>
+<span class="sd">        replace_fraction (float): how many instances of the search_pattern found in the structure get replaced by the replace pattern.</span>
+<span class="sd">        axis1a_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.</span>
+<span class="sd">        axis1b_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.</span>
+<span class="sd">        verbose (bool): print debugging info.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Atoms: the structure after search_pattern is replaced by replace_pattern.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">search_pattern</span> <span class="o">=</span> <span class="n">search_pattern</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">replace_pattern</span> <span class="o">=</span> <span class="n">replace_pattern</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">match_indices</span><span class="p">,</span> <span class="n">match_positions</span> <span class="o">=</span> <span class="n">find_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">search_pattern</span><span class="p">,</span> <span class="n">return_positions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">replace_fraction</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">replace_indices</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">match_positions</span><span class="p">))),</span> <span class="n">k</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">replace_fraction</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_positions</span><span class="p">)))</span>
+        <span class="n">match_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">match_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">replace_indices</span><span class="p">]</span>
+        <span class="n">match_positions</span> <span class="o">=</span> <span class="n">match_positions</span><span class="p">[</span><span class="n">replace_indices</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">match_indices</span><span class="p">,</span> <span class="n">match_positions</span><span class="p">)</span>
+
+    <span class="c1"># translate both search and replace patterns so that first atom of search pattern is at the origin</span>
+    <span class="n">replace_pattern</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">search_pattern</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">axis1a_idx</span><span class="p">])</span>
+    <span class="n">search_pattern</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">search_pattern</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">axis1a_idx</span><span class="p">])</span>
+    <span class="n">search_axis</span> <span class="o">=</span> <span class="n">search_pattern</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">axis1b_idx</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;search_axis: &quot;</span><span class="p">,</span> <span class="n">search_axis</span><span class="p">)</span>
+
+    <span class="n">replace2search_pattern_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">find_unchanged_atom_pairs</span><span class="p">(</span><span class="n">replace_pattern</span><span class="p">,</span> <span class="n">search_pattern</span><span class="p">)}</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">search_pattern</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">orientation_point_index</span> <span class="o">=</span> <span class="n">position_index_farthest_from_axis</span><span class="p">(</span><span class="n">search_axis</span><span class="p">,</span> <span class="n">search_pattern</span><span class="p">)</span>
+        <span class="n">orientation_point</span> <span class="o">=</span> <span class="n">search_pattern</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">orientation_point_index</span><span class="p">]</span>
+        <span class="n">orientation_axis</span> <span class="o">=</span> <span class="n">orientation_point</span> <span class="o">-</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">orientation_point</span><span class="p">,</span> <span class="n">search_axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">search_axis</span><span class="p">,</span> <span class="n">search_axis</span><span class="p">))</span> <span class="o">*</span> <span class="n">search_axis</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;orientation_axis: &quot;</span><span class="p">,</span> <span class="n">orientation_axis</span><span class="p">)</span>
+
+    <span class="n">new_structure</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">to_delete</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">replace_pattern</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">to_delete</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">([</span><span class="n">idx</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">match_indices</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">match</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">offsets</span> <span class="o">=</span> <span class="n">new_structure</span><span class="o">.</span><span class="n">extend_types</span><span class="p">(</span><span class="n">replace_pattern</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m_i</span><span class="p">,</span> <span class="n">atom_positions</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">match_positions</span><span class="p">):</span>
+            <span class="n">new_atoms</span> <span class="o">=</span> <span class="n">replace_pattern</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">atom_positions</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;original atoms:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">atom_positions</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;new atoms:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom_positions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">found_axis</span> <span class="o">=</span> <span class="n">atom_positions</span><span class="p">[</span><span class="n">axis1b_idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">atom_positions</span><span class="p">[</span><span class="n">axis1a_idx</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;found axis: &quot;</span><span class="p">,</span> <span class="n">found_axis</span><span class="p">)</span>
+                <span class="n">q1</span> <span class="o">=</span> <span class="n">quaternion_from_two_vectors</span><span class="p">(</span><span class="n">search_axis</span><span class="p">,</span> <span class="n">found_axis</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">q1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">q1</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;q1: &quot;</span><span class="p">,</span> <span class="n">q1</span><span class="o">.</span><span class="n">as_quat</span><span class="p">())</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;new atoms after q1:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;new atoms after q1 (translated):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span> <span class="o">+</span> <span class="n">atom_positions</span><span class="p">[</span><span class="n">axis1a_idx</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom_positions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">found_orientation_point</span> <span class="o">=</span> <span class="n">atom_positions</span><span class="p">[</span><span class="n">orientation_point_index</span><span class="p">]</span> <span class="o">-</span> <span class="n">atom_positions</span><span class="p">[</span><span class="n">axis1a_idx</span><span class="p">]</span>
+                    <span class="n">found_orientation_axis</span> <span class="o">=</span> <span class="n">found_orientation_point</span> <span class="o">-</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">found_orientation_point</span><span class="p">,</span> <span class="n">found_axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">found_axis</span><span class="p">,</span> <span class="n">found_axis</span><span class="p">))</span> <span class="o">*</span> <span class="n">found_axis</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;found orientation_axis: &quot;</span><span class="p">,</span> <span class="n">found_orientation_axis</span><span class="p">)</span>
+                    <span class="n">q1_o_axis</span> <span class="o">=</span> <span class="n">orientation_axis</span>
+                    <span class="k">if</span> <span class="n">q1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">q1_o_axis</span> <span class="o">=</span> <span class="n">q1</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">q1_o_axis</span><span class="p">)</span>
+
+                    <span class="n">q2</span> <span class="o">=</span> <span class="n">quaternion_from_two_vectors_around_axis</span><span class="p">(</span><span class="n">found_orientation_axis</span><span class="p">,</span> <span class="n">q1_o_axis</span><span class="p">,</span> <span class="n">found_axis</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(transformed) orientation_axis: &quot;</span><span class="p">,</span> <span class="n">q1_o_axis</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;orienting: &quot;</span><span class="p">,</span> <span class="n">found_orientation_point</span><span class="p">,</span> <span class="n">q1_o_axis</span><span class="p">,</span> <span class="n">found_orientation_axis</span><span class="p">,</span> <span class="n">q2</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">q2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+                        <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">q2</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;q2: &quot;</span><span class="p">,</span> <span class="n">q2</span><span class="o">.</span><span class="n">as_quat</span><span class="p">())</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;new aif verbose: toms after q2:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+
+            <span class="c1"># move replacement atoms into correct position</span>
+            <span class="n">new_atoms</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">atom_positions</span><span class="p">[</span><span class="n">axis1a_idx</span><span class="p">])</span>
+            <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span> <span class="o">%=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">new_structure</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;new atoms after translate:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+
+            <span class="n">structure_index_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">match_indices</span><span class="p">[</span><span class="n">m_i</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">replace2search_pattern_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">new_structure</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_atoms</span><span class="p">,</span> <span class="n">offsets</span><span class="o">=</span><span class="n">offsets</span><span class="p">,</span> <span class="n">structure_index_map</span><span class="o">=</span><span class="n">structure_index_map</span><span class="p">)</span>
+
+            <span class="n">to_delete_linker</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">match_indices</span><span class="p">[</span><span class="n">m_i</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">structure_index_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">to_delete</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">to_delete_linker</span><span class="p">)</span>
+
+    <span class="k">del</span><span class="p">(</span><span class="n">new_structure</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">to_delete</span><span class="p">)])</span>
+
+    <span class="k">return</span> <span class="n">new_structure</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
 
 
 
