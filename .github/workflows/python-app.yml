@@ -5,7 +5,7 @@ name: MOFUN
 
 on:
   push:
-    branches: [ main ]
+    branches: [ refactor2 ]
   pull_request:
     branches: [ main ]
 
