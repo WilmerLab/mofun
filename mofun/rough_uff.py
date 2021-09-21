@@ -2,6 +2,7 @@ from math import sqrt, log, cos, sin, pi
 
 import networkx as nx
 
+from mofun.atomic_masses import ATOMIC_MASSES
 from mofun.uff4mof import UFF4MOF, uff_key_starts_with, MAIN_GROUP_ELEMENTS
 
 def default_uff_rules():
