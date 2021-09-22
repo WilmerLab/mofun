@@ -156,7 +156,6 @@ def test_atoms_replicate__211_has_replicate_in_x_dim(octane):
     assert np.array_equal(np.tile(octane.charges,2), reploctane.charges)
     assert np.array_equal(np.tile(octane.groups,2), reploctane.groups)
 
-
 def test_atoms_replicate__213_has_replicates_in_xz_dims(octane):
     reploctane = octane.replicate((2,1,3))
     na = 26 # atoms in octane

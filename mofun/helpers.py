@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import math
 import random
 
 import numpy as np
@@ -64,18 +65,7 @@ def quaternion_from_two_vectors_around_axis(p1, p2, axis):
     if norm(axis) > 1e-15:
         axis /= norm(axis)
 
-    v1v2cross = np.cross(v1, v2)
-    if angle != 0. and norm(v1v2cross) == 0.:
-        print("POSSIBLY PROBLEMATIC ARGUMENT SET:")
-        print("p1: ", p1)
-        print("p2:", p2)
-        print("axis: ", axis)
-        print("v1: ", v1)
-        print("v2:", v2)
-        print("angle:", angle)
-        print("v1v2cross: ", v1v2cross)
-
-    if angle != 0. and np.isclose(axis, v1v2cross / norm(v1v2cross), 1e-3).all():
+    if angle not in [0., math.pi] and np.isclose(axis, np.cross(v1, v2) / norm(np.cross(v1, v2)), 1e-3).all():
         angle *= -1
     return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
 

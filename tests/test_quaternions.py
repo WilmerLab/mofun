@@ -35,3 +35,9 @@ def test_quaternion_from_two_vectors_around_axis__with_parallel_vectors_is_donot
     q = quaternion_from_two_vectors_around_axis((0., 0., 2.),(0., 0., 2.), axis=(1., 0., 0.))
     assert np.isclose(q.as_quat(), [0., 0., 0., 1.]).all()
     assert (q.apply([1., 1., 1.]) == [1., 1., 1.]).all()
+
+def test_quaternion_from_two_vectors_around_axis__with_antiparallel_about_x_reverses_yz():
+    q = quaternion_from_two_vectors_around_axis((-5, -1, 0.),(5, 1, 0.), axis=(1., 0., 0.))
+    assert np.isclose(q.apply([1., 1., 1.]), [1., -1., -1.]).all()
+    assert np.isclose(q.apply([1., -1., 1.]), [1., 1., -1.]).all()
+    assert np.isclose(q.apply([1., 1., -1.]), [1., -1., 1.]).all()
