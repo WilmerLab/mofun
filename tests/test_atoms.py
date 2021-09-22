@@ -139,27 +139,6 @@ def test_atoms_getitem__has_all_atom_types_and_charges():
     assert atoms[(2,3)].elements == ["C", "N"]
     assert (atoms[(0,1)].charges ==[1, 2]).all()
 
-def test_atoms_calc_angles__ethane_has_12_angles():
-    ethane = Atoms(elements='HHHCCHHH', positions=[(1., 1., 1)] * 8,
-                bonds=[(0,3), (1,3), (2,3), (3,4), (4,5), (4,6), (4,7)], bond_types=[0] * 7)
-
-    ethane.calc_angles()
-    unique_angles = set([tuple(x) for x in ethane.angles])
-    assert len(ethane.angles) == 12
-    assert unique_angles == {(0,3,1), (0,3,2), (1,3,2), (0,3,4), (1,3,4), (2,3,4),
-                             (3,4,5), (3,4,6), (3,4,7), (5,4,6), (5,4,7), (6,4,7)}
-
-def test_atoms_calc_dihedrals__ethane_has_9_dihedrals():
-    ethane = Atoms(elements='HHHCCHHH', positions=[(1., 1., 1)] * 8,
-                bonds=[(0,3), (1,3), (2,3), (3,4), (4,5), (4,6), (4,7)], bond_types=[0] * 7)
-
-    ethane.calc_dihedrals()
-    unique_dihedrals = set([tuple(x) for x in ethane.dihedrals])
-    assert len(ethane.dihedrals) == 9
-    assert unique_dihedrals == {(0,3,4,5), (1,3,4,5), (2,3,4,5),
-                                (0,3,4,6), (1,3,4,6), (2,3,4,6),
-                                (0,3,4,7), (1,3,4,7), (2,3,4,7)}
-
 def test_atoms_replicate__111_is_unchanged(octane):
     reploctane = octane.replicate((1,1,1))
     assert np.array_equal(octane.positions, reploctane.positions)
