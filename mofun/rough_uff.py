@@ -391,7 +391,10 @@ def delete_if_all_in_set(arr, s):
             deletion_list.append(i)
     return np.delete(arr, deletion_list, axis=0)
 
-def assign_pair_coeffs(atoms):
+def assign_pair_coeffs(atoms, assign_atom_type_labels_from_elements=False):
+    if assign_atom_type_labels_from_elements:
+        atoms.atom_type_labels = [uff_key_starts_with(el.ljust(2, "_"))[0] for el in atoms.atom_type_elements]
+
     atoms.pair_coeffs = ['%10.6f %10.6f # %s' % (*pair_coeffs(a1), a1) for a1 in atoms.atom_type_labels]
 
 def assign_bond_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
