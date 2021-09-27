@@ -90,9 +90,9 @@ class Atoms:
         missing. If you are using atom types with masses that do not correspond to periodic table
         elements, then you will need to specify the masses explicitly.
 
-        Passing force field term information for `bonds`, `angles`, `dihedrals` is optional, as well
-        as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_coeffs`,
-        `angle_coeffs`, and `dihedral_coeffs`.
+        Passing force field term information for `bonds`, `angles`, `dihedrals`, and `impropers` is optional, as well
+        as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_type_coeffs`,
+        `angle_type_coeffs`, `dihedral_type_coeffs`, and `improper_type_coeffs`.
 
         Examples:
 
@@ -398,7 +398,6 @@ class Atoms:
             if current_section == "Masses":
                 masses.append(tup[1])
                 atom_type_labels.append(comment)
-
             elif current_section == "Pair Coeffs":
                 pair_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
             elif current_section == "Bond Coeffs":
@@ -500,16 +499,16 @@ class Atoms:
         f.write('%d impropers\n' % len(self.improper_types))
         f.write("\n")
 
-        if (num_atom_types := len(self.atom_type_masses)) > 0:
-            f.write('%d atom types\n' % num_atom_types)
-        if (num_bond_types := len(set(self.bond_types))) > 0:
-            f.write('%d bond types\n' % num_bond_types)
-        if (num_angle_types := len(set(self.angle_types))) > 0:
-            f.write('%d angle types\n' % num_angle_types)
-        if (num_dihedral_types := len(set(self.dihedral_types))) > 0:
-            f.write('%d dihedral types\n' % num_dihedral_types)
-        if (num_improper_types := len(set(self.improper_types))) > 0:
-            f.write('%d improper types\n' % num_improper_types)
+        if self.num_atom_types > 0:
+            f.write('%d atom types\n' % self.num_atom_types)
+        if self.num_bond_types > 0:
+            f.write('%d bond types\n' % self.num_bond_types)
+        if self.num_angle_types > 0:
+            f.write('%d angle types\n' % self.num_angle_types)
+        if self.num_dihedral_types > 0:
+            f.write('%d dihedral types\n' % self.num_dihedral_types)
+        if self.num_improper_types > 0:
+            f.write('%d improper types\n' % self.num_improper_types)
 
         if self.cell.shape == (3,3):
             xlohi, ylohi, zlohi = zip([0,0,0], np.diag(self.cell))
@@ -734,23 +733,37 @@ class Atoms:
 
     @property
     def num_atom_types(self):
-        return 0 if len(self.atom_types) == 0 else max(self.atom_types) + 1
+        if len(self.atom_types) == 0:
+            return 0
+        return len(self.atom_type_elements)
 
     @property
     def num_bond_types(self):
-        return 0 if len(self.bond_types) == 0 else max(self.bond_types) + 1
+        if len(self.bond_types) == 0:
+            return 0
+        return len(self.bond_type_coeffs) or max(self.bond_types) + 1
 
     @property
     def num_angle_types(self):
-        return 0 if len(self.angle_types) == 0 else max(self.angle_types) + 1
+        if len(self.angle_types) == 0:
+            return 0
+        return len(self.angle_type_coeffs) or max(self.angle_types) + 1
 
     @property
     def num_dihedral_types(self):
-        return 0 if len(self.dihedral_types) == 0 else max(self.dihedral_types) + 1
+        if len(self.dihedral_types) == 0:
+            return 0
+        return len(self.dihedral_type_coeffs) or max(self.dihedral_types) + 1
+
+    @property
+    def num_improper_types(self):
+        if len(self.improper_types) == 0:
+            return 0
+        return len(self.improper_type_coeffs) or max(self.improper_types) + 1
 
     def extend_types(self, other):
         offsets = (self.num_atom_types, self.num_bond_types,
-                   self.num_angle_types, self.num_dihedral_types)
+                   self.num_angle_types, self.num_dihedral_types, self.num_improper_types)
 
         self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
         self.atom_type_masses = np.append(self.atom_type_masses, other.atom_type_masses)
@@ -760,6 +773,7 @@ class Atoms:
         self.bond_type_coeffs = np.append(self.bond_type_coeffs, other.bond_type_coeffs)
         self.angle_type_coeffs = np.append(self.angle_type_coeffs, other.angle_type_coeffs)
         self.dihedral_type_coeffs = np.append(self.dihedral_type_coeffs, other.dihedral_type_coeffs)
+        self.improper_type_coeffs = np.append(self.improper_type_coeffs, other.improper_type_coeffs)
 
         return offsets
 
@@ -838,12 +852,16 @@ class Atoms:
             existing_dihedral_indices = find_existing_topo(self.dihedrals, new_dihedrals)
             self.dihedrals = np.append(self.dihedrals, new_dihedrals).reshape((-1,4))
             self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
+            self.dihedrals = np.delete(self.dihedrals, existing_dihedral_indices, axis=0)
+            self.dihedral_types = np.delete(self.dihedral_types, existing_dihedral_indices)
 
         if len(other.impropers) > 0:
             new_impropers = convert2structureindex(other.impropers)
             existing_improper_indices = find_existing_topo(self.impropers, new_impropers)
             self.impropers = np.append(self.impropers, new_impropers).reshape((-1,4))
-            self.improper_types = np.append(self.improper_types, other.improper_types + offsets[3])
+            self.improper_types = np.append(self.improper_types, other.improper_types + offsets[4])
+            self.impropers = np.delete(self.impropers, existing_improper_indices, axis=0)
+            self.improper_types = np.delete(self.improper_types, existing_improper_indices)
 
         self.assert_arrays_are_consistent_sizes()
 

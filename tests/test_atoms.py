@@ -26,12 +26,11 @@ def test_atoms_del__deletes_bonds_attached_to_atoms(linear_cnnc):
     assert (linear_cnnc.bonds == [[1,2]]).all()
 
 def test_atoms_del__deletes_types_with_all_topologies(linear_cnnc):
-    linear_cnnc.impropers = [(0,1,2,3)]
-
-    linear_cnnc.bond_types = [0, 1, 2]
-    linear_cnnc.angle_types = [0, 1]
-    linear_cnnc.dihedral_types = [0]
-    linear_cnnc.improper_types = [0]
+    linear_cnnc.impropers = np.array([(0,1,2,3)])
+    linear_cnnc.bond_types = np.array([0, 1, 2])
+    linear_cnnc.angle_types = np.array([0, 1])
+    linear_cnnc.dihedral_types = np.array([0])
+    linear_cnnc.improper_types = np.array([0])
     del(linear_cnnc[[0]])
     assert (linear_cnnc.bond_types == (1, 2)).all()
     assert linear_cnnc.angle_types == (1)
@@ -63,7 +62,7 @@ def test_atoms_extend__new_types_come_after_old_types1(linear_cnnc):
     assert np.array_equal(a.elements, ["C", "H"])
 
 def test_atoms_extend__new_types_come_after_old_types(linear_cnnc):
-    linear_cnnc.impropers = [(0,1,2,3)]
+    linear_cnnc.impropers = np.array([(0,1,2,3)])
 
     linear_cnnc.atom_types = np.array([0,1,1,0])
     linear_cnnc.bond_types = np.array([0,1,0])
@@ -109,8 +108,8 @@ def test_atoms_extend__reindexes_new_dihedrals_to_proper_atoms(linear_cnnc):
     assert (double_cnnc.dihedrals == [(0,1,2,3), (4,5,6,7)]).all()
 
 def test_atoms_extend__reindexes_new_impropers_to_proper_atoms(linear_cnnc):
-    linear_cnnc.impropers = [(0,1,2,3)]
-    linear_cnnc.improper_types = [0]
+    linear_cnnc.impropers = np.array([(0,1,2,3)])
+    linear_cnnc.improper_types = np.array([0])
     double_cnnc = linear_cnnc.copy()
     double_cnnc.extend(linear_cnnc)
     assert (double_cnnc.impropers == [(0,1,2,3), (4,5,6,7)]).all()
