@@ -1,7 +1,11 @@
+from collections import Counter
+import itertools
 from math import sqrt, log, cos, sin, pi
 
 import networkx as nx
+import numpy as np
 
+from mofun.atomic_masses import ATOMIC_MASSES
 from mofun.uff4mof import UFF4MOF, uff_key_starts_with, MAIN_GROUP_ELEMENTS
 
 def default_uff_rules():
@@ -28,9 +32,40 @@ def add_aromatic_flag(g):
             for n in cycle:
                 g.nodes[n]['aromatic'] = True
 
-def assign_uff_atom_types(g, elements, override_rules=None):
-    """ g is a networkx Graph object
+def retype_atoms_from_uff_types(atoms, new_types):
+    """Retypes an atoms object with new UFF types.
+
+    Takes a new list of types (new_types) of length equal to the number of atoms in the system and
+    creates a new set of unique atom_types, where atom_type_labels are the UFF atom types, and atom_type_elements
+    and atom_type_masses are the appropriate element and mass for the UFF atom type. New atom_types are
+    assigned to the atoms object, based on the new atom type indices.
+
+    Args:
+        atoms (Atoms): atoms object to retype
+        new_types (List[Str]): list of UFF atom types, one per atom in the system.
     """
+
+    ptable_order = lambda x: list(ATOMIC_MASSES.keys()).index(x.split("_")[0])
+    unique_types = list(set(new_types))
+
+    # sort by string ordering, so types like 'C_1', 'C_2', 'C_3', 'C_R' will show up in order
+    unique_types.sort()
+    # sort by periodic element # order
+    unique_types.sort(key=ptable_order)
+
+    atoms.atom_type_labels = unique_types
+    atoms.atom_type_elements = [s.split("_")[0] for s in unique_types]
+    atoms.atom_type_masses = [ATOMIC_MASSES[s] for s in atoms.atom_type_elements]
+
+    atoms.atom_types = [unique_types.index(s) for s in new_types]
+
+def calc_uff_atom_types(bonds, elements, override_rules=None):
+    """
+    """
+
+    g = nx.Graph()
+    g.add_edges_from(bonds)
+
     if override_rules is None:
         override_rules = default_uff_rules()
 
@@ -315,3 +350,113 @@ def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None,
         return None
     else:
         raise Exception("we don't know how to handle this dihedral: %s-%s-%s-%s" % tuple(ut))
+
+def calc_angles(bonds):
+    """ Returns all possible angle tuples from a list of all system bond tuples."""
+    g = nx.Graph()
+    g.add_edges_from(bonds)
+
+    angles = []
+    for n in g.nodes:
+        angles += [(a, n, b) for (a,b) in itertools.combinations(g.neighbors(n), 2)]
+    return np.array(angles)
+
+def calc_dihedrals(bonds):
+    """ Returns all possible dihedral tuples from a list of all system bond tuples."""
+    g = nx.Graph()
+    g.add_edges_from(bonds)
+    # g.add_edges_from([tuple(x) for x in bonds])
+
+    dihedrals = []
+    for a, b in g.edges:
+        a_neighbors = list(g.adj[a])
+        a_neighbors.remove(b)
+        b_neighbors = list(g.adj[b])
+        b_neighbors.remove(a)
+
+        dihedrals += [(a1, a, b, b1) for a1 in a_neighbors for b1 in b_neighbors]
+    return np.array(dihedrals)
+
+def typekey(tup):
+    rev = list(tup)
+    rev.reverse()
+    if tuple(rev) <= tuple(tup):
+        return tuple(rev)
+    return tuple(tup)
+
+def delete_if_all_in_set(arr, s):
+    deletion_list = []
+    for i, tup in enumerate(arr):
+        if len(set(tup) - s) == 0:
+            deletion_list.append(i)
+    return np.delete(arr, deletion_list, axis=0)
+
+def assign_pair_coeffs(atoms, assign_atom_type_labels_from_elements=False):
+    if assign_atom_type_labels_from_elements:
+        atoms.atom_type_labels = [uff_key_starts_with(el.ljust(2, "_"))[0] for el in atoms.atom_type_elements]
+
+    atoms.pair_coeffs = ['%10.6f %10.6f # %s' % (*pair_coeffs(a1), a1) for a1 in atoms.atom_type_labels]
+
+def assign_bond_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
+    if len(exclude) >= 2:
+        atoms.bonds = delete_if_all_in_set(atoms.bonds, exclude)
+
+    # get an ordered list of bond types for every bond, e.g. [(1,2), (4,5)]
+    bond_types = [typekey([uff_atom_types[a] for a in atup]) for atup in atoms.bonds]
+    # reduce the list so every type is unique
+    unique_bond_types = list(dict.fromkeys(bond_types).keys())
+    # bond_types are the index of the type in the unique_bond_types list
+    atoms.bond_types = [unique_bond_types.index(bt) for bt in bond_types]
+    # calculate bond_params from bond types and bond_order_rules and assign
+    params = [(*bond_params(a1, a2, bond_order_rules=bond_order_rules), a1, a2) for (a1, a2) in unique_bond_types]
+    atoms.bond_type_coeffs = ['%10.6f %10.6f # %s %s' % p for p in params]
+
+def angle2lammpsdat(params):
+    if params[0] == "fourier":
+        return '%s %10.6f %10.6f %10.6f %10.6f # %s' % params
+    elif params[0] == "cosine/periodic":
+        return '%s %10.6f %d %d # %s' % params
+    else:
+        raise Exception("Unhandled angle style '%s'" % params[0])
+
+def assign_angle_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
+    if len(exclude) >= 3:
+        atoms.angles = delete_if_all_in_set(atoms.angles, exclude)
+
+    angle_types = [typekey([uff_atom_types[a] for a in atup]) for atup in atoms.angles]
+    unique_angle_types = list(dict.fromkeys(angle_types).keys())
+    atoms.angle_types = [unique_angle_types.index(a) for a in angle_types]
+    params = [(*angle_params(*a_ids, bond_order_rules=bond_order_rules), "%s %s %s" % a_ids) for a_ids in unique_angle_types]
+    atoms.angle_type_coeffs = [angle2lammpsdat(a) for a in params]
+
+def assign_dihedral_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
+    """
+
+    Args:
+        exclude (List): removes dihedrals from list if the dihedral's atom
+            indices are ALL contained within exclude.
+    """
+    num_dihedrals_per_bond = Counter([typekey([a2, a3]) for _, a2, a3, _ in atoms.dihedrals])
+    if len(exclude) >= 4:
+        atoms.dihedrals = delete_if_all_in_set(atoms.dihedrals, exclude)
+
+    # dihedral type is a tuple of four atom indices, and the number of dihedrals about the center bond
+    dihedral_types = [(*typekey([uff_atom_types[a] for a in atup]), num_dihedrals_per_bond[typekey([atup[1], atup[2]])]) for atup in atoms.dihedrals]
+    unique_dihedral_types = list(dict.fromkeys(dihedral_types).keys())
+    # params = [dihedral_params(*a_ids, bond_order_rules=bond_order_rules) for a_ids in unique_dihedral_types]
+    params = [(dihedral_params(*a_ids, bond_order_rules=bond_order_rules), a_ids) for a_ids in unique_dihedral_types]
+
+    # delete any dihedrals when the params come back None (i.e. for *_1)
+    for i in reversed(range(len(params))):
+        if params[i][0] is None:
+            # delete from atoms.dihedrals and dihedral_types
+            d_to_del = unique_dihedral_types[i]
+            atoms.dihedrals = [d for j, d in enumerate(atoms.dihedrals) if dihedral_types[j] != d_to_del]
+            dihedral_types = [d for d in dihedral_types if d != d_to_del]
+            # delete from params and types
+            del(unique_dihedral_types[i])
+            del(params[i])
+
+    # assign dihedral types
+    atoms.dihedral_types = [unique_dihedral_types.index(a) for a in dihedral_types]
+    atoms.dihedral_type_coeffs = ['%s %10.6f %d %d # %s %s %s %s M=%d' % (*p1, *p2) for p1, p2 in params]

@@ -26,12 +26,11 @@ def test_atoms_del__deletes_bonds_attached_to_atoms(linear_cnnc):
     assert (linear_cnnc.bonds == [[1,2]]).all()
 
 def test_atoms_del__deletes_types_with_all_topologies(linear_cnnc):
-    linear_cnnc.impropers = [(0,1,2,3)]
-
-    linear_cnnc.bond_types = [0, 1, 2]
-    linear_cnnc.angle_types = [0, 1]
-    linear_cnnc.dihedral_types = [0]
-    linear_cnnc.improper_types = [0]
+    linear_cnnc.impropers = np.array([(0,1,2,3)])
+    linear_cnnc.bond_types = np.array([0, 1, 2])
+    linear_cnnc.angle_types = np.array([0, 1])
+    linear_cnnc.dihedral_types = np.array([0])
+    linear_cnnc.improper_types = np.array([0])
     del(linear_cnnc[[0]])
     assert (linear_cnnc.bond_types == (1, 2)).all()
     assert linear_cnnc.angle_types == (1)
@@ -63,7 +62,7 @@ def test_atoms_extend__new_types_come_after_old_types1(linear_cnnc):
     assert np.array_equal(a.elements, ["C", "H"])
 
 def test_atoms_extend__new_types_come_after_old_types(linear_cnnc):
-    linear_cnnc.impropers = [(0,1,2,3)]
+    linear_cnnc.impropers = np.array([(0,1,2,3)])
 
     linear_cnnc.atom_types = np.array([0,1,1,0])
     linear_cnnc.bond_types = np.array([0,1,0])
@@ -109,8 +108,8 @@ def test_atoms_extend__reindexes_new_dihedrals_to_proper_atoms(linear_cnnc):
     assert (double_cnnc.dihedrals == [(0,1,2,3), (4,5,6,7)]).all()
 
 def test_atoms_extend__reindexes_new_impropers_to_proper_atoms(linear_cnnc):
-    linear_cnnc.impropers = [(0,1,2,3)]
-    linear_cnnc.improper_types = [0]
+    linear_cnnc.impropers = np.array([(0,1,2,3)])
+    linear_cnnc.improper_types = np.array([0])
     double_cnnc = linear_cnnc.copy()
     double_cnnc.extend(linear_cnnc)
     assert (double_cnnc.impropers == [(0,1,2,3), (4,5,6,7)]).all()
@@ -139,27 +138,6 @@ def test_atoms_getitem__has_all_atom_types_and_charges():
     assert atoms[(2,3)].elements == ["C", "N"]
     assert (atoms[(0,1)].charges ==[1, 2]).all()
 
-def test_atoms_calc_angles__ethane_has_12_angles():
-    ethane = Atoms(elements='HHHCCHHH', positions=[(1., 1., 1)] * 8,
-                bonds=[(0,3), (1,3), (2,3), (3,4), (4,5), (4,6), (4,7)], bond_types=[0] * 7)
-
-    ethane.calc_angles()
-    unique_angles = set([tuple(x) for x in ethane.angles])
-    assert len(ethane.angles) == 12
-    assert unique_angles == {(0,3,1), (0,3,2), (1,3,2), (0,3,4), (1,3,4), (2,3,4),
-                             (3,4,5), (3,4,6), (3,4,7), (5,4,6), (5,4,7), (6,4,7)}
-
-def test_atoms_calc_dihedrals__ethane_has_9_dihedrals():
-    ethane = Atoms(elements='HHHCCHHH', positions=[(1., 1., 1)] * 8,
-                bonds=[(0,3), (1,3), (2,3), (3,4), (4,5), (4,6), (4,7)], bond_types=[0] * 7)
-
-    ethane.calc_dihedrals()
-    unique_dihedrals = set([tuple(x) for x in ethane.dihedrals])
-    assert len(ethane.dihedrals) == 9
-    assert unique_dihedrals == {(0,3,4,5), (1,3,4,5), (2,3,4,5),
-                                (0,3,4,6), (1,3,4,6), (2,3,4,6),
-                                (0,3,4,7), (1,3,4,7), (2,3,4,7)}
-
 def test_atoms_replicate__111_is_unchanged(octane):
     reploctane = octane.replicate((1,1,1))
     assert np.array_equal(octane.positions, reploctane.positions)
@@ -176,7 +154,6 @@ def test_atoms_replicate__211_has_replicate_in_x_dim(octane):
     assert np.array_equal(np.tile(octane.atom_types,2), reploctane.atom_types)
     assert np.array_equal(np.tile(octane.charges,2), reploctane.charges)
     assert np.array_equal(np.tile(octane.groups,2), reploctane.groups)
-
 
 def test_atoms_replicate__213_has_replicates_in_xz_dims(octane):
     reploctane = octane.replicate((2,1,3))

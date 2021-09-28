@@ -1,6 +1,5 @@
 import copy
 import io
-import itertools
 import os
 import pathlib
 import xml.etree.ElementTree as ET
@@ -8,7 +7,7 @@ import xml.etree.ElementTree as ET
 import ase
 from ase.formula import Formula
 from CifFile import ReadCif as read_cif
-import networkx as nx
+
 import numpy as np
 from scipy.linalg import norm
 
@@ -91,9 +90,9 @@ class Atoms:
         missing. If you are using atom types with masses that do not correspond to periodic table
         elements, then you will need to specify the masses explicitly.
 
-        Passing force field term information for `bonds`, `angles`, `dihedrals` is optional, as well
-        as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_coeffs`,
-        `angle_coeffs`, and `dihedral_coeffs`.
+        Passing force field term information for `bonds`, `angles`, `dihedrals`, and `impropers` is optional, as well
+        as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_type_coeffs`,
+        `angle_type_coeffs`, `dihedral_type_coeffs`, and `improper_type_coeffs`.
 
         Examples:
 
@@ -309,7 +308,7 @@ class Atoms:
                 return atoms
         elif filetype == "mol":
             with use_or_open(fd, path, mode='w') as fh:
-                return cls.save_mol(fh, **kwargs)
+                return self.save_mol(fh, **kwargs)
         else:
             raise Exception("Unsupported filetype")
 
@@ -399,7 +398,6 @@ class Atoms:
             if current_section == "Masses":
                 masses.append(tup[1])
                 atom_type_labels.append(comment)
-
             elif current_section == "Pair Coeffs":
                 pair_coeffs.append("%s%s" % (" ".join(tup[1:]), comment_string))
             elif current_section == "Bond Coeffs":
@@ -501,16 +499,16 @@ class Atoms:
         f.write('%d impropers\n' % len(self.improper_types))
         f.write("\n")
 
-        if (num_atom_types := len(self.atom_type_masses)) > 0:
-            f.write('%d atom types\n' % num_atom_types)
-        if (num_bond_types := len(set(self.bond_types))) > 0:
-            f.write('%d bond types\n' % num_bond_types)
-        if (num_angle_types := len(set(self.angle_types))) > 0:
-            f.write('%d angle types\n' % num_angle_types)
-        if (num_dihedral_types := len(set(self.dihedral_types))) > 0:
-            f.write('%d dihedral types\n' % num_dihedral_types)
-        if (num_improper_types := len(set(self.improper_types))) > 0:
-            f.write('%d improper types\n' % num_improper_types)
+        if self.num_atom_types > 0:
+            f.write('%d atom types\n' % self.num_atom_types)
+        if self.num_bond_types > 0:
+            f.write('%d bond types\n' % self.num_bond_types)
+        if self.num_angle_types > 0:
+            f.write('%d angle types\n' % self.num_angle_types)
+        if self.num_dihedral_types > 0:
+            f.write('%d dihedral types\n' % self.num_dihedral_types)
+        if self.num_improper_types > 0:
+            f.write('%d improper types\n' % self.num_improper_types)
 
         if self.cell.shape == (3,3):
             xlohi, ylohi, zlohi = zip([0,0,0], np.diag(self.cell))
@@ -715,24 +713,6 @@ class Atoms:
 
         return " ".join([self.atom_type_labels[x] for x in atoms])
 
-    def retype_atoms_from_uff_types(self, new_types):
-        """Takes a list of new_types that are strings, converts to integer types, and populates
-        atom_type_labels"""
-
-        ptable_order = lambda x: list(ATOMIC_MASSES.keys()).index(x.split("_")[0])
-        unique_types = list(set(new_types))
-
-        # sort by string ordering, so types like 'C_1', 'C_2', 'C_3', 'C_R' will show up in order
-        unique_types.sort()
-        # sort by periodic element # order
-        unique_types.sort(key=ptable_order)
-
-        self.atom_type_labels = unique_types
-        self.atom_type_elements = [s.split("_")[0] for s in unique_types]
-        self.atom_type_masses = [ATOMIC_MASSES[s] for s in self.atom_type_elements]
-
-        self.atom_types = [unique_types.index(s) for s in new_types]
-
     @property
     def elements(self):
         return [self.atom_type_elements[i] for i in self.atom_types]
@@ -753,23 +733,37 @@ class Atoms:
 
     @property
     def num_atom_types(self):
-        return 0 if len(self.atom_types) == 0 else max(self.atom_types) + 1
+        if len(self.atom_types) == 0:
+            return 0
+        return len(self.atom_type_elements)
 
     @property
     def num_bond_types(self):
-        return 0 if len(self.bond_types) == 0 else max(self.bond_types) + 1
+        if len(self.bond_types) == 0:
+            return 0
+        return len(self.bond_type_coeffs) or max(self.bond_types) + 1
 
     @property
     def num_angle_types(self):
-        return 0 if len(self.angle_types) == 0 else max(self.angle_types) + 1
+        if len(self.angle_types) == 0:
+            return 0
+        return len(self.angle_type_coeffs) or max(self.angle_types) + 1
 
     @property
     def num_dihedral_types(self):
-        return 0 if len(self.dihedral_types) == 0 else max(self.dihedral_types) + 1
+        if len(self.dihedral_types) == 0:
+            return 0
+        return len(self.dihedral_type_coeffs) or max(self.dihedral_types) + 1
+
+    @property
+    def num_improper_types(self):
+        if len(self.improper_types) == 0:
+            return 0
+        return len(self.improper_type_coeffs) or max(self.improper_types) + 1
 
     def extend_types(self, other):
         offsets = (self.num_atom_types, self.num_bond_types,
-                   self.num_angle_types, self.num_dihedral_types)
+                   self.num_angle_types, self.num_dihedral_types, self.num_improper_types)
 
         self.atom_type_elements = np.append(self.atom_type_elements, other.atom_type_elements)
         self.atom_type_masses = np.append(self.atom_type_masses, other.atom_type_masses)
@@ -779,6 +773,7 @@ class Atoms:
         self.bond_type_coeffs = np.append(self.bond_type_coeffs, other.bond_type_coeffs)
         self.angle_type_coeffs = np.append(self.angle_type_coeffs, other.angle_type_coeffs)
         self.dihedral_type_coeffs = np.append(self.dihedral_type_coeffs, other.dihedral_type_coeffs)
+        self.improper_type_coeffs = np.append(self.improper_type_coeffs, other.improper_type_coeffs)
 
         return offsets
 
@@ -857,12 +852,16 @@ class Atoms:
             existing_dihedral_indices = find_existing_topo(self.dihedrals, new_dihedrals)
             self.dihedrals = np.append(self.dihedrals, new_dihedrals).reshape((-1,4))
             self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
+            self.dihedrals = np.delete(self.dihedrals, existing_dihedral_indices, axis=0)
+            self.dihedral_types = np.delete(self.dihedral_types, existing_dihedral_indices)
 
         if len(other.impropers) > 0:
             new_impropers = convert2structureindex(other.impropers)
             existing_improper_indices = find_existing_topo(self.impropers, new_impropers)
             self.impropers = np.append(self.impropers, new_impropers).reshape((-1,4))
-            self.improper_types = np.append(self.improper_types, other.improper_types + offsets[3])
+            self.improper_types = np.append(self.improper_types, other.improper_types + offsets[4])
+            self.impropers = np.delete(self.impropers, existing_improper_indices, axis=0)
+            self.improper_types = np.delete(self.improper_types, existing_improper_indices)
 
         self.assert_arrays_are_consistent_sizes()
 
@@ -950,30 +949,6 @@ class Atoms:
         if self.cell is not None and len(self.cell) > 0:
             kwargs['cell'] = self.cell
         return ase.Atoms(self.elements, **kwargs)
-
-    def calc_angles(self):
-        g = nx.Graph()
-        g.add_edges_from([tuple(x) for x in self.bonds])
-
-        angles = []
-        for n in g.nodes:
-            angles += [(a, n, b) for (a,b) in itertools.combinations(g.neighbors(n), 2)]
-        self.angles = np.array(angles)
-
-    def calc_dihedrals(self):
-        g = nx.Graph()
-        g.add_edges_from([tuple(x) for x in self.bonds])
-
-        dihedrals = []
-        for a, b in g.edges:
-            a_neighbors = list(g.adj[a])
-            a_neighbors.remove(b)
-            b_neighbors = list(g.adj[b])
-            b_neighbors.remove(a)
-
-            dihedrals += [(a1, a, b, b1) for a1 in a_neighbors for b1 in b_neighbors]
-        self.dihedrals = np.array(dihedrals)
-
 
 def find_unchanged_atom_pairs(orig_structure, final_structure, max_delta=1e-5):
     """Returns array of tuple pairs, where each pair contains the indices in the original and the final

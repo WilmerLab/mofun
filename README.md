@@ -1,5 +1,5 @@
 # MOFUN
 
-Main Branch Status: [![Build Status](https://travis-ci.org/paulboone/mofun.svg?branch=main)](https://travis-ci.org/paulboone/mofun)
+[![MOFUN Refactor Branch Test Status](https://github.com/paulboone/mofun/actions/workflows/python-app.yml/badge.svg?branch=refactor2)](https://github.com/paulboone/mofun/actions/workflows/python-app.yml)
 
 See [Documentation](https://paulboone.github.io/mofun/)
