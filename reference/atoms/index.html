@@ -315,13 +315,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#mofun.atoms.Atoms.retype_atoms_from_uff_types" class="md-nav__link">
-    retype_atoms_from_uff_types()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#mofun.atoms.Atoms.save" class="md-nav__link">
     save()
   </a>
@@ -482,13 +475,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#mofun.atoms.Atoms.retype_atoms_from_uff_types" class="md-nav__link">
-    retype_atoms_from_uff_types()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#mofun.atoms.Atoms.save" class="md-nav__link">
     save()
   </a>
@@ -621,6 +607,7 @@ i.e. this Angle Coeffs section:</p>
 
 
 
+
   <div class="doc doc-object doc-method">
 
 
@@ -658,9 +645,9 @@ use the <code>elements</code> parameter, then type ids are automatically generat
 <p>Passing <code>atom_type_masses</code> is optional, and masses will be inferred from the elements if
 missing. If you are using atom types with masses that do not correspond to periodic table
 elements, then you will need to specify the masses explicitly.</p>
-<p>Passing force field term information for <code>bonds</code>, <code>angles</code>, <code>dihedrals</code> is optional, as well
-as passing force field coefficients for LAMMPS with <code>pair_coeffs</code>, <code>bond_coeffs</code>,
-<code>angle_coeffs</code>, and <code>dihedral_coeffs</code>.</p>
+<p>Passing force field term information for <code>bonds</code>, <code>angles</code>, <code>dihedrals</code>, and <code>impropers</code> is optional, as well
+as passing force field coefficients for LAMMPS with <code>pair_coeffs</code>, <code>bond_type_coeffs</code>,
+<code>angle_type_coeffs</code>, <code>dihedral_type_coeffs</code>, and <code>improper_type_coeffs</code>.</p>
 
 <p><strong>Examples:</strong></p>
     
@@ -866,9 +853,9 @@ as passing force field coefficients for LAMMPS with <code>pair_coeffs</code>, <c
 <span class="sd">    missing. If you are using atom types with masses that do not correspond to periodic table</span>
 <span class="sd">    elements, then you will need to specify the masses explicitly.</span>
 
-<span class="sd">    Passing force field term information for `bonds`, `angles`, `dihedrals` is optional, as well</span>
-<span class="sd">    as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_coeffs`,</span>
-<span class="sd">    `angle_coeffs`, and `dihedral_coeffs`.</span>
+<span class="sd">    Passing force field term information for `bonds`, `angles`, `dihedrals`, and `impropers` is optional, as well</span>
+<span class="sd">    as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_type_coeffs`,</span>
+<span class="sd">    `angle_type_coeffs`, `dihedral_type_coeffs`, and `improper_type_coeffs`.</span>
 
 <span class="sd">    Examples:</span>
 
@@ -975,8 +962,6 @@ as passing force field coefficients for LAMMPS with <code>pair_coeffs</code>, <c
     </div>
 
   </div>
-
-
 
 
 
@@ -1119,12 +1104,16 @@ identical and can be considered to be the same atom.</p></td>
         <span class="n">existing_dihedral_indices</span> <span class="o">=</span> <span class="n">find_existing_topo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dihedrals</span><span class="p">,</span> <span class="n">new_dihedrals</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dihedrals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dihedrals</span><span class="p">,</span> <span class="n">new_dihedrals</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dihedral_types</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dihedral_types</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">dihedral_types</span> <span class="o">+</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dihedrals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dihedrals</span><span class="p">,</span> <span class="n">existing_dihedral_indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dihedral_types</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dihedral_types</span><span class="p">,</span> <span class="n">existing_dihedral_indices</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">impropers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">new_impropers</span> <span class="o">=</span> <span class="n">convert2structureindex</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">impropers</span><span class="p">)</span>
         <span class="n">existing_improper_indices</span> <span class="o">=</span> <span class="n">find_existing_topo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">impropers</span><span class="p">,</span> <span class="n">new_impropers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">impropers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">impropers</span><span class="p">,</span> <span class="n">new_impropers</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">improper_types</span> <span class="o">+</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">improper_types</span> <span class="o">+</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impropers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">impropers</span><span class="p">,</span> <span class="n">existing_improper_indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span><span class="p">,</span> <span class="n">existing_improper_indices</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">assert_arrays_are_consistent_sizes</span><span class="p">()</span>
 </code></pre></div>
@@ -1709,7 +1698,6 @@ and still be considered that element. Default: 0.1.</p></td>
         <span class="k">if</span> <span class="n">current_section</span> <span class="o">==</span> <span class="s2">&quot;Masses&quot;</span><span class="p">:</span>
             <span class="n">masses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">atom_type_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comment</span><span class="p">)</span>
-
         <span class="k">elif</span> <span class="n">current_section</span> <span class="o">==</span> <span class="s2">&quot;Pair Coeffs&quot;</span><span class="p">:</span>
             <span class="n">pair_coeffs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">comment_string</span><span class="p">))</span>
         <span class="k">elif</span> <span class="n">current_section</span> <span class="o">==</span> <span class="s2">&quot;Bond Coeffs&quot;</span><span class="p">:</span>
@@ -1892,48 +1880,6 @@ and still be considered that element. Default: 0.1.</p></td>
 
 
 
-<h3 id="mofun.atoms.Atoms.retype_atoms_from_uff_types" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">retype_atoms_from_uff_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_types</span><span class="p">)</span></code>
-
-
-</h3>
-
-    <div class="doc doc-contents ">
-
-      <p>Takes a list of new_types that are strings, converts to integer types, and populates
-atom_type_labels</p>
-
-        <details class="quote">
-          <summary>Source code in <code>mofun/atoms.py</code></summary>
-          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">retype_atoms_from_uff_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_types</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Takes a list of new_types that are strings, converts to integer types, and populates</span>
-<span class="sd">    atom_type_labels&quot;&quot;&quot;</span>
-
-    <span class="n">ptable_order</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">ATOMIC_MASSES</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">unique_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">new_types</span><span class="p">))</span>
-
-    <span class="c1"># sort by string ordering, so types like &#39;C_1&#39;, &#39;C_2&#39;, &#39;C_3&#39;, &#39;C_R&#39; will show up in order</span>
-    <span class="n">unique_types</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
-    <span class="c1"># sort by periodic element # order</span>
-    <span class="n">unique_types</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">ptable_order</span><span class="p">)</span>
-
-    <span class="bp">self</span><span class="o">.</span><span class="n">atom_type_labels</span> <span class="o">=</span> <span class="n">unique_types</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">atom_type_elements</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">unique_types</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">atom_type_masses</span> <span class="o">=</span> <span class="p">[</span><span class="n">ATOMIC_MASSES</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_type_elements</span><span class="p">]</span>
-
-    <span class="bp">self</span><span class="o">.</span><span class="n">atom_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">unique_types</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">new_types</span><span class="p">]</span>
-</code></pre></div>
-        </details>
-    </div>
-
-  </div>
-
-
-
-  <div class="doc doc-object doc-method">
-
-
-
 <h3 id="mofun.atoms.Atoms.save" class="doc doc-heading">
 <code class="highlight language-python"><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
@@ -2094,16 +2040,16 @@ explicit filetype to override default filetype implied from file extension.</p><
     <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> impropers</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span><span class="p">))</span>
     <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="n">num_atom_types</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom_type_masses</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> atom types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">num_atom_types</span><span class="p">)</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">num_bond_types</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bond_types</span><span class="p">)))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> bond types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">num_bond_types</span><span class="p">)</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">num_angle_types</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angle_types</span><span class="p">)))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> angle types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">num_angle_types</span><span class="p">)</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">num_dihedral_types</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dihedral_types</span><span class="p">)))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> dihedral types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">num_dihedral_types</span><span class="p">)</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">num_improper_types</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">improper_types</span><span class="p">)))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> improper types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">num_improper_types</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atom_types</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> atom types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atom_types</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bond_types</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> bond types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bond_types</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_angle_types</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> angle types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_angle_types</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_dihedral_types</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> dihedral types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_dihedral_types</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_improper_types</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> improper types</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_improper_types</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
         <span class="n">xlohi</span><span class="p">,</span> <span class="n">ylohi</span><span class="p">,</span> <span class="n">zlohi</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="p">))</span>
