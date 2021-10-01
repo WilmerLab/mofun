@@ -120,7 +120,7 @@ def test_find_pattern_in_structure__hkust1_cif_2x2x2_supercell_has_256_benzene_r
     hkust1_2x2x2 = hkust1_cif.replicate(repldims=(2,2,2))
     match_indices = find_pattern_in_structure(hkust1_2x2x2, benzene)
 
-    assert len(match_indices) == 864
+    assert len(match_indices) == 256
     for indices in match_indices:
         pattern_found = hkust1_2x2x2[indices]
         assert list(pattern_found.elements) == ['C','C','C','C','C','C','H','H','H']
