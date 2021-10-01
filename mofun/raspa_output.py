@@ -14,6 +14,9 @@ def parse_gas_loading(output_file, units='molkg'):
             elif units=='vv' and "Average loading absolute [cm^3 (STP)/cm^3 framework]" in line:
                 absvloading = float(line.split()[6])
                 absvloading_error = float(line.split()[8])
+            elif units=='cc_g' and "Average loading absolute [cm^3 (STP)/gr framework]" in line:
+                absvloading = float(line.split()[6])
+                absvloading_error = float(line.split()[8])
             elif "Number of molecules:" in line:
                 atom_blocks = [float(lines[offset + i + 5].split()[2]) for offset in range(5)]
             elif "Conversion factor molecules/unit cell -> cm^3 STP/cm^3:" in line:
