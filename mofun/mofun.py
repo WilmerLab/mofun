@@ -92,6 +92,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
     if verbose:
         print("round %d (%d) [%s]: " % (0, len(starting_atoms), pattern.elements[0]), starting_atoms)
 
+    pattern_elements = pattern.elements
     all_match_index_tuples = []
     for a_idx, a in enumerate(starting_atoms):
         match_index_tuples = [[a]]
@@ -107,7 +108,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
             match_index_tuples = []
             for match in last_match_index_tuples:
                 for atom_idx in nearby_atom_indices:
-                    if s_types_view[atom_idx]==pattern.elements[i]:
+                    if s_types_view[atom_idx]==pattern_elements[i]:
                         found_match = True
                         for j in range(0, i):
                             if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=rel_tol_sq):
