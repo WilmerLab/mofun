@@ -52,7 +52,7 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
             s_types_view.append(s_types[i])
 
     s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
-    return s_types_view, s_ss, index_mapper, s_positions
+    return s_types_view, s_ss, index_mapper, s_pos_view, s_positions
 
 def find_pattern_in_structure(structure, pattern, return_positions=False, rel_tol=5e-2, verbose=False):
     """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number
@@ -77,33 +77,46 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
     if verbose:
         print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
-    s_types_view, s_ss, index_mapper, s_positions = get_types_ss_map_limited_near_uc(structure, p_ss.max() ** 0.5, structure.cell)
+    pattern_length = p_ss.max() ** 0.5
+    s_types_view, s_ss, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length, structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
+
+    binsize = 1. # angstrom
+    bincoords = (np.array(s_pos_view) // binsize).astype(np.int16)
+    nearbybins = np.ceil(pattern_length / binsize)
+    db = np.array(sorted([(*r, i) for i, r in enumerate(bincoords)]))
 
     # Search instances of first atom in a search pattern
     # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
-    starting_atoms = [[idx] for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.elements[0])]
+    starting_atoms = [idx for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.elements[0])]
     if verbose:
         print("round %d (%d) [%s]: " % (0, len(starting_atoms), pattern.elements[0]), starting_atoms)
 
     all_match_index_tuples = []
     for a_idx, a in enumerate(starting_atoms):
-        match_index_tuples = [a]
+        match_index_tuples = [[a]]
+        posbin =  s_pos_view[a] // binsize
+        nearby = db[(db[:, 0] <= posbin[0] + nearbybins) & (db[:, 0] >= posbin[0] - nearbybins) &
+                    (db[:, 1] <= posbin[1] + nearbybins) & (db[:, 1] >= posbin[1] - nearbybins) &
+                    (db[:, 2] <= posbin[2] + nearbybins) & (db[:, 2] >= posbin[2] - nearbybins)]
+
+        nearby_atom_indices = nearby[:,3]
+
         for i in range(1, len(pattern)):
             last_match_index_tuples = match_index_tuples
             match_index_tuples = []
             for match in last_match_index_tuples:
+                for atom_idx in nearby_atom_indices:
+                    if s_types_view[atom_idx]==pattern.elements[i]:
+                        found_match = True
+                        for j in range(0, i):
+                            if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=rel_tol_sq):
+                                found_match = False
+                                break
 
-                for atom_idx in atoms_by_type[pattern.elements[i]]:
-                    found_match = True
-                    for j in range(0, i):
-                        if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=rel_tol_sq):
-                            found_match = False
-                            break
-
-                    # anything that matches the distance to all prior pattern atoms is a good match so far
-                    if found_match:
-                        match_index_tuples.append(match + [atom_idx])
+                        # anything that matches the distance to all prior pattern atoms is a good match so far
+                        if found_match:
+                            match_index_tuples.append(match + [atom_idx])
             if verbose:
                 print("round %d (%d) [%s]: " % (i, len(match_index_tuples), pattern.elements[i]), match_index_tuples)
         if verbose:
