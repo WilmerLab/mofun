@@ -115,7 +115,7 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust
         pattern_found = hkust1_cif[indices]
         assert list(pattern_found.elements) == ['Cu']
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_cif_2x2x2_supercell_has_256_benzene_rings(hkust1_cif, benzene):
     hkust1_2x2x2 = hkust1_cif.replicate(repldims=(2,2,2))
     match_indices = find_pattern_in_structure(hkust1_2x2x2, benzene)
