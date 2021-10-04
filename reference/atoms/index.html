@@ -1223,8 +1223,6 @@ identical and can be considered to be the same atom.</p></td>
 <li>cif</li>
 <li>cml</li>
 </ul>
-<p>Only the lammps data file and cif support reading from a file object, presently, due to the
-other formats depending on external library support.</p>
 
 <p><strong>Parameters:</strong></p>
 <table>
@@ -1270,9 +1268,6 @@ explicit filetype to override default filetype implied from file extension.</p><
 <span class="sd">    - cif</span>
 <span class="sd">    - cml</span>
 
-<span class="sd">    Only the lammps data file and cif support reading from a file object, presently, due to the</span>
-<span class="sd">    other formats depending on external library support.</span>
-
 <span class="sd">    Args:</span>
 <span class="sd">        f (Str or Path or File): either a path to a file or an open File to load from</span>
 <span class="sd">        filetype (Str): filetype (&#39;lmpdat&#39;, &#39;cif&#39;, or &#39;cml&#39;) of passed f File object, or</span>
@@ -1299,9 +1294,7 @@ explicit filetype to override default filetype implied from file extension.</p><
             <span class="n">atoms</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_lmpdat</span><span class="p">(</span><span class="n">fh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">atoms</span>
     <span class="k">elif</span> <span class="n">filetype</span> <span class="o">==</span> <span class="s2">&quot;cml&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Loading a cml file requires a path&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_cml</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_cml</span><span class="p">(</span><span class="n">fd</span> <span class="ow">or</span> <span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">filetype</span> <span class="o">==</span> <span class="s2">&quot;cif&quot;</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">use_or_open</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_cif</span><span class="p">(</span><span class="n">fh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -1446,7 +1439,7 @@ explicit filetype to override default filetype implied from file extension.</p><
 
 
 <h3 id="mofun.atoms.Atoms.load_cml" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">load_cml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">load_cml</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></code>
 
   <span class="doc doc-properties">
       <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
@@ -1471,8 +1464,8 @@ explicit filetype to override default filetype implied from file extension.</p><
   <tbody>
       <tr>
         <td><code>f</code></td>
-        <td><code>File</code></td>
-        <td><p>File-like object to read from.</p></td>
+        <td><code>Path or File</code></td>
+        <td><p>Path or File-like object to read from.</p></td>
         <td><em>required</em></td>
       </tr>
   </tbody>
@@ -1495,17 +1488,17 @@ explicit filetype to override default filetype implied from file extension.</p><
         <details class="quote">
           <summary>Source code in <code>mofun/atoms.py</code></summary>
           <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">load_cml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">load_cml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Loads a CML file, including bonding information.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        f (File): File-like object to read from.</span>
+<span class="sd">        f (Path or File): Path or File-like object to read from.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Atoms: loaded Atoms object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
 
     <span class="n">atom_dicts</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">attrib</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;.//atom&#39;</span><span class="p">)]</span>
