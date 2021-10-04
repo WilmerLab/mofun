@@ -235,9 +235,6 @@ class Atoms:
         - cif
         - cml
 
-        Only the lammps data file and cif support reading from a file object, presently, due to the
-        other formats depending on external library support.
-
         Args:
             f (Str or Path or File): either a path to a file or an open File to load from
             filetype (Str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
@@ -264,9 +261,7 @@ class Atoms:
                 atoms = cls.load_lmpdat(fh, **kwargs)
                 return atoms
         elif filetype == "cml":
-            if path is None:
-                raise Exception("Loading a cml file requires a path")
-            return cls.load_cml(path, **kwargs)
+            return cls.load_cml(fd or path, **kwargs)
         elif filetype == "cif":
             with use_or_open(fd, path) as fh:
                 return cls.load_cif(fh, **kwargs)
@@ -662,17 +657,17 @@ class Atoms:
         return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
 
     @classmethod
-    def load_cml(cls, path):
+    def load_cml(cls, f):
         """Loads a CML file, including bonding information.
 
         Args:
-            f (File): File-like object to read from.
+            f (Path or File): Path or File-like object to read from.
 
         Returns:
             Atoms: loaded Atoms object
         """
 
-        tree = ET.parse(path)
+        tree = ET.parse(f)
         root = tree.getroot()
 
         atom_dicts = [a.attrib for a in root.findall('.//atom')]
