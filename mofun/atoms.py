@@ -38,8 +38,8 @@ class Atoms:
 
     Atoms also stores information on the coefficients needed to define each force field term:
     `pair_coeffs`, `bond_type_coeffs`, `angle_type_coeffs`, `dihedral_type_coeffs`, and
-    `improper_type_coeffs`. The \*\_coeffs variables are lists of strings, where the item index
-    corresponds to the \*\_type, and the string is the full LAMMPS coeffs definition string. we do
+    `improper_type_coeffs`. The \\*\\_coeffs variables are lists of strings, where the item index
+    corresponds to the \\*\\_type, and the string is the full LAMMPS coeffs definition string. we do
     not interpret any of the LAMMPS coefficient specifics, we just store it in its original form,
     i.e. this Angle Coeffs section:
 
