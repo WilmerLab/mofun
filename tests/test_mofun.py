@@ -115,12 +115,12 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_48_Cu_metal_nodes(hkust
         pattern_found = hkust1_cif[indices]
         assert list(pattern_found.elements) == ['Cu']
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 def test_find_pattern_in_structure__hkust1_cif_2x2x2_supercell_has_256_benzene_rings(hkust1_cif, benzene):
     hkust1_2x2x2 = hkust1_cif.replicate(repldims=(2,2,2))
     match_indices = find_pattern_in_structure(hkust1_2x2x2, benzene)
 
-    assert len(match_indices) == 864
+    assert len(match_indices) == 256
     for indices in match_indices:
         pattern_found = hkust1_2x2x2[indices]
         assert list(pattern_found.elements) == ['C','C','C','C','C','C','H','H','H']
@@ -319,11 +319,9 @@ def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_
     structure = uio66_linker_no_bonds.copy()
     structure.cell = 100*np.identity(3)
     final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_some_bonds, axis1a_idx=0, axis1b_idx=15)
+
     assert Counter(final_structure.elements) == {'C': 8, 'O': 4, 'H': 4}
     assert_positions_are_unchanged(structure, final_structure, max_delta=0.1)
-    assert np.array_equal(final_structure.bonds, [(10, 11), (9, 12), (4, 5), (6, 7)])
-    assert np.array_equal(final_structure.angles, [(11, 10, 3), (11, 10, 9), (10, 9, 12), (12, 9, 8), (3, 4, 5), (5, 4, 7), (4, 7, 6), (8, 7, 6)])
-    assert np.array_equal(final_structure.dihedrals, [
-        (11, 10,  3,  0), (11, 10,  3,  4), (11, 10,  9, 12), (11, 10,  9,  8), ( 3, 10,  9, 12),
-        ( 0,  3,  4,  5), (10,  3,  4,  5), (12,  9,  8,  7), (12,  9,  8, 14), ( 3,  4,  7,  6),
-        ( 5,  4,  7,  8), ( 5,  4,  7,  6), ( 9,  8,  7,  6), (14,  8,  7,  6)])
+    assert_topo(final_structure.dihedrals, uio66_linker_some_bonds.dihedrals,
+                final_structure.dihedral_types, uio66_linker_some_bonds.dihedral_types,
+                final_structure.dihedral_type_coeffs, uio66_linker_some_bonds.dihedral_type_coeffs)

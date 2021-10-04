@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import math
 import random
 
 import numpy as np
@@ -29,7 +30,6 @@ def remove_duplicates(match_indices, key=lambda m: tuple(sorted(m)), pick_random
         return [random.choice(matches) for _, matches in keyed_tuples.items()]
     else: # pick first
         return [matches[0] for _, matches in keyed_tuples.items()]
-
 
 def position_index_farthest_from_axis(axis, atoms):
     q = quaternion_from_two_vectors(axis, [1., 0., 0.])
@@ -65,7 +65,7 @@ def quaternion_from_two_vectors_around_axis(p1, p2, axis):
     if norm(axis) > 1e-15:
         axis /= norm(axis)
 
-    if angle != 0. and np.isclose(axis, np.cross(v1, v2) / norm(np.cross(v1, v2)), 1e-3).all():
+    if angle not in [0., math.pi] and np.isclose(axis, np.cross(v1, v2) / norm(np.cross(v1, v2)), 1e-3).all():
         angle *= -1
     return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
 
@@ -85,3 +85,10 @@ def use_or_open(fh, path, mode='r'):
             yield f
     else:
         yield fh
+
+def typekey(tup):
+    rev = list(tup)
+    rev.reverse()
+    if tuple(rev) <= tuple(tup):
+        return tuple(rev)
+    return tuple(tup)
