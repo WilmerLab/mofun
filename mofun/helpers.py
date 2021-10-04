@@ -85,3 +85,10 @@ def use_or_open(fh, path, mode='r'):
             yield f
     else:
         yield fh
+
+def typekey(tup):
+    rev = list(tup)
+    rev.reverse()
+    if tuple(rev) <= tuple(tup):
+        return tuple(rev)
+    return tuple(tup)

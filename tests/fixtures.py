@@ -10,6 +10,7 @@ from pytest import approx
 
 import tests
 from mofun import Atoms
+from mofun.helpers import typekey
 
 sqrt2_2 = sqrt(2) / 2
 sqrt3_2 = sqrt(3) / 2
@@ -49,6 +50,23 @@ def assert_positions_are_unchanged(orig_structure, final_structure, max_delta=1e
         for p1 in new_p_ordered:
             print(p1)
     assert (distances < max_delta).all()
+
+def assert_topo(topo, expected_topo, types=None, expected_types=None, coeffs=None, expected_coeffs=None):
+
+    # check right atoms are part of the topo
+    sorted_topo = sorted([typekey(t) for t in topo])
+    sorted_expected_topo = sorted([typekey(t) for t in expected_topo])
+    assert np.array_equal(sorted_topo, sorted_expected_topo)
+
+    # check types are mapped (assume coeffs are ordered the same!)
+    if types is not None and expected_types is not None:
+        sorted_topo_w_types = sorted([(*typekey(t), types[i]) for i, t in enumerate(topo)])
+        sorted_expected_topo_w_types = sorted([(*typekey(t), expected_types[i]) for i, t in enumerate(expected_topo)])
+        assert np.array_equal(sorted_topo_w_types, sorted_expected_topo_w_types)
+
+    # check coeffs for each type are equal
+    if coeffs is not None and expected_coeffs is not None:
+        assert np.array_equal(coeffs, expected_coeffs)
 
 def assert_benzene(coords):
     # incomplete sample

@@ -7,6 +7,7 @@ import numpy as np
 
 from mofun.atomic_masses import ATOMIC_MASSES
 from mofun.uff4mof import UFF4MOF, uff_key_starts_with, MAIN_GROUP_ELEMENTS
+from mofun.helpers import typekey
 
 def default_uff_rules():
     return {
@@ -376,13 +377,6 @@ def calc_dihedrals(bonds):
 
         dihedrals += [(a1, a, b, b1) for a1 in a_neighbors for b1 in b_neighbors]
     return np.array(dihedrals)
-
-def typekey(tup):
-    rev = list(tup)
-    rev.reverse()
-    if tuple(rev) <= tuple(tup):
-        return tuple(rev)
-    return tuple(tup)
 
 def delete_if_all_in_set(arr, s):
     deletion_list = []
