@@ -81,10 +81,8 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
     s_types_view, s_ss, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length, structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
 
-    binsize = 1. # angstrom
-    bincoords = (np.array(s_pos_view) // binsize).astype(np.int16)
-    nearbybins = np.ceil(pattern_length / binsize)
-    db = np.array(sorted([(*r, i) for i, r in enumerate(bincoords)]))
+    # created sorted coords array for creating search subsets
+    p = np.array(sorted([(*r, i) for i, r in enumerate(s_pos_view)]))
 
     # Search instances of first atom in a search pattern
     # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
@@ -96,12 +94,12 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
     all_match_index_tuples = []
     for a_idx, a in enumerate(starting_atoms):
         match_index_tuples = [[a]]
-        posbin =  s_pos_view[a] // binsize
-        nearby = db[(db[:, 0] <= posbin[0] + nearbybins) & (db[:, 0] >= posbin[0] - nearbybins) &
-                    (db[:, 1] <= posbin[1] + nearbybins) & (db[:, 1] >= posbin[1] - nearbybins) &
-                    (db[:, 2] <= posbin[2] + nearbybins) & (db[:, 2] >= posbin[2] - nearbybins)]
 
-        nearby_atom_indices = nearby[:,3]
+        nearby = p[(p[:, 0] <= s_pos_view[a][0] + pattern_length) & (p[:, 0] >= s_pos_view[a][0] - pattern_length) &
+                   (p[:, 1] <= s_pos_view[a][1] + pattern_length) & (p[:, 1] >= s_pos_view[a][1] - pattern_length) &
+                   (p[:, 2] <= s_pos_view[a][2] + pattern_length) & (p[:, 2] >= s_pos_view[a][2] - pattern_length)]
+
+        nearby_atom_indices = nearby[:,3].astype(np.int16)
 
         for i in range(1, len(pattern)):
             last_match_index_tuples = match_index_tuples
