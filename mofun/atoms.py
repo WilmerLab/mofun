@@ -864,8 +864,6 @@ class Atoms:
         """Replicate atoms object across xyz dimensions
 
         Warnings:
-
-        * only works for orthorhombic at the moment!
         * does not magically handle any bonds that may cross periodic boundary conditions!
 
         Args:
