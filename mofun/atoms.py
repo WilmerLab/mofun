@@ -877,7 +877,7 @@ class Atoms:
         ucmults = ucmults[np.any(ucmults != 0, axis=1)] # remove [0,0,0] since in copy
         for ucmult in ucmults:
             transatoms = self.copy()
-            transatoms.translate(np.matmul(transatoms.cell, ucmult))
+            transatoms.translate(np.matmul(transatoms.cell.T, ucmult))
             repl_atoms.extend(transatoms, offsets=(0,0,0,0))
 
         repl_atoms.cell = self.cell * repldims

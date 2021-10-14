@@ -197,8 +197,8 @@ def test_atoms_replicate__213_has_replicates_in_xz_dims(octane):
     assert np.array_equal(np.tile(octane.groups, 6), reploctane.groups)
 
 def test_atoms_replicate__triclinic_222_has_replicates_in_three_dims():
-    a = Atoms(elements="H", positions=[(1, 1, 1)], cell=np.array([[10, 0, 0], [10, 10, 0], [0, 0, 10]]).T)
-    expected = Atoms(elements="HHHHHHHH", cell=np.array([[20, 0, 0], [20, 20, 0], [0, 0, 20]]).T,
+    a = Atoms(elements="H", positions=[(1, 1, 1)], cell=np.array([[10, 0, 0], [10, 10, 0], [0, 0, 10]]))
+    expected = Atoms(elements="HHHHHHHH", cell=np.array([[20, 0, 0], [20, 20, 0], [0, 0, 20]]),
                      positions=[[1,1,1], [11,1,1], [11,11,1], [21,11,1],
                                 [1,1,11], [11,1,11], [11,11,11], [21,11,11]])
 
