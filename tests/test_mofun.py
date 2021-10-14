@@ -9,7 +9,7 @@ import pytest
 from pytest import approx
 from scipy.spatial.transform import Rotation as R
 
-from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms
+from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms, get_types_ss_map_limited_near_uc
 
 from tests.fixtures import *
 
@@ -325,3 +325,17 @@ def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_
     assert_topo(final_structure.dihedrals, uio66_linker_some_bonds.dihedrals,
                 final_structure.dihedral_types, uio66_linker_some_bonds.dihedral_types,
                 final_structure.dihedral_type_coeffs, uio66_linker_some_bonds.dihedral_type_coeffs)
+
+def test_get_types_ss_map_limited_near_uc__triclinic_cell_zero_length_gives_original_atoms():
+    one_axis_points = np.linspace(0.01,0.99,2)
+    cell = np.array([[10, 0, 0], [10, 10, 0], [0, 0, 10]])
+    relv = np.array(np.meshgrid(one_axis_points, one_axis_points, one_axis_points)).T.reshape(-1,3)
+    absv = np.dot(cell.T, relv.T).T
+    structure = Atoms(elements=["H"]*len(absv), positions=absv, cell=cell)
+
+    s_types_view, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, 0)
+    assert len(s_positions) == 27 * len(absv)
+    assert len(s_types_view) == len(absv)
+    assert len(index_mapper) == len(absv)
+    assert len(s_pos_view) == len(absv)
+    assert_positions_are_unchanged(np.array(s_pos_view), absv, verbose=True)

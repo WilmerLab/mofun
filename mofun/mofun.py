@@ -14,11 +14,10 @@ def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
     return (uc_vectors * multipliers).sum(axis=1)
 
-def get_types_ss_map_limited_near_uc(structure, length, cell):
+def get_types_ss_map_limited_near_uc(structure, length):
     """
     structure:
     length: the length of the longest dimension of the search pattern
-    cell:
 
     creates master lists of indices, types and positions, for all atoms in the structure and all
     atoms across the PBCs. Limits atoms across PBCs to those that are within a distance of the
@@ -26,8 +25,8 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     boundary than this will never match the search pattern).
     """
 
-
-    uc_offsets = uc_neighbor_offsets(structure.cell)
+    cell = structure.cell
+    uc_offsets = uc_neighbor_offsets(cell)
     # move (0., 0., 0.) to be at the 0 index
     uc_offsets[np.where(np.all(uc_offsets == (0,0,0), axis=1))[0][0]] = uc_offsets[0]
     uc_offsets[0] = (0.0, 0.0, 0.0)
@@ -37,21 +36,39 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
 
     s_types = list(structure.elements) * len(uc_offsets)
 
+    index_mapper = []
+    s_pos_view = []
+    s_types_view = []
+
     is_triclinic = not (np.diag(cell) * np.identity(3) == cell).all()
     if is_triclinic:
-        index_mapper = [i for i, pos in enumerate(s_positions)]
-        s_pos_view = [pos for i, pos in enumerate(s_positions)]
-        s_types_view = [s_types[i] for i, pos in enumerate(s_positions)]
+        # search within triclinic space + buffer by looking at three planes that go through origin
 
-        # TODO: optimize for triclinic
-        # search for within triclinic space + buffer by looking at three planes that go through
-        # origin
+        # normal vectors for planes: xy, xz, yz
+        nvs = np.array([np.cross(cell[0], cell[1]), np.cross(cell[0], cell[2]), np.cross(cell[1], cell[2])])
+        nvnorms = np.linalg.norm(nvs, axis=1)
+        planedists = np.abs(np.array([np.dot(cell[2], nvs[0]) / nvnorms[0],
+                                      np.dot(cell[1], nvs[1]) / nvnorms[1],
+                                      np.dot(cell[0], nvs[2]) / nvnorms[2]]))
+        # calculate distance to center point; from a plane boundary to inside the unit cell
+        # (inwards) should have a negative distance. If not, we will multiply the distances below
+        # by -1 to account for this.
+        centerpos = cell.sum(axis=0) / 2
+        centerdist = np.dot(nvs, centerpos)
+        nmults = -centerdist / np.abs(centerdist)
+
+        for i, pos in enumerate(s_positions):
+            if ((-planedists[0] - length <= nmults[0] * np.dot(nvs[0], pos) / nvnorms[0] <= length) and
+                (-planedists[1] - length <= nmults[1] * np.dot(nvs[1], pos) / nvnorms[1] <= length) and
+                (-planedists[2] - length <= nmults[2] * np.dot(nvs[2], pos) / nvnorms[2] <= length)):
+
+                index_mapper.append(i)
+                s_pos_view.append(pos)
+                s_types_view.append(s_types[i])
 
     else: # orthorhombic
         cell = list(np.diag(cell))
-        index_mapper = []
-        s_pos_view = []
-        s_types_view = []
+
         for i, pos in enumerate(s_positions):
             if (pos[0] >= -length and pos[0] < length + cell[0] and
                 pos[1] >= -length and pos[1] < length + cell[1] and
@@ -87,7 +104,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
         print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
     pattern_length = p_ss.max() ** 0.5
-    s_types_view, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length, structure.cell)
+    s_types_view, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length)
     atoms_by_type = atoms_by_type_dict(s_types_view)
 
     # created sorted coords array for creating search subsets
