@@ -25,8 +25,7 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     boundary that is less than the length of the search pattern (i.e. atoms further away from the
     boundary than this will never match the search pattern).
     """
-    # if not (cell.angles() == [90., 90., 90.]).all():
-    #     raise Exception("Currently optimizations do not support unit cell angles != 90")
+
 
     uc_offsets = uc_neighbor_offsets(structure.cell)
     # move (0., 0., 0.) to be at the 0 index
@@ -37,22 +36,32 @@ def get_types_ss_map_limited_near_uc(structure, length, cell):
     s_positions = np.array([x for y in s_positions for x in y])
 
     s_types = list(structure.elements) * len(uc_offsets)
-    cell = list(np.diag(cell))
-    index_mapper = []
-    s_pos_view = []
-    s_types_view = []
 
-    for i, pos in enumerate(s_positions):
-        # only currently works for orthorhombic crystals
-        if (pos[0] >= -length and pos[0] < length + cell[0] and
+    is_triclinic = not (np.diag(cell) * np.identity(3) == cell).all()
+    if is_triclinic:
+        index_mapper = [i for i, pos in enumerate(s_positions)]
+        s_pos_view = [pos for i, pos in enumerate(s_positions)]
+        s_types_view = [s_types[i] for i, pos in enumerate(s_positions)]
+
+        # TODO: optimize for triclinic
+        # search for within triclinic space + buffer by looking at three planes that go through
+        # origin
+
+    else: # orthorhombic
+        cell = list(np.diag(cell))
+        index_mapper = []
+        s_pos_view = []
+        s_types_view = []
+        for i, pos in enumerate(s_positions):
+            if (pos[0] >= -length and pos[0] < length + cell[0] and
                 pos[1] >= -length and pos[1] < length + cell[1] and
                 pos[2] >= -length and pos[2] < length + cell[2]):
-            index_mapper.append(i)
-            s_pos_view.append(pos)
-            s_types_view.append(s_types[i])
 
-    s_ss = distance.cdist(s_pos_view, s_pos_view, "sqeuclidean")
-    return s_types_view, s_ss, index_mapper, s_pos_view, s_positions
+                index_mapper.append(i)
+                s_pos_view.append(pos)
+                s_types_view.append(s_types[i])
+
+    return s_types_view, index_mapper, s_pos_view, s_positions
 
 def find_pattern_in_structure(structure, pattern, return_positions=False, rel_tol=5e-2, verbose=False):
     """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number
@@ -78,7 +87,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
         print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
     pattern_length = p_ss.max() ** 0.5
-    s_types_view, s_ss, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length, structure.cell)
+    s_types_view, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length, structure.cell)
     atoms_by_type = atoms_by_type_dict(s_types_view)
 
     # created sorted coords array for creating search subsets
@@ -90,26 +99,31 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
     if verbose:
         print("round %d (%d) [%s]: " % (0, len(starting_atoms), pattern.elements[0]), starting_atoms)
 
+    def get_nearby_atoms(p, s_pos_view, pattern_length, a):
+        p1 = p[(p[:, 0] <= s_pos_view[a][0] + pattern_length) & (p[:, 0] >= s_pos_view[a][0] - pattern_length)]
+        p2 = p1[(p1[:, 1] <= s_pos_view[a][1] + pattern_length) & (p1[:, 1] >= s_pos_view[a][1] - pattern_length)]
+        return (p2[(p2[:, 2] <= s_pos_view[a][2] + pattern_length) & (p2[:, 2] >= s_pos_view[a][2] - pattern_length)])
+
     pattern_elements = pattern.elements
     all_match_index_tuples = []
     for a_idx, a in enumerate(starting_atoms):
         match_index_tuples = [[a]]
 
-        nearby = p[(p[:, 0] <= s_pos_view[a][0] + pattern_length) & (p[:, 0] >= s_pos_view[a][0] - pattern_length) &
-                   (p[:, 1] <= s_pos_view[a][1] + pattern_length) & (p[:, 1] >= s_pos_view[a][1] - pattern_length) &
-                   (p[:, 2] <= s_pos_view[a][2] + pattern_length) & (p[:, 2] >= s_pos_view[a][2] - pattern_length)]
-
+        nearby = get_nearby_atoms(p, s_pos_view, pattern_length, a)
         nearby_atom_indices = nearby[:,3].astype(np.int16)
+        nearby_positions = nearby[:,0:3]
+        idx2ssidx = {atom_idx:i for i, atom_idx in enumerate(nearby_atom_indices)}
+        s_ss = distance.cdist(nearby_positions, nearby_positions, "sqeuclidean")
 
         for i in range(1, len(pattern)):
             last_match_index_tuples = match_index_tuples
             match_index_tuples = []
             for match in last_match_index_tuples:
-                for atom_idx in nearby_atom_indices:
+                for ss_idx, atom_idx in enumerate(nearby_atom_indices):
                     if s_types_view[atom_idx]==pattern_elements[i]:
                         found_match = True
                         for j in range(0, i):
-                            if not math.isclose(p_ss[i,j], s_ss[match[j], atom_idx], rel_tol=rel_tol_sq):
+                            if not math.isclose(p_ss[i,j], s_ss[idx2ssidx[match[j]], ss_idx], rel_tol=rel_tol_sq):
                                 found_match = False
                                 break
 

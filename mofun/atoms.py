@@ -505,6 +505,7 @@ class Atoms:
         if self.num_improper_types > 0:
             f.write('%d improper types\n' % self.num_improper_types)
 
+        # TODO: support triclinic
         if self.cell.shape == (3,3):
             xlohi, ylohi, zlohi = zip([0,0,0], np.diag(self.cell))
             f.write(" %10.6f %10.6f xlo xhi\n" % xlohi)
@@ -647,6 +648,7 @@ class Atoms:
         cell_tags = ['_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma']
         if has_all_tags(block, cell_tags):
             a, b, c, alpha, beta, gamma = [float(block[tag]) for tag in cell_tags]
+            # TODO: Fix for triclinic
             if alpha != 90. or beta != 90 or gamma != 90.:
                 raise Exception("No support for non orthorhombic UCs at the moment!")
 
