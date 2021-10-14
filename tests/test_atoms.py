@@ -204,5 +204,5 @@ def test_atoms_replicate__triclinic_222_has_replicates_in_three_dims():
 
     ra = a.replicate((2, 2, 2))
     assert len(ra) == 8
-    assert_positions_are_unchanged(ra, expected, verbose=True)
+    assert_structure_positions_are_unchanged(ra, expected, verbose=True)
     assert np.array_equal(ra.cell, expected.cell)
