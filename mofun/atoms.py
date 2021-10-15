@@ -659,7 +659,7 @@ class Atoms:
         return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
 
     @classmethod
-    def load_cml(cls, f):
+    def load_cml(cls, f, verbose=False):
         """Loads a CML file, including bonding information.
 
         Args:
@@ -684,6 +684,12 @@ class Atoms:
         bonds_by_ids, bond_orders = zip(*bond_tuples)
         bonds = [(id_to_idx[b1], id_to_idx[b2]) for (b1,b2) in bonds_by_ids]
         bond_types = [0 for b in bonds]
+        if verbose:
+            print("Found %d atoms: %s" % (len(elements), elements))
+            print("Found %d atom positions: %s" % (len(positions), positions))
+            print("Found %d bonds: %s" % (len(bonds), bonds))
+            print("Found %d bond_types: %s" % (len(bond_types), bond_types))
+
         return cls(elements=elements, positions=positions, bonds=bonds, bond_types=bond_types)
 
     @classmethod
