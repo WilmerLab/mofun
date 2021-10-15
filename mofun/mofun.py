@@ -163,7 +163,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
     else:
         return match_index_tuples_in_uc
 
-def replace_pattern_in_structure(structure, search_pattern, replace_pattern, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, verbose=False):
+def replace_pattern_in_structure(structure, search_pattern, replace_pattern, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, return_num_matches=False, verbose=False):
     """Replaces all instances of `pattern` in `structure` with the `replace_pattern`.
 
     Works across periodic boundary conditions.
@@ -267,4 +267,7 @@ def replace_pattern_in_structure(structure, search_pattern, replace_pattern, rep
 
     del(new_structure[list(to_delete)])
 
-    return new_structure
+    if return_num_matches:
+        return new_structure, len(match_indices)
+    else:
+        return new_structure
