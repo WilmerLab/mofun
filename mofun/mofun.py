@@ -133,6 +133,8 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
         s_ss = distance.cdist(nearby_positions, nearby_positions, "sqeuclidean")
 
         for i in range(1, len(pattern)):
+            if len(match_index_tuples) == 0:
+                break
             last_match_index_tuples = match_index_tuples
             match_index_tuples = []
             for match in last_match_index_tuples:
