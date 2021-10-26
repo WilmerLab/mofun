@@ -25,12 +25,14 @@ def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=False):
     p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]
     new_p_ordered = list(new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))])
 
+    p_unmatched = []
     p_corresponding = []
     distances = np.full(len(p), max(9.99, 9.99 * max_delta))
     for i, p1 in enumerate(p_ordered):
         found_match = False
         for j, p2 in enumerate(new_p_ordered):
             if p2[2] - p1[2] > 1:
+                p_unmatched.append(p1)
                 break
             elif (np21 := norm(np.array(p2) - p1)) < max_delta:
                 found_match = True
@@ -47,7 +49,10 @@ def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=False):
             if distances[i] > max_delta:
                 annotation = " * "
             print(i, p1, p_corresponding[i], distances[i], annotation)
-        print("UNMATCHED coords: ")
+        print("UNMATCHED coords in old positions: ")
+        for p1 in p_unmatched:
+            print(p1)
+        print("UNMATCHED coords in new positions: ")
         for p1 in new_p_ordered:
             print(p1)
     assert (distances < max_delta).all()
