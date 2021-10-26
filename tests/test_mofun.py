@@ -239,6 +239,20 @@ def test_replace_pattern_in_structure__replacement_pattern_across_pbc_gets_coord
     assert Counter(final_structure.elements) == Counter(structure.elements)
     assert_structure_positions_are_unchanged(structure, final_structure)
 
+def test_replace_pattern_in_structure__with_four_points_gets_replaced_with_itself():
+    structure = Atoms(elements='CCHH', positions=[(0., 0., 0.), (1., 0., 0.),(0., 1., 0.), (0., 0., 1.)])
+    structure.translate((3,3,3))
+    structure.cell = 15 * np.identity(3)
+
+    search_pattern = structure.copy()
+
+    replace_pattern = Atoms(elements='FFHeHe', positions=search_pattern.positions)
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=True)
+
+    assert final_structure.elements == ['F', 'F', 'He', 'He']
+    final_structure.positions %= np.diag(final_structure.cell)
+    assert_structure_positions_are_unchanged(structure, final_structure, verbose=True)
+
 def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_with_itself_does_not_change_positions():
     search_pattern = Atoms(elements='CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
     replace_pattern = Atoms(elements='FFHe', positions=search_pattern.positions)
