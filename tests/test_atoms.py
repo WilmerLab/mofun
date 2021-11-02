@@ -5,6 +5,7 @@ from io import StringIO
 from tests.fixtures import *
 from mofun import Atoms
 from mofun.atoms import find_unchanged_atom_pairs
+from mofun.helpers import assert_positions_are_unchanged, assert_structure_positions_are_unchanged
 
 
 def test_atoms__type_labels_are_inferred_from_elements():

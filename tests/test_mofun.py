@@ -10,7 +10,7 @@ from pytest import approx
 from scipy.spatial.transform import Rotation as R
 
 from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms, get_types_ss_map_limited_near_uc
-from mofun.helpers import assert_positions_are_unchanged
+from mofun.helpers import assert_positions_are_unchanged, assert_structure_positions_are_unchanged, PositionsNotEquivalent
 
 from tests.fixtures import *
 
@@ -240,7 +240,7 @@ def test_replace_pattern_in_structure__replacement_pattern_across_pbc_gets_coord
     assert Counter(final_structure.elements) == Counter(structure.elements)
     assert_structure_positions_are_unchanged(structure, final_structure)
 
-def test_replace_pattern_in_structure__with_four_points_gets_replaced_with_itself():
+def test_replace_pattern_in_structure__3way_symmetrical_structure_raises_position_exception():
     structure = Atoms(elements='CCHH', positions=[(0., 0., 0.), (1., 0., 0.),(0., 1., 0.), (0., 0., 1.)])
     structure.translate((3,3,3))
     structure.cell = 15 * np.identity(3)
@@ -248,11 +248,9 @@ def test_replace_pattern_in_structure__with_four_points_gets_replaced_with_itsel
     search_pattern = structure.copy()
 
     replace_pattern = Atoms(elements='FFHeHe', positions=search_pattern.positions)
-    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=True)
 
-    assert final_structure.elements == ['F', 'F', 'He', 'He']
-    final_structure.positions %= np.diag(final_structure.cell)
-    assert_structure_positions_are_unchanged(structure, final_structure, verbose=True)
+    with pytest.raises(PositionsNotEquivalent):
+        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=True)
 
 def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_with_itself_does_not_change_positions():
     search_pattern = Atoms(elements='CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
@@ -261,7 +259,7 @@ def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_wi
     structure.cell = 15 * np.identity(3)
     for _ in range(100):
         r = R.random(1)
-        print(r.as_quat())
+        print("quat: ", r.as_quat())
         structure.positions = r.apply(structure.positions)
         dp = np.random.random(3) * 15
         print(dp)
