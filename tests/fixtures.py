@@ -18,39 +18,6 @@ sqrt3_2 = sqrt(3) / 2
 def random_positions(num):
     return np.random.rand(num, 3) * 100
 
-def assert_positions_are_unchanged(orig_structure, final_structure, max_delta=1e-5, verbose=False):
-    p = orig_structure.positions
-    p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]
-    new_p = final_structure.positions
-    new_p_ordered = list(new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))])
-
-    p_corresponding = []
-    distances = np.full(len(p), max(9.99, 9.99 * max_delta))
-    for i, p1 in enumerate(p_ordered):
-        found_match = False
-        for j, p2 in enumerate(new_p_ordered):
-            if p2[2] - p1[2] > 1:
-                break
-            elif (np21 := norm(np.array(p2) - p1)) < max_delta:
-                found_match = True
-                p_corresponding.append(new_p_ordered.pop(j))
-                distances[i] = np21
-                break
-        if not found_match:
-            p_corresponding.append([])
-
-    distances = np.array(distances)
-    if verbose:
-        for i, p1 in enumerate(p_ordered):
-            annotation = ""
-            if distances[i] > max_delta:
-                annotation = " * "
-            print(i, p1, p_corresponding[i], distances[i], annotation)
-        print("UNMATCHED coords: ")
-        for p1 in new_p_ordered:
-            print(p1)
-    assert (distances < max_delta).all()
-
 def assert_topo(topo, expected_topo, types=None, expected_types=None, coeffs=None, expected_coeffs=None):
 
     # check right atoms are part of the topo

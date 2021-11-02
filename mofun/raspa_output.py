@@ -17,6 +17,15 @@ def parse_gas_loading(output_file, units='molkg'):
             elif units=='cc_g' and "Average loading absolute [cm^3 (STP)/gr framework]" in line:
                 absvloading = float(line.split()[6])
                 absvloading_error = float(line.split()[8])
+            elif units=='molkg' and "Average loading excess [mol/kg framework]" in line:
+                excessvloading = float(line.split()[5])
+                excessvloading_error = float(line.split()[7])
+            elif units=='vv' and "Average loading excess [cm^3 (STP)/cm^3 framework]" in line:
+                excessvloading = float(line.split()[6])
+                excessvloading_error = float(line.split()[8])
+            elif units=='cc_g' and "Average loading excess [cm^3 (STP)/gr framework]" in line:
+                excessvloading = float(line.split()[6])
+                excessvloading_error = float(line.split()[8])
             elif "Number of molecules:" in line:
                 atom_blocks = [float(lines[offset + i + 5].split()[2]) for offset in range(5)]
             elif "Conversion factor molecules/unit cell -> cm^3 STP/cm^3:" in line:
@@ -24,7 +33,7 @@ def parse_gas_loading(output_file, units='molkg'):
             elif "Conversion factor mol/kg -> cm^3 STP/cm^3:" in line:
                 molkg_to_vv = float(line.split()[6])
 
-    return absvloading, absvloading_error, *atom_blocks, molecules_uc_to_vv, molkg_to_vv
+    return absvloading, absvloading_error, excessvloading, excessvloading_error, *atom_blocks, molecules_uc_to_vv, molkg_to_vv
 
 
 def parse_henrys(output_file):

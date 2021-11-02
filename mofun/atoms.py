@@ -62,7 +62,7 @@ class Atoms:
                     bonds=[], bond_types=[], angles=[], angle_types=[],
                     dihedrals=[], dihedral_types=[], impropers=[], improper_types=[],
                     pair_coeffs=[], bond_type_coeffs=[], angle_type_coeffs=[],
-                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=[]):
+                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=None):
         """Create an Atoms object.
 
         An Atoms object can be created without any atoms using `Atoms()`. For creating more
@@ -134,7 +134,11 @@ class Atoms:
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
-        self.cell = np.array(cell)
+
+        if cell is not None:
+            self.cell = np.array(cell)
+        else:
+            self.cell = None
 
         self.bonds = np.array(bonds, dtype=int)
         self.bond_types = np.array(bond_types, dtype=int)
@@ -505,7 +509,8 @@ class Atoms:
         if self.num_improper_types > 0:
             f.write('%d improper types\n' % self.num_improper_types)
 
-        if self.cell.shape == (3,3):
+        # TODO: support triclinic
+        if self.cell is not None and self.cell.shape == (3,3):
             xlohi, ylohi, zlohi = zip([0,0,0], np.diag(self.cell))
             f.write(" %10.6f %10.6f xlo xhi\n" % xlohi)
             f.write(" %10.6f %10.6f ylo yhi\n" % ylohi)
@@ -582,12 +587,13 @@ class Atoms:
             f.write("%6d %10.4f %10.4f %10.4f  %5s %10.8f  0  0\n" % (i + 1, x, y, z,
                 self.elements[i], self.charges[i]))
 
-        f.write("\n\n\n")
-        f.write("  Fundcell_Info: Listed\n")
-        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
-        f.write("           90.0000          90.0000          90.0000\n")
-        f.write("           0.00000          0.00000          0.00000\n")
-        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+        if self.cell is not None:
+            f.write("\n\n\n")
+            f.write("  Fundcell_Info: Listed\n")
+            f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+            f.write("           90.0000          90.0000          90.0000\n")
+            f.write("           0.00000          0.00000          0.00000\n")
+            f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
 
 
     @classmethod
@@ -647,6 +653,7 @@ class Atoms:
         cell_tags = ['_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma']
         if has_all_tags(block, cell_tags):
             a, b, c, alpha, beta, gamma = [float(block[tag]) for tag in cell_tags]
+            # TODO: Fix for triclinic
             if alpha != 90. or beta != 90 or gamma != 90.:
                 raise Exception("No support for non orthorhombic UCs at the moment!")
 
@@ -657,7 +664,7 @@ class Atoms:
         return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
 
     @classmethod
-    def load_cml(cls, f):
+    def load_cml(cls, f, verbose=False):
         """Loads a CML file, including bonding information.
 
         Args:
@@ -682,6 +689,12 @@ class Atoms:
         bonds_by_ids, bond_orders = zip(*bond_tuples)
         bonds = [(id_to_idx[b1], id_to_idx[b2]) for (b1,b2) in bonds_by_ids]
         bond_types = [0 for b in bonds]
+        if verbose:
+            print("Found %d atoms: %s" % (len(elements), elements))
+            print("Found %d atom positions: %s" % (len(positions), positions))
+            print("Found %d bonds: %s" % (len(bonds), bonds))
+            print("Found %d bond_types: %s" % (len(bond_types), bond_types))
+
         return cls(elements=elements, positions=positions, bonds=bonds, bond_types=bond_types)
 
     @classmethod
@@ -793,6 +806,7 @@ class Atoms:
                 identical and can be considered to be the same atom.
             verbose (bool): print debugging info.
         """
+
         atom_idx_offset = len(self.positions)
         if offsets is None:
             if verbose:
@@ -864,8 +878,6 @@ class Atoms:
         """Replicate atoms object across xyz dimensions
 
         Warnings:
-
-        * only works for orthorhombic at the moment!
         * does not magically handle any bonds that may cross periodic boundary conditions!
 
         Args:
@@ -874,12 +886,15 @@ class Atoms:
         Returns:
             Atoms: replicated atoms.
         """
+        if self.cell is None:
+            raise Exception("Can't replicate if no unit cell has been defined")
+
         repl_atoms = self.copy()
         ucmults = np.array(np.meshgrid(*[range(r) for r in repldims])).T.reshape(-1, 3)
         ucmults = ucmults[np.any(ucmults != 0, axis=1)] # remove [0,0,0] since in copy
         for ucmult in ucmults:
             transatoms = self.copy()
-            transatoms.translate(np.matmul(transatoms.cell, ucmult))
+            transatoms.translate(np.matmul(transatoms.cell.T, ucmult))
             repl_atoms.extend(transatoms, offsets=(0,0,0,0))
 
         repl_atoms.cell = self.cell * repldims
@@ -941,7 +956,7 @@ class Atoms:
         Only supports export of the positions and elements.
         """
         kwargs = dict(positions=self.positions)
-        if self.cell is not None and len(self.cell) > 0:
+        if self.cell is not None:
             kwargs['cell'] = self.cell
         return ase.Atoms(self.elements, **kwargs)
 
