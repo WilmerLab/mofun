@@ -62,7 +62,7 @@ class Atoms:
                     bonds=[], bond_types=[], angles=[], angle_types=[],
                     dihedrals=[], dihedral_types=[], impropers=[], improper_types=[],
                     pair_coeffs=[], bond_type_coeffs=[], angle_type_coeffs=[],
-                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=[]):
+                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=None):
         """Create an Atoms object.
 
         An Atoms object can be created without any atoms using `Atoms()`. For creating more
@@ -134,7 +134,11 @@ class Atoms:
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
-        self.cell = np.array(cell)
+
+        if cell is not None:
+            self.cell = np.array(cell)
+        else:
+            self.cell = None
 
         self.bonds = np.array(bonds, dtype=int)
         self.bond_types = np.array(bond_types, dtype=int)
@@ -506,7 +510,7 @@ class Atoms:
             f.write('%d improper types\n' % self.num_improper_types)
 
         # TODO: support triclinic
-        if self.cell.shape == (3,3):
+        if self.cell is not None and self.cell.shape == (3,3):
             xlohi, ylohi, zlohi = zip([0,0,0], np.diag(self.cell))
             f.write(" %10.6f %10.6f xlo xhi\n" % xlohi)
             f.write(" %10.6f %10.6f ylo yhi\n" % ylohi)
@@ -583,12 +587,13 @@ class Atoms:
             f.write("%6d %10.4f %10.4f %10.4f  %5s %10.8f  0  0\n" % (i + 1, x, y, z,
                 self.elements[i], self.charges[i]))
 
-        f.write("\n\n\n")
-        f.write("  Fundcell_Info: Listed\n")
-        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
-        f.write("           90.0000          90.0000          90.0000\n")
-        f.write("           0.00000          0.00000          0.00000\n")
-        f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+        if self.cell is not None:
+            f.write("\n\n\n")
+            f.write("  Fundcell_Info: Listed\n")
+            f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+            f.write("           90.0000          90.0000          90.0000\n")
+            f.write("           0.00000          0.00000          0.00000\n")
+            f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
 
 
     @classmethod
@@ -881,6 +886,9 @@ class Atoms:
         Returns:
             Atoms: replicated atoms.
         """
+        if self.cell is None:
+            raise Exception("Can't replicate if no unit cell has been defined")
+
         repl_atoms = self.copy()
         ucmults = np.array(np.meshgrid(*[range(r) for r in repldims])).T.reshape(-1, 3)
         ucmults = ucmults[np.any(ucmults != 0, axis=1)] # remove [0,0,0] since in copy
@@ -948,7 +956,7 @@ class Atoms:
         Only supports export of the positions and elements.
         """
         kwargs = dict(positions=self.positions)
-        if self.cell is not None and len(self.cell) > 0:
+        if self.cell is not None:
             kwargs['cell'] = self.cell
         return ase.Atoms(self.elements, **kwargs)
 
