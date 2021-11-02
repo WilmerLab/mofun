@@ -244,20 +244,17 @@ def replace_pattern_in_structure(
                 # the first quaternion aligns the search pattern axis points with the axis points
                 # found in the structure and is used to rotate the replacement pattern to match
                 q1 = quaternion_from_two_vectors(search_axis, match_axis)
-                if q1 is not None:
-                    new_atoms.positions = q1.apply(new_atoms.positions)
-                    if not ignore_positions_check:
-                        chk_search_pattern.positions = q1.apply(chk_search_pattern.positions)
-                    if verbose:
-                        print("q1: ", q1.as_quat())
+                new_atoms.positions = q1.apply(new_atoms.positions)
+                if not ignore_positions_check:
+                    chk_search_pattern.positions = q1.apply(chk_search_pattern.positions)
+                if verbose:
+                    print("q1: ", q1.as_quat())
 
                 if len(atom_positions) > 2:
                     match_orientation_point = atom_positions[search_orientation_point_idx] - atom_positions[axis1a_idx]
                     match_orientation_axis = match_orientation_point - (np.dot(match_orientation_point, match_axis) / np.dot(match_axis, match_axis)) * match_axis
                     if verbose: print("match orientation axis: ", match_orientation_axis)
-                    q1_o_axis = search_orientation_axis
-                    if q1 is not None:
-                        q1_o_axis = q1.apply(q1_o_axis)
+                    q1_o_axis = q1.apply(search_orientation_axis)
 
                     # the second quaternion is a rotation around the found axis in the structure and
                     # aligns the orientation axis point to its placement in the structure.
@@ -266,15 +263,11 @@ def replace_pattern_in_structure(
                         print("orienting using match orientation point: ", match_orientation_point)
                         print("from match orientation axis: ", match_orientation_axis)
                         print("to (rotated) search pattern orientation axis: ", q1_o_axis)
-                        if q2 is not None:
-                            print("q2: ", q2.as_quat())
-                        else:
-                            print("q2: no quat is necessary")
+                        print("q2: ", q2.as_quat())
 
-                    if q2 is not None:
-                        new_atoms.positions = q2.apply(new_atoms.positions)
-                        if not ignore_positions_check:
-                            chk_search_pattern.positions = q2.apply(chk_search_pattern.positions)
+                    new_atoms.positions = q2.apply(new_atoms.positions)
+                    if not ignore_positions_check:
+                        chk_search_pattern.positions = q2.apply(chk_search_pattern.positions)
 
             # move replacement atoms into correct position
             new_atoms.translate(atom_positions[axis1a_idx])
