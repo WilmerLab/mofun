@@ -277,7 +277,7 @@ def replace_pattern_in_structure(
 
             if not ignore_positions_check:
                 assert_positions_are_unchanged(atom_positions, chk_search_pattern.positions,
-                    max_delta=positions_check_max_delta, verbose=True, raise_exception=True)
+                    max_delta=positions_check_max_delta, verbose=verbose, raise_exception=True)
 
             new_atoms.positions %= np.diag(new_structure.cell)
 
