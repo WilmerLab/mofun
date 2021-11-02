@@ -10,6 +10,7 @@ from pytest import approx
 from scipy.spatial.transform import Rotation as R
 
 from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms, get_types_ss_map_limited_near_uc
+from mofun.helpers import assert_positions_are_unchanged
 
 from tests.fixtures import *
 
