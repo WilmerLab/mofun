@@ -93,10 +93,13 @@ def typekey(tup):
         return tuple(rev)
     return tuple(tup)
 
+class PositionsNotEquivalent(Exception):
+    pass
+
 def assert_structure_positions_are_unchanged(orig_structure, final_structure, max_delta=1e-5, verbose=False):
     return assert_positions_are_unchanged(orig_structure.positions, final_structure.positions, max_delta, verbose)
 
-def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=False):
+def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=False, raise_exception=False):
     p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]
     new_p_ordered = new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))]
     p_unmatched = []
@@ -131,4 +134,8 @@ def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=False):
         print("UNMATCHED coords in new positions: ")
         for p1 in new_p_ordered:
             print(p1)
-    assert (distances < max_delta).all()
+    if raise_exception:
+        if not (distances < max_delta).all():
+            raise PositionsNotEquivalent()
+    else:
+        assert (distances < max_delta).all()
