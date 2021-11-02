@@ -801,6 +801,7 @@ class Atoms:
                 identical and can be considered to be the same atom.
             verbose (bool): print debugging info.
         """
+
         atom_idx_offset = len(self.positions)
         if offsets is None:
             if verbose:
