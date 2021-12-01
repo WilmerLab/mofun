@@ -126,7 +126,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
         match_index_tuples = [[a]]
 
         nearby = get_nearby_atoms(p, s_pos_view, pattern_length, a)
-        nearby_atom_indices = nearby[:,3].astype(np.int16)
+        nearby_atom_indices = nearby[:,3].astype(np.int32)
         nearby_positions = nearby[:,0:3]
         idx2ssidx = {atom_idx:i for i, atom_idx in enumerate(nearby_atom_indices)}
         s_ss = distance.cdist(nearby_positions, nearby_positions, "sqeuclidean")
