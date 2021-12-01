@@ -958,6 +958,7 @@ class Atoms:
         kwargs = dict(positions=self.positions)
         if self.cell is not None:
             kwargs['cell'] = self.cell
+            kwargs['pbc'] = True
         return ase.Atoms(self.elements, **kwargs)
 
 def find_unchanged_atom_pairs(orig_structure, final_structure, max_delta=1e-5):
