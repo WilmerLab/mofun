@@ -9,7 +9,7 @@ import pytest
 from pytest import approx
 from scipy.spatial.transform import Rotation as R
 
-from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms, get_types_ss_map_limited_near_uc
+from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms, get_types_ss_map_limited_near_uc, AtomsShouldNotBeDeletedTwice
 from mofun.helpers import assert_positions_are_unchanged, assert_structure_positions_are_unchanged, PositionsNotEquivalent
 
 from tests.fixtures import *
@@ -252,6 +252,14 @@ def test_replace_pattern_in_structure__three_points_on_x_axis_positions_are_unch
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.elements) == {"C":2, "F": 3}
     assert_structure_positions_are_unchanged(structure, final_structure)
+
+def test_replace_pattern_in_structure__overlapping_match_patterns_errors():
+    structure = Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)], cell=100*np.identity(3))
+    search_pattern = Atoms(elements='NNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.)])
+    replace_pattern = Atoms(elements='FFC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.)])
+
+    with pytest.raises(AtomsShouldNotBeDeletedTwice):
+        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
 
 def test_replace_pattern_in_structure__pattern_and_reverse_pattern_on_x_axis_positions_are_unchanged():
     structure = Atoms(elements='HHCCCHH', positions=[(-1., 1, 0), (-1., -1, 0), (0., 0., 0), (1., 0., 0.), (3., 0., 0.), (4., 1, 0), (4., -1, 0)], cell=7*np.identity(3))

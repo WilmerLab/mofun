@@ -166,11 +166,15 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, abstol
     else:
         return match_index_tuples_in_uc
 
+class AtomsShouldNotBeDeletedTwice(Exception):
+    pass
+
 def replace_pattern_in_structure(
     structure, search_pattern, replace_pattern, replace_fraction=1.0,
     axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
     return_num_matches=False, replace_all=False, verbose=False,
-    ignore_positions_check=False, positions_check_max_delta=0.1):
+    ignore_positions_check=False, positions_check_max_delta=0.1,
+    ignore_atoms_should_not_be_deleted_twice=False):
     """Replaces all instances of `pattern` in `structure` with the `replace_pattern`.
 
     Works across periodic boundary conditions.
@@ -185,10 +189,19 @@ def replace_pattern_in_structure(
         search_pattern (Atoms): an Atoms object to search for.
         replace_pattern (Atoms): an Atoms object to search for.
         replace_fraction (float): how many instances of the search_pattern found in the structure get replaced by the replace pattern.
-        axis1a_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.
-        axis1b_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. Mostly useful for testing and debugging.
+        axis1a_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern. Necessary for handling symmetric patterns.
+        axis1b_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. Necessary for handling symmetric patterns.
+        axis2_idx (float): index in search_pattern of third point defining the orientational axis of the search_pattern. Necessary for handling symmetric patterns.
         replace_all (bool): replaces all atoms even if positions and elements match exactly
         verbose (bool): print debugging info.
+        ignore_positions_check (bool): do not raise an error when the search pattern cannot be rotated to overlap with
+            the atoms of the match pattern. In general, this should not be turned off, but there may be cases where it
+            is helpful, such as when deleting all atoms in a symmetric search pattern. In that case, it doesn't matter
+            what rotations would be performed on the replacement pattern, since the search pattern is being deleted.
+        positions_check_max_delta (float): maximum allowed difference in position between each atom in the search and
+            match patterns, before an error gets raised.
+        ignore_atoms_should_not_be_deleted_twice (bool): don't raise an AtomsShouldNotBeDeletedTwice exception when
+            two matches would delete the same atoms.
     Returns:
         Atoms: the structure after search_pattern is replaced by replace_pattern.
     """
@@ -297,7 +310,10 @@ def replace_pattern_in_structure(
                 new_structure.extend(new_atoms, offsets=offsets)
 
             to_delete_linker = set(match_indices[m_i]) - set(structure_index_map.values())
-            to_delete |= set(to_delete_linker)
+            if (to_delete.isdisjoint(to_delete_linker) or ignore_atoms_should_not_be_deleted_twice):
+                to_delete |= set(to_delete_linker)
+            else:
+                raise AtomsShouldNotBeDeletedTwice()
 
     del(new_structure[list(to_delete)])
 
