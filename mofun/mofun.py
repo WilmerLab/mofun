@@ -79,7 +79,7 @@ def get_types_ss_map_limited_near_uc(structure, length):
 
     return s_types_view, index_mapper, s_pos_view, s_positions
 
-def find_pattern_in_structure(structure, pattern, return_positions=False, rel_tol=5e-2, verbose=False):
+def find_pattern_in_structure(structure, pattern, return_positions=False, abstol=5e-2, verbose=False):
     """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number
     of atoms, the same elements and the same relative coordinates as in `pattern`.
 
@@ -92,17 +92,16 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
         structure (Atoms): an Atoms object to search in.
         pattern (Atoms): an Atoms object to search for.
         return_positions (bool): additionally returns the positions for each index
-        rel_tol (float): the relative tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).
+        abstol (float): the absolute tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).
         verbose (bool): print debugging info.
     Returns:
         List [tuple(len(pattern))]: returns a tuple of size `len(pattern)` containing the indices in structure that matched the pattern, one tuple per each match.
     """
-    # the relative tolerance needs adjusted to squared relative tolerance
-    rel_tol_sq = 1 - (1 - rel_tol)**2
+
     if verbose:
         print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
-    pattern_length = p_ss.max() ** 0.5
+    pattern_length = p_ss.max() ** 0.5 + 2 * abstol
     s_types_view, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length)
     atoms_by_type = atoms_by_type_dict(s_types_view)
 
@@ -128,9 +127,11 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
         nearby = get_nearby_atoms(p, s_pos_view, pattern_length, a)
         nearby_atom_indices = nearby[:,3].astype(np.int32)
         nearby_positions = nearby[:,0:3]
+
         idx2ssidx = {atom_idx:i for i, atom_idx in enumerate(nearby_atom_indices)}
         s_ss = distance.cdist(nearby_positions, nearby_positions, "sqeuclidean")
 
+        # start for loop at one since we've searched for starting atoms (index == 0) above
         for i in range(1, len(pattern)):
             if len(match_index_tuples) == 0:
                 break
@@ -140,8 +141,9 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, rel_to
                 for ss_idx, atom_idx in enumerate(nearby_atom_indices):
                     if s_types_view[atom_idx]==pattern_elements[i]:
                         found_match = True
+                        # check all distances to this new proposed atom
                         for j in range(0, i):
-                            if not math.isclose(p_ss[i,j], s_ss[idx2ssidx[match[j]], ss_idx], rel_tol=rel_tol_sq):
+                            if not math.isclose(p_ss[i,j]**0.5, s_ss[idx2ssidx[match[j]], ss_idx]**0.5, abs_tol=abstol):
                                 found_match = False
                                 break
 

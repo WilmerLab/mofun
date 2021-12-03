@@ -53,6 +53,26 @@ def test_find_pattern_in_structure__octane_has_12_CH2(octane):
         assert ((pattern_found.positions[1] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
         assert ((pattern_found.positions[2] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
 
+def test_find_pattern_in_structure__all_atoms_are_within_tolerance():
+    # tolerances should be absolute in the sense that even if an atom is very far away from another atom, the location
+    # of that atom should be within the tolerance. E.g, here, we have a molecule that looks like this:
+    #.  HC.....................................................B and if the distance between C and B was 100 angstrom
+    # then 5% error in the distance could lead to a 5 angstrom difference in position of the B atom. This is not what
+    # we want when replacing portions of crystalline structures. If there is a use-case for relative tolerances, we can
+    # easily add it back in.
+    longstructure = Atoms(elements='HCB', positions=[(1, 0, 0), (2, 0, 0), (103, 0, 0)], cell=1000*np.identity(3))
+    longpattern = Atoms(elements='HCB', positions=[(1, 0, 0), (2, 0, 0), (108., 0, 0)])
+    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 0
+
+    longpattern.positions[2] = (104., 0, 0)
+    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 0
+
+    longpattern.positions[2] = (103.1, 0, 0)
+    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 0
+
+    longpattern.positions[2] = (103.04, 0, 0)
+    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 1
+
 def test_find_pattern_in_structure__cnnc_over_x_pbc_has_positions_across_x_pbc(linear_cnnc):
     linear_cnnc.positions = (linear_cnnc.positions + (-0.5, 0.0, 0.0)) % 15
     linear_cnnc.pop(-1) #don't match final NC
