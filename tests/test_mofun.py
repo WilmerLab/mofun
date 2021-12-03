@@ -241,6 +241,18 @@ def test_replace_pattern_in_structure__two_points_on_x_axis_positions_are_unchan
     assert Counter(final_structure.elements) == {"C":2, "F": 2}
     assert_structure_positions_are_unchanged(structure, final_structure)
 
+def test_replace_pattern_in_structure__three_points_on_x_axis_positions_are_unchanged():
+    # this test exists to verify that for a search pattern with more than 2 atoms where all atoms lie on the same axis
+    # there are no errors, since there is an extra unnecessary quaternion calcuation to orient the replacement pattern
+    # into the final position
+    structure = Atoms(elements='CNNNC', positions=[(0., 0., 0), (1., 0., 0.), (2., 0., 0.), (3., 0., 0.), (4., 0., 0.)], cell=100*np.identity(3))
+    search_pattern = Atoms(elements='NNN', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.)])
+    replace_pattern = Atoms(elements='FFF', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.)])
+
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
+    assert Counter(final_structure.elements) == {"C":2, "F": 3}
+    assert_structure_positions_are_unchanged(structure, final_structure)
+
 def test_replace_pattern_in_structure__pattern_and_reverse_pattern_on_x_axis_positions_are_unchanged():
     structure = Atoms(elements='HHCCCHH', positions=[(-1., 1, 0), (-1., -1, 0), (0., 0., 0), (1., 0., 0.), (3., 0., 0.), (4., 1, 0), (4., -1, 0)], cell=7*np.identity(3))
     structure.translate([2, 2, 0.1])

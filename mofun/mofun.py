@@ -213,6 +213,9 @@ def replace_pattern_in_structure(
     replace2search_pattern_map = {k:v for (k,v) in find_unchanged_atom_pairs(replace_pattern, search_pattern)}
 
     if len(search_pattern) > 2:
+        # note that we find an orientation point if there are nore than two atoms in the search pattern, but it is still
+        # possible that all the atoms like on the search axis. In that, case a point on the axis will be returned and
+        # there is an unnecessary final rotation to "align" that point.
         if axis2_idx is None:
             search_orientation_point_idx = position_index_farthest_from_axis(search_axis, search_pattern)
         else:
