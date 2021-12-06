@@ -7,7 +7,7 @@ from scipy.spatial import distance
 from mofun.atoms import find_unchanged_atom_pairs
 from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_farthest_from_axis, \
                           quaternion_from_two_vectors, quaternion_from_two_vectors_around_axis, \
-                          remove_duplicates, assert_positions_are_unchanged
+                          remove_duplicates, assert_positions_are_unchanged, suppress_warnings
 
 def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
@@ -169,6 +169,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, abstol
 class AtomsShouldNotBeDeletedTwice(Exception):
     pass
 
+@suppress_warnings
 def replace_pattern_in_structure(
     structure, search_pattern, replace_pattern, replace_fraction=1.0,
     axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,

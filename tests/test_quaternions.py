@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from pytest import approx
 
@@ -37,7 +39,10 @@ def test_quaternion_from_two_vectors_around_axis__with_parallel_vectors_is_donot
     assert (q.apply([1., 1., 1.]) == [1., 1., 1.]).all()
 
 def test_quaternion_from_two_vectors_around_axis__with_antiparallel_about_x_reverses_yz():
-    q = quaternion_from_two_vectors_around_axis((-5, -1, 0.),(5, 1, 0.), axis=(1., 0., 0.))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        q = quaternion_from_two_vectors_around_axis((-5, -1, 0.),(5, 1, 0.), axis=(1., 0., 0.))
+
     assert np.isclose(q.apply([1., 1., 1.]), [1., -1., -1.]).all()
     assert np.isclose(q.apply([1., -1., 1.]), [1., 1., -1.]).all()
     assert np.isclose(q.apply([1., 1., -1.]), [1., -1., 1.]).all()

@@ -1,12 +1,22 @@
 from contextlib import contextmanager
+import functools
 import math
 import random
+import warnings
 
 import numpy as np
 from scipy.linalg import norm
 from scipy.spatial.transform import Rotation as R
 
 from mofun.atomic_masses import ATOMIC_MASSES
+
+def suppress_warnings(func):
+    @functools.wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return func(*args, **kwargs)
+    return wrapper_decorator
 
 def atoms_of_type(types, element):
     """ returns all atom indices in types that match the symbol element """
