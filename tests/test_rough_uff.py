@@ -4,7 +4,7 @@ import networkx as nx
 
 from mofun import Atoms
 from mofun.rough_uff import calc_uff_atom_types, add_aromatic_flag, guess_bond_order, \
-                            bond_params, angle_params, dihedral_params, calc_angles, calc_dihedrals
+                            bond_params, angle_params, dihedral_params, calc_angles, calc_dihedrals, retype_atoms_from_uff_types
 from tests.fixtures import uio66_linker_cml
 
 from pytest import approx
@@ -158,3 +158,35 @@ def test__dihedrals__ethane_has_9_dihedrals():
     assert unique_dihedrals == {(0,3,4,5), (1,3,4,5), (2,3,4,5),
                                 (0,3,4,6), (1,3,4,6), (2,3,4,6),
                                 (0,3,4,7), (1,3,4,7), (2,3,4,7)}
+
+def test__retype_atoms_from_uff_types__boron_gives_all_boron():
+    cnnc = Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)])
+    retype_atoms_from_uff_types(cnnc, ["B"] * 4)
+    assert cnnc.atom_types == [0] * 4
+    assert cnnc.atom_type_labels == ["B"]
+    assert cnnc.atom_type_elements == ["B"]
+    assert cnnc.atom_type_masses == [10.811]
+
+def test__retype_atoms_from_uff_types__BZrZrB_gives_BZrZrB():
+    cnnc = Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)])
+    retype_atoms_from_uff_types(cnnc, ["B", "Zr", "Zr", "B"])
+    assert cnnc.atom_types == [0, 1, 1, 0]
+    assert cnnc.atom_type_labels == ["B", "Zr"]
+    assert cnnc.atom_type_elements == ["B", "Zr"]
+    assert cnnc.atom_type_masses == [10.811, 91.224]
+
+def test__retype_atoms_from_uff_types__BZrZrB_with_full_atom_types_gives_BZrZrB():
+    cnnc = Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.)])
+    retype_atoms_from_uff_types(cnnc, ["B_3", "Zr8f4", "Zr8f4", "B_3"])
+    assert cnnc.atom_types == [0, 1, 1, 0]
+    assert cnnc.atom_type_labels == ["B_3", "Zr8f4"]
+    assert cnnc.atom_type_elements == ["B", "Zr"]
+    assert cnnc.atom_type_masses == [10.811, 91.224]
+
+def test__retype_atoms_from_uff_types__C2C1ZrC3H_with_full_atom_types_orders_as_HCCCZr():
+    cnnnc = Atoms(elements='CNNNC', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.), (3.0, 0., 0.), (4.0, 0., 0.)])
+    retype_atoms_from_uff_types(cnnnc, ["C_2", "C_1", "Zr8f4", "C_3", "H_"])
+    assert cnnnc.atom_types == [2, 1, 4, 3, 0]
+    assert cnnnc.atom_type_labels == ["H_", "C_1", "C_2", "C_3", "Zr8f4"]
+    assert cnnnc.atom_type_elements == ["H", "C", "C", "C", "Zr"]
+    assert cnnnc.atom_type_masses == [1.00794, 12.0107, 12.0107, 12.0107, 91.224]
