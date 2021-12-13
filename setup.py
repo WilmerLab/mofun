@@ -17,6 +17,9 @@ setup(name='mofun',
           'networkx',
           'click',
       ],
+      extras_require={
+        'docs': ['mkdocs-material', 'mkdocstrings'],
+      },
       entry_points={
         'console_scripts': [
             'mofun = mofun.cli.mofun_cli:mofun_cli',

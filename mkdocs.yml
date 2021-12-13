@@ -5,9 +5,19 @@ theme:
 
 plugins:
 - search
+
 # - gen-files:
 #     scripts:
 #     - docs/gen_doc_stubs.py
 - mkdocstrings:
     watch:
       - mofun
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html

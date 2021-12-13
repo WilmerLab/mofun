@@ -7,7 +7,6 @@ dist/
 build/
 MANIFEST
 *.cache
-*.png
 *.ipynb
 *.blend
 *.npy
