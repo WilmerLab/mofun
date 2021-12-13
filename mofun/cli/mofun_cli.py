@@ -22,12 +22,13 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('-a2', '--axis2-idx', type=int, default=None, help="index of point that makes up secondary rotation axis (between this point and the primary rotation axis)")
 @click.option('--dumppath', type=click.Path(path_type=pathlib.Path))
 @click.option('-q', '--chargefile', type=click.File('r'))
+@click.option('--replicate', nargs=3, type=int, help="replicate structure across x, y, and z dimensions")
 @click.option('--mic', type=float, help="enforce minimum image convention using a cutoff of mic")
 @click.option('--framework-element', type=str, help="convert all atoms that are in group 0, the framework group to a specific atom type to make vizualizing the structure easier")
 @click.option('--pp', is_flag=True, default=False, help="Assign UFF pair potentials to atoms (sufficient for fixed force-field calculations)")
 def mofun_cli(inputpath, outputpath,
         find_path=None, replace_path=None, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
-        dumppath=None, chargefile=None, mic=None, framework_element=None, pp=False):
+        dumppath=None, chargefile=None, replicate=None, mic=None, framework_element=None, pp=False):
     atoms = Atoms.load(inputpath)
 
     # upate positions from lammps dump file
@@ -42,6 +43,9 @@ def mofun_cli(inputpath, outputpath,
         charges = np.array([float(line.strip()) for line in chargefile if line.strip() != ''])
         assert len(charges) == len(atoms.positions)
         atoms.charges = charges
+
+    if replicate is not None:
+        atoms = atoms.replicate(replicate)
 
     # replicate to meet minimum image convention, if necessary
     if mic is not None:
