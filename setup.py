@@ -14,6 +14,13 @@ setup(name='mofun',
           'numpy',
           'scipy',
           'PyCifRW',
-          'networkx'
+          'networkx',
+          'click',
       ],
+      entry_points={
+        'console_scripts': [
+            'mofun = mofun.cli.mofun_cli:mofun_cli',
+          ]
+      }
+
 )
