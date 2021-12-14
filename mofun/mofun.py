@@ -79,7 +79,7 @@ def get_types_ss_map_limited_near_uc(structure, length):
 
     return s_types_view, index_mapper, s_pos_view, s_positions
 
-def find_pattern_in_structure(structure, pattern, return_positions=False, abstol=5e-2, verbose=False):
+def find_pattern_in_structure(structure, pattern, return_positions=False, atol=5e-2, verbose=False):
     """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number
     of atoms, the same elements and the same relative coordinates as in `pattern`.
 
@@ -92,7 +92,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, abstol
         structure (Atoms): an Atoms object to search in.
         pattern (Atoms): an Atoms object to search for.
         return_positions (bool): additionally returns the positions for each index
-        abstol (float): the absolute tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).
+        atol (float): the absolute tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).
         verbose (bool): print debugging info.
     Returns:
         List [tuple(len(pattern))]: returns a tuple of size `len(pattern)` containing the indices in structure that matched the pattern, one tuple per each match.
@@ -101,7 +101,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, abstol
     if verbose:
         print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
-    pattern_length = p_ss.max() ** 0.5 + 2 * abstol
+    pattern_length = p_ss.max() ** 0.5 + 2 * atol
     s_types_view, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length)
     atoms_by_type = atoms_by_type_dict(s_types_view)
 
@@ -143,7 +143,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, abstol
                         found_match = True
                         # check all distances to this new proposed atom
                         for j in range(0, i):
-                            if not math.isclose(p_ss[i,j]**0.5, s_ss[idx2ssidx[match[j]], ss_idx]**0.5, abs_tol=abstol):
+                            if not math.isclose(p_ss[i,j]**0.5, s_ss[idx2ssidx[match[j]], ss_idx]**0.5, abs_tol=atol):
                                 found_match = False
                                 break
 
@@ -171,7 +171,7 @@ class AtomsShouldNotBeDeletedTwice(Exception):
 
 @suppress_warnings
 def replace_pattern_in_structure(
-    structure, search_pattern, replace_pattern, replace_fraction=1.0,
+    structure, search_pattern, replace_pattern, replace_fraction=1.0, atol=5e-2,
     axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
     return_num_matches=False, replace_all=False, verbose=False,
     ignore_positions_check=False, positions_check_max_delta=0.1,
@@ -190,6 +190,7 @@ def replace_pattern_in_structure(
         search_pattern (Atoms): an Atoms object to search for.
         replace_pattern (Atoms): an Atoms object to search for.
         replace_fraction (float): how many instances of the search_pattern found in the structure get replaced by the replace pattern.
+        atol (float): absolute tolerance in Angstroms for atom posistions to be considered matching.
         axis1a_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern. Necessary for handling symmetric patterns.
         axis1b_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. Necessary for handling symmetric patterns.
         axis2_idx (float): index in search_pattern of third point defining the orientational axis of the search_pattern. Necessary for handling symmetric patterns.
@@ -209,7 +210,7 @@ def replace_pattern_in_structure(
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
-    match_indices, match_positions = find_pattern_in_structure(structure, search_pattern, return_positions=True)
+    match_indices, match_positions = find_pattern_in_structure(structure, search_pattern, atol=atol, return_positions=True)
 
     if replace_fraction < 1.0:
         replace_indices = random.sample(list(range(len(match_positions))), k=round(replace_fraction * len(match_positions)))

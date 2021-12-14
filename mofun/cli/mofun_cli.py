@@ -17,6 +17,7 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('-f', '--find-path', type=click.Path(path_type=pathlib.Path))
 @click.option('-r', '--replace-path', type=click.Path(path_type=pathlib.Path))
 @click.option('-p', '--replace-fraction', type=float, default=1.0)
+@click.option('--atol', type=float, default=5e-2, help="absolute tolerance in Angstroms for atom posistions to be considered matching")
 @click.option('-a1a', '--axis1a-idx', type=int, default=0, help="index of first point on primary rotation axis")
 @click.option('-a1b', '--axis1b-idx', type=int, default=-1, help="index of second point on primary rotation axis")
 @click.option('-a2', '--axis2-idx', type=int, default=None, help="index of point that makes up secondary rotation axis (between this point and the primary rotation axis)")
@@ -27,7 +28,7 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('--framework-element', type=str, help="convert all atoms that are in group 0, the framework group to a specific atom type to make vizualizing the structure easier")
 @click.option('--pp', is_flag=True, default=False, help="Assign UFF pair potentials to atoms (sufficient for fixed force-field calculations)")
 def mofun_cli(inputpath, outputpath,
-        find_path=None, replace_path=None, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
+        find_path=None, replace_path=None, atol=5e-2, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
         dumppath=None, chargefile=None, replicate=None, mic=None, framework_element=None, pp=False):
     atoms = Atoms.load(inputpath)
 
@@ -61,10 +62,10 @@ def mofun_cli(inputpath, outputpath,
         search_pattern = Atoms.load(find_path)
         if replace_path is not None:
             replace_pattern = Atoms.load(replace_path)
-            atoms = replace_pattern_in_structure(atoms, search_pattern, replace_pattern,
+            atoms = replace_pattern_in_structure(atoms, search_pattern, replace_pattern, atol=atol,
                 axis1a_idx=axis1a_idx, axis1b_idx=axis1b_idx, axis2_idx=axis2_idx, replace_fraction=replace_fraction)
         else:
-            results = find_pattern_in_structure(atoms, search_pattern)
+            results = find_pattern_in_structure(atoms, search_pattern, atol=atol)
             print("Found %d instances of the search_pattern in the structure" % len(results))
             print(results)
 

@@ -62,16 +62,16 @@ def test_find_pattern_in_structure__all_atoms_are_within_tolerance():
     # easily add it back in.
     longstructure = Atoms(elements='HCB', positions=[(1, 0, 0), (2, 0, 0), (103, 0, 0)], cell=1000*np.identity(3))
     longpattern = Atoms(elements='HCB', positions=[(1, 0, 0), (2, 0, 0), (108., 0, 0)])
-    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 0
+    assert len(find_pattern_in_structure(longstructure, longpattern, atol=0.05)) == 0
 
     longpattern.positions[2] = (104., 0, 0)
-    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 0
+    assert len(find_pattern_in_structure(longstructure, longpattern, atol=0.05)) == 0
 
     longpattern.positions[2] = (103.1, 0, 0)
-    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 0
+    assert len(find_pattern_in_structure(longstructure, longpattern, atol=0.05)) == 0
 
     longpattern.positions[2] = (103.04, 0, 0)
-    assert len(find_pattern_in_structure(longstructure, longpattern, abstol=0.05)) == 1
+    assert len(find_pattern_in_structure(longstructure, longpattern, atol=0.05)) == 1
 
 def test_find_pattern_in_structure__cnnc_over_x_pbc_has_positions_across_x_pbc(linear_cnnc):
     linear_cnnc.positions = (linear_cnnc.positions + (-0.5, 0.0, 0.0)) % 15
