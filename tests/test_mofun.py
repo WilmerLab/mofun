@@ -366,7 +366,7 @@ def test_replace_pattern_in_structure__in_uio66_replacing_linker_with_linker_doe
 
     final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert Counter(final_structure.elements) == {'C': 192, 'O': 120, 'F': 96, 'Zr': 24}
-    # assert_structure_positions_are_unchanged(structure, final_structure, max_delta=0.25, verbose=True)
+    # assert_structure_positions_are_unchanged(structure, final_structure, max_delta=0.25)
 
 def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_bonds_angles_has_bonds_angles(uio66_linker_no_bonds, uio66_linker_some_bonds):
     structure = uio66_linker_no_bonds.copy()
@@ -391,4 +391,4 @@ def test_get_types_ss_map_limited_near_uc__triclinic_cell_zero_length_gives_orig
     assert len(s_types_view) == len(absv)
     assert len(index_mapper) == len(absv)
     assert len(s_pos_view) == len(absv)
-    assert_positions_are_unchanged(np.array(s_pos_view), absv, verbose=True)
+    assert_positions_are_unchanged(np.array(s_pos_view), absv)
