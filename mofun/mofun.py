@@ -156,7 +156,7 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, abstol
             print("starting atom %d: found %d matches: %s" % (a_idx, len(match_index_tuples), match_index_tuples))
         all_match_index_tuples += match_index_tuples
 
-    all_match_index_tuples = remove_duplicates(all_match_index_tuples,
+    all_match_index_tuples = remove_duplicates(all_match_index_tuples, pick_random=True,
         key=lambda m: tuple(sorted([index_mapper[i] % len(structure) for i in m])))
 
     match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in all_match_index_tuples]
