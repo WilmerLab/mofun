@@ -215,8 +215,8 @@ def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_fluorine
     assert_structure_positions_are_unchanged(octane, final_structure)
 
 def test_replace_pattern_in_structure__replace_CH3_in_octane_with_fluorines(octane):
-    search_pattern = Atoms(elements='CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
-    replace_pattern = Atoms(elements='FFFF', positions=search_pattern.positions)
+    search_pattern = Atoms(elements='CHHHC', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998), (1.489, 0.021, 0.395)])
+    replace_pattern = Atoms(elements='FFFFC', positions=search_pattern.positions)
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert Counter(final_structure.elements) == {"F": 8, "C": 6, "H": 12}
     # note the positions are not EXACTLY the same because the original structure has slightly
@@ -224,8 +224,8 @@ def test_replace_pattern_in_structure__replace_CH3_in_octane_with_fluorines(octa
     assert_structure_positions_are_unchanged(octane, final_structure, max_delta=0.1)
 
 def test_replace_pattern_in_structure__replace_CH3_in_octane_with_CH3(octane):
-    search_pattern = Atoms(elements='CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
-    replace_pattern = Atoms(elements='CHHH', positions=search_pattern.positions)
+    search_pattern = Atoms(elements='CHHHC', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998), (1.489, 0.021, 0.395)])
+    replace_pattern = Atoms(elements='CHHHC', positions=search_pattern.positions)
     final_structure = replace_pattern_in_structure(octane, search_pattern, replace_pattern)
     assert Counter(final_structure.elements) == {"C": 8, "H": 18}
     # note the positions are not EXACTLY the same because the original structure has slightly
@@ -332,7 +332,7 @@ def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_it
 
 def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     structure = Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.),
-                                        (1+ sqrt(2)/2, sqrt(2)/2, 0.),
+                                        (1 + sqrt(2)/2, sqrt(2)/2, 0.),
                                         (2 + sqrt(2)/2, sqrt(2)/2, 0.)], cell=100*np.identity(3))
     search_pattern = Atoms(elements='NN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
     replace_pattern = Atoms(elements='FF', positions=[(0., 0., 0), (1.0, 0., 0.)])
