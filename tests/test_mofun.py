@@ -246,6 +246,7 @@ def test_replace_pattern_in_structure__three_points_on_x_axis_positions_are_unch
     # there are no errors, since there is an extra unnecessary quaternion calcuation to orient the replacement pattern
     # into the final position
     structure = Atoms(elements='CNNNC', positions=[(0., 0., 0), (1., 0., 0.), (2., 0., 0.), (3., 0., 0.), (4., 0., 0.)], cell=100*np.identity(3))
+    structure.positions += 1 # so that we are not on a PBC and assert_structure_positions_are_unchanged will work
     search_pattern = Atoms(elements='NNN', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.)])
     replace_pattern = Atoms(elements='FFF', positions=[(0., 0., 0), (1.0, 0., 0.), (2.0, 0., 0.)])
 
@@ -284,13 +285,12 @@ def test_replace_pattern_in_structure__3way_symmetrical_structure_raises_positio
     structure = Atoms(elements='CCHH', positions=[(0., 0., 0.), (1., 0., 0.),(0., 1., 0.), (0., 0., 1.)])
     structure.translate((3,3,3))
     structure.cell = 15 * np.identity(3)
-
     search_pattern = structure.copy()
-
     replace_pattern = Atoms(elements='FFHeHe', positions=search_pattern.positions)
 
     with pytest.raises(PositionsNotEquivalent):
-        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=True)
+        for _ in range(100):
+            final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=True)
 
 def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_with_itself_does_not_change_positions():
     search_pattern = Atoms(elements='CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
@@ -334,6 +334,7 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
     structure = Atoms(elements='CNNC', positions=[(0., 0., 0), (1.0, 0., 0.),
                                         (1 + sqrt(2)/2, sqrt(2)/2, 0.),
                                         (2 + sqrt(2)/2, sqrt(2)/2, 0.)], cell=100*np.identity(3))
+    structure.positions += 1 # so that we are not on a PBC and assert_structure_positions_are_unchanged will work
     search_pattern = Atoms(elements='NN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
     replace_pattern = Atoms(elements='FF', positions=[(0., 0., 0), (1.0, 0., 0.)])
 
