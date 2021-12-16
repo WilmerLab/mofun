@@ -115,9 +115,22 @@ def assert_structure_positions_are_unchanged(orig_structure, final_structure, ma
     return assert_positions_are_unchanged(orig_structure.positions, final_structure.positions, max_delta, verbose)
 
 def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=True, raise_exception=False):
+    if raise_exception:
+        if not positions_are_unchanged(p, new_p, max_delta, verbose):
+            raise PositionsNotEquivalent()
+    else:
+         assert positions_are_unchanged(p, new_p, max_delta, verbose)
+
+def positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=True):
+    print("** positions_are_unchanged? **")
+    print("p = \n", p)
+    print("new_p = \n", new_p)
     p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]
     new_p_ordered = new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))]
-    p_unmatched = []
+
+    print("p     (sorted) = \n", p_ordered)
+    print("new_p (sorted) = \n", new_p_ordered)
+    p_matched = []
     p_corresponding = []
     distances = np.full(len(p), max(9.99, 9.99 * max_delta))
     for i, p1 in enumerate(p_ordered):
@@ -125,17 +138,18 @@ def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=True, raise
         for j, p2 in enumerate(new_p_ordered):
             # print(p2, p1, norm(np.array(p2) - p1))
             if p2[2] - p1[2] > 1:
-                p_unmatched.append(p1)
                 break
             elif (np21 := norm(np.array(p2) - p1)) < max_delta:
                 found_match = True
                 p_corresponding.append(new_p_ordered[j, :])
                 new_p_ordered = np.delete(new_p_ordered, j, axis=0)
+                p_matched.append(i)
                 distances[i] = np21
                 break
         if not found_match:
             p_corresponding.append([])
 
+    p_unmatched = np.delete(p_ordered, p_matched, 0)
     distances = np.array(distances)
     if verbose:
         for i, p1 in enumerate(p_ordered):
@@ -149,8 +163,5 @@ def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=True, raise
         print("UNMATCHED coords in new positions: ")
         for p1 in new_p_ordered:
             print(p1)
-    if raise_exception:
-        if not (distances < max_delta).all():
-            raise PositionsNotEquivalent()
-    else:
-        assert (distances < max_delta).all()
+        print("--")
+    return (distances < max_delta).all()
