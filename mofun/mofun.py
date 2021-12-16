@@ -174,7 +174,7 @@ def replace_pattern_in_structure(
     structure, search_pattern, replace_pattern, replace_fraction=1.0, atol=5e-2,
     axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
     return_num_matches=False, replace_all=False, verbose=False,
-    ignore_positions_check=False, positions_check_max_delta=0.1,
+    positions_check_max_delta=0.1,
     ignore_atoms_should_not_be_deleted_twice=False):
     """Replaces all instances of `pattern` in `structure` with the `replace_pattern`.
 
@@ -196,10 +196,6 @@ def replace_pattern_in_structure(
         axis2_idx (float): index in search_pattern of third point defining the orientational axis of the search_pattern. Necessary for handling symmetric patterns.
         replace_all (bool): replaces all atoms even if positions and elements match exactly
         verbose (bool): print debugging info.
-        ignore_positions_check (bool): do not raise an error when the search pattern cannot be rotated to overlap with
-            the atoms of the match pattern. In general, this should not be turned off, but there may be cases where it
-            is helpful, such as when deleting all atoms in a symmetric search pattern. In that case, it doesn't matter
-            what rotations would be performed on the replacement pattern, since the search pattern is being deleted.
         positions_check_max_delta (float): maximum allowed difference in position between each atom in the search and
             match patterns, before an error gets raised.
         ignore_atoms_should_not_be_deleted_twice (bool): don't raise an AtomsShouldNotBeDeletedTwice exception when
@@ -237,10 +233,6 @@ def replace_pattern_in_structure(
             search_orientation_point_idx = axis2_idx
 
         search_orientation_point = search_pattern.positions[search_orientation_point_idx]
-        search_orientation_axis = search_orientation_point - (np.dot(search_orientation_point, search_axis) / np.dot(search_axis, search_axis)) * search_axis
-        if verbose:
-            print("search pattern orientation point index: ", search_orientation_point_idx)
-            print("search pattern orientation axis: ", search_orientation_axis)
 
     new_structure = structure.copy()
     to_delete = set()
@@ -250,52 +242,34 @@ def replace_pattern_in_structure(
         offsets = new_structure.extend_types(replace_pattern)
         for m_i, atom_positions in enumerate(match_positions):
             new_atoms = replace_pattern.copy()
-            if not ignore_positions_check:
-                chk_search_pattern = search_pattern.copy()
-            if verbose:
-                print("--------------")
-                print(m_i)
-                print("average position: ", np.average(atom_positions, axis=0))
+            chk_search_pattern = search_pattern.copy()
 
             if len(atom_positions) > 1:
-                match_axis = atom_positions[axis1b_idx] - atom_positions[axis1a_idx]
-                if verbose: print("match axis: ", match_axis)
-
                 # the first quaternion aligns the search pattern axis points with the axis points
-                # found in the structure and is used to rotate the replacement pattern to match
+                # found in the structure
+                match_axis = atom_positions[axis1b_idx] - atom_positions[axis1a_idx]
                 q1 = quaternion_from_two_vectors(search_axis, match_axis)
+
                 new_atoms.positions = q1.apply(new_atoms.positions)
-                if not ignore_positions_check:
-                    chk_search_pattern.positions = q1.apply(chk_search_pattern.positions)
-                if verbose:
-                    print("q1: ", q1.as_quat())
+                chk_search_pattern.positions = q1.apply(chk_search_pattern.positions)
 
                 if len(atom_positions) > 2:
                     match_orientation_point = atom_positions[search_orientation_point_idx] - atom_positions[axis1a_idx]
-                    match_orientation_axis = match_orientation_point - (np.dot(match_orientation_point, match_axis) / np.dot(match_axis, match_axis)) * match_axis
-                    if verbose: print("match orientation axis: ", match_orientation_axis)
-                    q1_o_axis = q1.apply(search_orientation_axis)
+                    rotated_search_orientation_point = q1.apply(search_orientation_point)
 
                     # the second quaternion is a rotation around the found axis in the structure and
                     # aligns the orientation axis point to its placement in the structure.
-                    q2 = quaternion_from_two_vectors_around_axis(match_orientation_axis, q1_o_axis, match_axis)
-                    if verbose:
-                        print("orienting using match orientation point: ", match_orientation_point)
-                        print("from match orientation axis: ", match_orientation_axis)
-                        print("to (rotated) search pattern orientation axis: ", q1_o_axis)
-                        print("q2: ", q2.as_quat())
+                    q2 = quaternion_from_two_vectors_around_axis(rotated_search_orientation_point, match_orientation_point, match_axis)
 
                     new_atoms.positions = q2.apply(new_atoms.positions)
-                    if not ignore_positions_check:
-                        chk_search_pattern.positions = q2.apply(chk_search_pattern.positions)
+                    chk_search_pattern.positions = q2.apply(chk_search_pattern.positions)
 
             # move replacement atoms into correct position
             new_atoms.translate(atom_positions[axis1a_idx])
 
-            if not ignore_positions_check:
-                chk_search_pattern.translate(atom_positions[axis1a_idx])
-                assert_positions_are_unchanged(atom_positions, chk_search_pattern.positions,
-                    max_delta=positions_check_max_delta, verbose=verbose, raise_exception=True)
+            chk_search_pattern.translate(atom_positions[axis1a_idx])
+            assert_positions_are_unchanged(atom_positions, chk_search_pattern.positions,
+                max_delta=positions_check_max_delta, verbose=verbose, raise_exception=True)
 
             new_atoms.positions %= np.diag(new_structure.cell)
 

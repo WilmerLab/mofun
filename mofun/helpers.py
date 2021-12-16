@@ -66,9 +66,14 @@ def quaternion_from_two_vectors(p1, p2):
 
 def quaternion_from_two_vectors_around_axis(p1, p2, axis):
     """ returns the quaternion necessary to rotate p1 to p2"""
+    axis = np.array(axis)
+
+    # convert p1 / p2 to be vectors orthogonal to axis
+    p1 = p1 - (np.dot(p1, axis) / np.dot(axis, axis)) * axis
+    p2 = p2 - (np.dot(p2, axis) / np.dot(axis, axis)) * axis
+
     v1 = np.array(p1) / norm(p1)
     v2 = np.array(p2) / norm(p2)
-    axis = np.array(axis)
 
     angle = np.arccos(max(-1.0, min(np.dot(v1, v2), 1)))
 
@@ -77,7 +82,7 @@ def quaternion_from_two_vectors_around_axis(p1, p2, axis):
 
     if angle not in [0., math.pi] and np.isclose(axis, np.cross(v1, v2) / norm(np.cross(v1, v2)), 1e-3).all():
         angle *= -1
-    return R.from_quat([*(axis*np.sin(angle / 2)), np.cos(angle/2)])
+    return R.from_quat([*(axis*np.sin(-angle / 2)), np.cos(-angle/2)])
 
 def guess_elements_from_masses(masses, max_delta=1e-2):
     def find_element(elmass):
