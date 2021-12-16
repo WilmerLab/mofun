@@ -60,6 +60,16 @@ def octane():
         yield structure
 
 @pytest.fixture
+def half_octane():
+    # CH3 CH2 CH2 CH2 #
+    with Path("tests/molecules/half_octane.xyz") as path:
+        structure = Atoms.from_ase_atoms(ase.io.read(path))
+        structure.cell = 60 * np.identity(3)
+        structure.translate((30., 30., 30.))
+        yield structure
+
+
+@pytest.fixture
 def hkust1_cif():
     with Path("tests/hkust-1/hkust-1-with-bonds.cif") as path:
         yield Atoms.load_cif(path)

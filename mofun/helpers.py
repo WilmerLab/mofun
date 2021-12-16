@@ -28,6 +28,16 @@ def atoms_by_type_dict(atom_types):
         atoms_by_type[k].append(i)
     return atoms_by_type
 
+def group_duplicates(match_indices, key=lambda m: tuple(sorted(m))):
+    keyed_tuples = {}
+    for m in match_indices:
+        mkey = key(m)
+        if mkey not in keyed_tuples:
+            keyed_tuples[mkey] = [m]
+        else:
+            keyed_tuples[mkey].append(m)
+    return keyed_tuples
+
 def remove_duplicates(match_indices, key=lambda m: tuple(sorted(m)), pick_random=False):
     keyed_tuples = {}
     for m in match_indices:
@@ -122,14 +132,15 @@ def assert_positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=True, raise
          assert positions_are_unchanged(p, new_p, max_delta, verbose)
 
 def positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=True):
-    print("** positions_are_unchanged? **")
-    print("p = \n", p)
-    print("new_p = \n", new_p)
     p_ordered = p[np.lexsort((p[:,0], p[:,1], p[:,2]))]
     new_p_ordered = new_p[np.lexsort((new_p[:,0], new_p[:,1], new_p[:,2]))]
 
-    print("p     (sorted) = \n", p_ordered)
-    print("new_p (sorted) = \n", new_p_ordered)
+    if verbose:
+        print("** positions_are_unchanged? **")
+        print("p = \n", p)
+        print("new_p = \n", new_p)
+        print("p     (sorted) = \n", p_ordered)
+        print("new_p (sorted) = \n", new_p_ordered)
     p_matched = []
     p_corresponding = []
     distances = np.full(len(p), max(9.99, 9.99 * max_delta))

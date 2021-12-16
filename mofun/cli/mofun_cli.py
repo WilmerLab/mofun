@@ -28,7 +28,7 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('--framework-element', type=str, help="convert all atoms that are in group 0, the framework group to a specific atom type to make vizualizing the structure easier")
 @click.option('--pp', is_flag=True, default=False, help="Assign UFF pair potentials to atoms (sufficient for fixed force-field calculations)")
 def mofun_cli(inputpath, outputpath,
-        find_path=None, replace_path=None, atol=5e-2, replace_fraction=1.0, axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
+        find_path=None, replace_path=None, atol=5e-2, replace_fraction=1.0, axisp1_idx=0, axisp2_idx=-1, opoint_idx=None,
         dumppath=None, chargefile=None, replicate=None, mic=None, framework_element=None, pp=False):
     atoms = Atoms.load(inputpath)
 
@@ -63,7 +63,7 @@ def mofun_cli(inputpath, outputpath,
         if replace_path is not None:
             replace_pattern = Atoms.load(replace_path)
             atoms = replace_pattern_in_structure(atoms, search_pattern, replace_pattern, atol=atol,
-                axis1a_idx=axis1a_idx, axis1b_idx=axis1b_idx, axis2_idx=axis2_idx, replace_fraction=replace_fraction)
+                axisp1_idx=axisp1_idx, axisp2_idx=axisp2_idx, opoint_idx=opoint_idx, replace_fraction=replace_fraction)
         else:
             results = find_pattern_in_structure(atoms, search_pattern, atol=atol)
             print("Found %d instances of the search_pattern in the structure" % len(results))

@@ -3,11 +3,12 @@ import random
 
 import numpy as np
 from scipy.spatial import distance
+from scipy.spatial.transform import Rotation as R
 
 from mofun.atoms import find_unchanged_atom_pairs
 from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_farthest_from_axis, \
                           quaternion_from_two_vectors, quaternion_from_two_vectors_around_axis, \
-                          remove_duplicates, assert_positions_are_unchanged, suppress_warnings
+                          remove_duplicates, assert_positions_are_unchanged, suppress_warnings, group_duplicates, positions_are_unchanged
 
 def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
@@ -79,23 +80,32 @@ def get_types_ss_map_limited_near_uc(structure, length):
 
     return s_types_view, index_mapper, s_pos_view, s_positions
 
-def find_pattern_in_structure(structure, pattern, return_positions=False, atol=5e-2, verbose=False):
-    """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number
-    of atoms, the same elements and the same relative coordinates as in `pattern`.
+@suppress_warnings
+def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, opoint_idx=None,
+        return_positions_and_quats=False, atol=5e-2, verbose=False):
+    """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number of atoms, the
+    same elements and the same relative coordinates as in `pattern`.
 
-    Returns a list of tuples, one tuple per match found in `structure` where each tuple has the size
-    `len(pattern)` and contains the indices in the structure that matched the pattern. If
-    `return_postions=True` then  an additional list is returned containing positions for each
-    matched index for each match.
+    Returns a list of tuples, one tuple per match found in `structure` where each tuple has the size `len(pattern)` and
+    contains the indices in the structure that matched the pattern. If `return_positions_and_quats=True` then two
+    additional lists are returned containing positions for each matched index for each match, and the quaternions
+    required to rotate the search pattern to the match pattern.
 
     Args:
         structure (Atoms): an Atoms object to search in.
         pattern (Atoms): an Atoms object to search for.
-        return_positions (bool): additionally returns the positions for each index
+        axisp1_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern. May help with performance for large problems.
+        axisp2_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. May help with performance for large problems.
+        opoint_idx (float): index in search_pattern of the orientation point that we will use to align the search pattern (the search pattern will be rotated so that the orientation point in the search pattern will have the same coordinates as the same point in the match pattern).
+        return_positions_and_quats (bool): additionally returns the positions for each index and the quaternions that rotation the search pattern to the match pattern.
         atol (float): the absolute tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).
         verbose (bool): print debugging info.
     Returns:
-        List [tuple(len(pattern))]: returns a tuple of size `len(pattern)` containing the indices in structure that matched the pattern, one tuple per each match.
+        List [tuple(len(pattern))],  {List [tuple(len(pattern))], List [scipy.spatial.transform.Rotation]} : returns a
+            list of tuples of size `len(pattern)` containing the indices in the structure that matched the pattern, one
+            tuple per each match, and optionally (if return_positions_and_quats is True) a corresponding list of tuples
+            with positions instead of indices, and a list of quaternions (scipy.spatial.transform.Rotation), one per
+            each match.
     """
 
     if verbose:
@@ -156,13 +166,69 @@ def find_pattern_in_structure(structure, pattern, return_positions=False, atol=5
             print("starting atom %d: found %d matches: %s" % (a_idx, len(match_index_tuples), match_index_tuples))
         all_match_index_tuples += match_index_tuples
 
-    all_match_index_tuples = remove_duplicates(all_match_index_tuples, pick_random=True,
-        key=lambda m: tuple(sorted([index_mapper[i] % len(structure) for i in m])))
+    ## remove duplicates by calculating quaternions necessary to align atoms, applying it to the search pattern and if
+    # there is symmetry or chirality, eliminating possible matches where the atoms rotate into different places than we
+    # found them in the structure.
+    pattern = pattern.copy()
+    pattern.translate(-pattern.positions[axisp1_idx])
+    search_axis = pattern.positions[axisp2_idx]
+    if len(pattern) > 2 and opoint_idx is None:
+        # note that we find an orientation point if there are nore than two atoms in the search pattern, but it is still
+        # possible that all the atoms like on the search axis. In that, case a point on the axis will be returned and
+        # there is an unnecessary final rotation to "align" that point.
+        opoint_idx = position_index_farthest_from_axis(search_axis, pattern)
 
-    match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in all_match_index_tuples]
-    if return_positions:
-        match_index_tuple_positions = np.array([[s_positions[index_mapper[m]] for m in match] for match in all_match_index_tuples])
-        return match_index_tuples_in_uc, match_index_tuple_positions
+    grouped_tuples = group_duplicates(all_match_index_tuples, key=lambda m: tuple(sorted([index_mapper[i] % len(structure) for i in m])))
+    grouped_tuples2 = []
+
+    good_match_index_tuples = []
+    good_match_quats = []
+    for _, match_tuples in grouped_tuples.items():
+        quats = []
+        good_indices = []
+        for i, match_tuple in enumerate(match_tuples):
+            atom_positions = np.array([s_positions[index_mapper[m]] for m in match_tuple])
+            q = R.identity()
+            if len(atom_positions) > 1:
+                # the first quaternion aligns the search pattern axis points with the axis points
+                # found in the structure
+                match_axis = atom_positions[axisp2_idx] - atom_positions[axisp1_idx]
+                q = quaternion_from_two_vectors(search_axis, match_axis)
+
+                if len(atom_positions) > 2:
+                    # the second quaternion is a rotation around the found axis in the structure and
+                    # aligns the orientation axis point to its placement in the structure.
+                    match_orientation_point = atom_positions[opoint_idx] - atom_positions[axisp1_idx]
+                    rotated_orientation_point = q.apply(pattern.positions[opoint_idx])
+                    q = quaternion_from_two_vectors_around_axis(rotated_orientation_point, match_orientation_point, match_axis) * q
+
+            quats.append(q)
+            chk_pattern = pattern.copy()
+            chk_pattern.positions = q.apply(chk_pattern.positions)
+            chk_pattern.translate(atom_positions[axisp1_idx])
+            if positions_are_unchanged(atom_positions, chk_pattern.positions, max_delta=atol, verbose=verbose):
+                good_indices.append(i)
+
+        if len(good_indices) > 1:
+            # Likely it is because of symmetry if we found more than one good match. Randomly choose one.
+            match_chosen = random.choice(good_indices)
+            good_match_index_tuples.append(match_tuples[match_chosen])
+            good_match_quats.append(quats[match_chosen])
+        elif len(good_indices) == 1:
+            # Found one good match; either we have no symmetry, or we have symmetry where only one numbering of the
+            # atoms can be rotated into place
+            good_match_index_tuples.append(match_tuples[good_indices[0]])
+            good_match_quats.append(quats[good_indices[0]])
+        else:
+            print("""WARNING:
+                Search pattern was matched, but there is no possible way to rotate the search patttern to meet the match pattern.
+                This is likely due to finding a match of the opposite chirality.
+                """)
+
+    match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in good_match_index_tuples]
+    if return_positions_and_quats:
+        match_index_tuple_positions = np.array([[s_positions[index_mapper[m]] for m in match] for match in good_match_index_tuples])
+        return match_index_tuples_in_uc, match_index_tuple_positions, np.array(good_match_quats)
     else:
         return match_index_tuples_in_uc
 
@@ -172,7 +238,7 @@ class AtomsShouldNotBeDeletedTwice(Exception):
 @suppress_warnings
 def replace_pattern_in_structure(
     structure, search_pattern, replace_pattern, replace_fraction=1.0, atol=5e-2,
-    axis1a_idx=0, axis1b_idx=-1, axis2_idx=None,
+    axisp1_idx=0, axisp2_idx=-1, opoint_idx=None,
     return_num_matches=False, replace_all=False, verbose=False,
     positions_check_max_delta=0.1,
     ignore_atoms_should_not_be_deleted_twice=False):
@@ -191,13 +257,11 @@ def replace_pattern_in_structure(
         replace_pattern (Atoms): an Atoms object to search for.
         replace_fraction (float): how many instances of the search_pattern found in the structure get replaced by the replace pattern.
         atol (float): absolute tolerance in Angstroms for atom posistions to be considered matching.
-        axis1a_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern. Necessary for handling symmetric patterns.
-        axis1b_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. Necessary for handling symmetric patterns.
-        axis2_idx (float): index in search_pattern of third point defining the orientational axis of the search_pattern. Necessary for handling symmetric patterns.
+        axisp1_idx (float): index in search_pattern of first point defining the directional axis of the search_pattern.
+        axisp2_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern.
+        opoint_idx (float): index in search_pattern of third point defining the orientational axis of the search_pattern.
         replace_all (bool): replaces all atoms even if positions and elements match exactly
         verbose (bool): print debugging info.
-        positions_check_max_delta (float): maximum allowed difference in position between each atom in the search and
-            match patterns, before an error gets raised.
         ignore_atoms_should_not_be_deleted_twice (bool): don't raise an AtomsShouldNotBeDeletedTwice exception when
             two matches would delete the same atoms.
     Returns:
@@ -206,33 +270,23 @@ def replace_pattern_in_structure(
     search_pattern = search_pattern.copy()
     replace_pattern = replace_pattern.copy()
 
-    match_indices, match_positions = find_pattern_in_structure(structure, search_pattern, atol=atol, return_positions=True)
+    # translate both search and replace patterns so that first atom of search pattern is at the origin
+    replace_pattern.translate(-search_pattern.positions[axisp1_idx])
+    search_pattern.translate(-search_pattern.positions[axisp1_idx])
+
+    match_indices, match_positions, quats = find_pattern_in_structure(structure, search_pattern, atol=atol,
+        axisp1_idx=axisp1_idx, axisp2_idx=axisp2_idx, opoint_idx=opoint_idx, return_positions_and_quats=True,
+        verbose=verbose)
 
     if replace_fraction < 1.0:
         replace_indices = random.sample(list(range(len(match_positions))), k=round(replace_fraction * len(match_positions)))
         match_indices = [match_indices[i] for i in replace_indices]
         match_positions = match_positions[replace_indices]
+        quats = quats[replace_indices]
 
     if verbose: print("match_indices / positions: ", match_indices, match_positions)
 
-    # translate both search and replace patterns so that first atom of search pattern is at the origin
-    replace_pattern.translate(-search_pattern.positions[axis1a_idx])
-    search_pattern.translate(-search_pattern.positions[axis1a_idx])
-    search_axis = search_pattern.positions[axis1b_idx]
-    if verbose: print("search pattern axis: ", search_axis)
-
     replace2search_pattern_map = {k:v for (k,v) in find_unchanged_atom_pairs(replace_pattern, search_pattern)}
-
-    if len(search_pattern) > 2:
-        # note that we find an orientation point if there are nore than two atoms in the search pattern, but it is still
-        # possible that all the atoms like on the search axis. In that, case a point on the axis will be returned and
-        # there is an unnecessary final rotation to "align" that point.
-        if axis2_idx is None:
-            search_orientation_point_idx = position_index_farthest_from_axis(search_axis, search_pattern)
-        else:
-            search_orientation_point_idx = axis2_idx
-
-        search_orientation_point = search_pattern.positions[search_orientation_point_idx]
 
     new_structure = structure.copy()
     to_delete = set()
@@ -240,37 +294,12 @@ def replace_pattern_in_structure(
         to_delete |= set([idx for match in match_indices for idx in match])
     else:
         offsets = new_structure.extend_types(replace_pattern)
+
         for m_i, atom_positions in enumerate(match_positions):
+            q = quats[m_i]
             new_atoms = replace_pattern.copy()
-            chk_search_pattern = search_pattern.copy()
-
-            if len(atom_positions) > 1:
-                # the first quaternion aligns the search pattern axis points with the axis points
-                # found in the structure
-                match_axis = atom_positions[axis1b_idx] - atom_positions[axis1a_idx]
-                q1 = quaternion_from_two_vectors(search_axis, match_axis)
-
-                new_atoms.positions = q1.apply(new_atoms.positions)
-                chk_search_pattern.positions = q1.apply(chk_search_pattern.positions)
-
-                if len(atom_positions) > 2:
-                    match_orientation_point = atom_positions[search_orientation_point_idx] - atom_positions[axis1a_idx]
-                    rotated_search_orientation_point = q1.apply(search_orientation_point)
-
-                    # the second quaternion is a rotation around the found axis in the structure and
-                    # aligns the orientation axis point to its placement in the structure.
-                    q2 = quaternion_from_two_vectors_around_axis(rotated_search_orientation_point, match_orientation_point, match_axis)
-
-                    new_atoms.positions = q2.apply(new_atoms.positions)
-                    chk_search_pattern.positions = q2.apply(chk_search_pattern.positions)
-
-            # move replacement atoms into correct position
-            new_atoms.translate(atom_positions[axis1a_idx])
-
-            chk_search_pattern.translate(atom_positions[axis1a_idx])
-            assert_positions_are_unchanged(atom_positions, chk_search_pattern.positions,
-                max_delta=positions_check_max_delta, verbose=verbose, raise_exception=True)
-
+            new_atoms.positions = q.apply(new_atoms.positions)
+            new_atoms.translate(atom_positions[axisp1_idx])
             new_atoms.positions %= np.diag(new_structure.cell)
 
             if verbose:

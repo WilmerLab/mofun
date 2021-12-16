@@ -22,6 +22,21 @@ def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     for indices in match_indices:
         assert octane[indices].elements == ["C"]
 
+def test_find_pattern_in_structure__half_octane_has_1_CH3(half_octane):
+    print(half_octane)
+    pattern = Atoms(elements='CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
+    q = R.random(1)
+    pattern.positions = q.apply(pattern.positions)
+    match_indices = find_pattern_in_structure(half_octane, pattern)
+    assert len(match_indices) == 1
+    for indices in match_indices:
+        pattern_found = half_octane[indices]
+        assert pattern_found.elements == ["C", "H", "H", "H"]
+        cpos = pattern_found.positions[0]
+        assert ((pattern_found.positions[1] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+        assert ((pattern_found.positions[2] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+        assert ((pattern_found.positions[3] - cpos) ** 2).sum() == approx(1.18704299, 5e-2)
+
 def test_find_pattern_in_structure__octane_has_2_CH3(octane):
     pattern = Atoms(elements='CHHH', positions=[(0, 0, 0), (-0.538, -0.635,  0.672), (-0.397,  0.993,  0.052), (-0.099, -0.371, -0.998)])
     match_indices = find_pattern_in_structure(octane, pattern)
@@ -77,7 +92,7 @@ def test_find_pattern_in_structure__cnnc_over_x_pbc_has_positions_across_x_pbc(l
     linear_cnnc.positions = (linear_cnnc.positions + (-0.5, 0.0, 0.0)) % 15
     linear_cnnc.pop(-1) #don't match final NC
     search_pattern = Atoms(elements='CN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
-    match_indices, match_positions = find_pattern_in_structure(linear_cnnc, search_pattern, return_positions=True)
+    match_indices, match_positions, quats = find_pattern_in_structure(linear_cnnc, search_pattern, return_positions_and_quats=True)
     assert (linear_cnnc[match_indices[0]].positions == [(14.5, 0., 0.), (0.5, 0., 0.)]).all()
     assert (match_positions[0] == np.array([(14.5, 0., 0.), (15.5, 0., 0.)])).all()
 
@@ -88,7 +103,7 @@ def test_find_pattern_in_structure__cnnc_over_xy_pbc_has_positions_across_xy_pbc
     linear_cnnc.pop() #don't match final NC
     print(linear_cnnc.positions)
     search_pattern = Atoms(elements='CN', positions=[(0.0, 0., 0), (1.0, 0., 0.)])
-    match_indices, match_positions = find_pattern_in_structure(linear_cnnc, search_pattern, return_positions=True)
+    match_indices, match_positions, quats = find_pattern_in_structure(linear_cnnc, search_pattern, return_positions_and_quats=True)
     assert np.isclose(linear_cnnc[match_indices[0]].positions, np.array([(14.5, 14.5, 0.), (sqrt2_2 - 0.5, sqrt2_2 - 0.5, 0.)])).all()
     assert (match_positions[0] == np.array([(14.5, 14.5, 0.), (14.5 + sqrt2_2, 14.5 + sqrt2_2, 0.)])).all()
 
@@ -120,7 +135,7 @@ def test_find_pattern_in_structure__hkust1_unit_cell_has_32_benzene_rings(hkust1
 def test_find_pattern_in_structure__hkust1_unit_cell_offset_has_32_benzene_rings(hkust1_cif, benzene):
     hkust1_cif.translate((-4,-4,-4))
     hkust1_cif.positions = hkust1_cif.positions % np.diag(hkust1_cif.cell)
-    match_indices, coords = find_pattern_in_structure(hkust1_cif, benzene, return_positions=True)
+    match_indices, coords, quats = find_pattern_in_structure(hkust1_cif, benzene, return_positions_and_quats=True)
     for i, indices in enumerate(match_indices):
         assert list(hkust1_cif[indices].elements) == ['C','C','C','C','C','C','H','H','H']
         assert_benzene(coords[i])
@@ -281,16 +296,35 @@ def test_replace_pattern_in_structure__replacement_pattern_across_pbc_gets_coord
     assert Counter(final_structure.elements) == Counter(structure.elements)
     assert_structure_positions_are_unchanged(structure, final_structure)
 
-def test_replace_pattern_in_structure__3way_symmetrical_structure_raises_position_exception():
+def test_replace_pattern_in_structure__chiral_molecule_does_not_match():
+    structure = Atoms(elements='CBHH', positions=[(0., 0., 0.), (1., 0., 0.),(0., 2., 0.), (0., 0., 1.)])
+    structure.translate((3,3,3))
+    structure.cell = 15 * np.identity(3)
+    search_pattern = Atoms(elements='CHHB', positions=[(0., 0., 0.), (1., 0., 0.),(0., 2., 0.), (0., 0., 1.)])
+    matches = find_pattern_in_structure(structure, search_pattern)
+    assert len(matches) == 0
+
+def test_replace_pattern_in_structure__3way_symmetrical_structure_never_raises_position_exception():
+    structure = Atoms(elements='CHHH', positions=[(0., 0., 0.), (1., 0., 0.),(0., 1., 0.), (0., 0., 1.)])
+    structure.translate((3,3,3))
+    structure.cell = 15 * np.identity(3)
+    search_pattern = structure.copy()
+    replace_pattern = Atoms(elements='FFHeHe', positions=search_pattern.positions)
+
+    for _ in range(10):
+        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=False)
+        assert_structure_positions_are_unchanged(structure, final_structure)
+
+def test_replace_pattern_in_structure__2way_symmetrical_structure_never_raises_position_exception():
     structure = Atoms(elements='CCHH', positions=[(0., 0., 0.), (1., 0., 0.),(0., 1., 0.), (0., 0., 1.)])
     structure.translate((3,3,3))
     structure.cell = 15 * np.identity(3)
     search_pattern = structure.copy()
     replace_pattern = Atoms(elements='FFHeHe', positions=search_pattern.positions)
 
-    with pytest.raises(PositionsNotEquivalent):
-        for _ in range(100):
-            final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=True)
+    for _ in range(10):
+        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, verbose=False)
+        assert_structure_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_with_itself_does_not_change_positions():
     search_pattern = Atoms(elements='CCH', positions=[(0., 0., 0.), (4., 0., 0.),(0., 1., 0.)])
@@ -305,7 +339,7 @@ def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_wi
         print(dp)
         structure.translate(dp)
         structure.positions = structure.positions % 15
-        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
+        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axisp1_idx=0, axisp2_idx=1)
         assert_structure_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__special_rotated_pattern_replaced_with_itself_does_not_change_positions():
@@ -316,7 +350,7 @@ def test_replace_pattern_in_structure__special_rotated_pattern_replaced_with_its
     r = R.from_quat([-0.4480244,  -0.50992783,  0.03212454, -0.7336319 ])
     structure.positions = r.apply(structure.positions)
     structure.positions = structure.positions % 15
-    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axisp1_idx=0, axisp2_idx=1)
     assert_structure_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_itself_does_not_change_positions():
@@ -327,7 +361,7 @@ def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_it
     r = R.from_quat([ 0.02814096,  0.99766676,  0.03984918, -0.04776152])
     structure.positions = r.apply(structure.positions)
     structure.positions = structure.positions % 15
-    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axis1a_idx=0, axis1b_idx=1)
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axisp1_idx=0, axisp2_idx=1)
     assert_structure_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
@@ -344,7 +378,7 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
 
 @pytest.mark.slow
 def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
-    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
+    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axisp1_idx=0, axisp2_idx=7)
     assert Counter(final_structure.elements) == Counter(hkust1_cif.elements)
     assert_structure_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
 
@@ -352,7 +386,7 @@ def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_
 def test_replace_pattern_in_structure__in_hkust1_offset_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
     hkust1_cif.translate((-4,-4,-4))
     hkust1_cif.positions = hkust1_cif.positions % np.diag(hkust1_cif.cell)
-    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axis1a_idx=0, axis1b_idx=7)
+    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axisp1_idx=0, axisp2_idx=7)
     assert Counter(final_structure.elements) == Counter(hkust1_cif.elements)
     assert_structure_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
 
@@ -372,7 +406,7 @@ def test_replace_pattern_in_structure__in_uio66_replacing_linker_with_linker_doe
 def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_bonds_angles_has_bonds_angles(uio66_linker_no_bonds, uio66_linker_some_bonds):
     structure = uio66_linker_no_bonds.copy()
     structure.cell = 100*np.identity(3)
-    final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_some_bonds, axis1a_idx=0, axis1b_idx=15)
+    final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_some_bonds, axisp1_idx=0, axisp2_idx=15)
 
     assert Counter(final_structure.elements) == {'C': 8, 'O': 4, 'H': 4}
     assert_structure_positions_are_unchanged(structure, final_structure, max_delta=0.1)
