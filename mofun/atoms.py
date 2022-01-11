@@ -10,6 +10,7 @@ from CifFile import ReadCif as read_cif
 
 import numpy as np
 from scipy.linalg import norm
+from scipy.spatial.distance import cdist
 
 from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES, use_or_open
 
@@ -834,11 +835,9 @@ class Atoms:
 
             Used to allow an override of an existing force field term by finding old terms between
             the same atoms to delete"""
-
-            existing_topo = [tuple(x) for x in topo]
-            new_topo_tuples = [tuple(x) for x in new_topo]
-            existing_topo_indices = [existing_topo.index(b) for b in new_topo_tuples if b in existing_topo]
-            return existing_topo_indices
+            if len(topo) == 0:
+                return []
+            return list(np.nonzero(cdist(topo, new_topo, 'cityblock') == 0)[0])
 
         if len(other.bonds) > 0:
             new_bonds = convert2structureindex(other.bonds)
