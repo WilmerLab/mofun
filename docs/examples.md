@@ -37,12 +37,10 @@ from mofun import Atoms, replace_pattern_in_structure
 
 structure = Atoms.load("uio66.cif")
 uio66_linker = Atoms.load("uio66-linker.cml")
-uio66_linker_w_hydroxyl = Atoms.load("uio66-linker-w-hydroxyl.cml")
+uio66_linker_oh = Atoms.load("uio66-linker-w-hydroxyl.cml")
 
-structure_w_hdyroxyl = replace_pattern_in_structure(structure, uio66_linker, uio66_linker_w_hydroxyl)
-
-structure_w_hdyroxyl.save("uio66-w-hydroxyl.lmpdat")
-structure_w_hdyroxyl.to_ase().write("uio66-w-hydroxyl.cif")
+structure_oh = replace_pattern_in_structure(structure, uio66_linker, uio66_linker_oh)
+structure_oh.save("uio66-w-hydroxyl.lmpdat")
 ```
 
 In your shell:
@@ -122,13 +120,13 @@ from mofun import Atoms, replace_pattern_in_structure
 
 structure = Atoms.load("uio66.cif")
 uio66_linker = Atoms.load("uio66-linker-w-Zr.cml")
-uio66_linker_parameterized = Atoms.load("uio66-linker-parameterized-w-Zr.lmpdat")
-uio66_metal_center = Atoms.load("uio66-metal-center.cml")
-uio66_metal_center_parameterized = Atoms.load("uio66-metal-center-parameterized.lmpdat")
+uio66_linker_params = Atoms.load("uio66-linker-parameterized-w-Zr.lmpdat")
+uio66_mc = Atoms.load("uio66-metal-center.cml")
+uio66_mc_params = Atoms.load("uio66-metal-center-parameterized.lmpdat")
 
-param1 = replace_pattern_in_structure(structure, uio66_metal_center, uio66_metal_center_parameterized)
-param2 = replace_pattern_in_structure(param1, uio66_linker, uio66_linker_parameterized)
-param2.to_ase().write("uio66-parameterized.lmpdat")
+param1 = replace_pattern_in_structure(structure, uio66_mc, uio66_mc_params)
+param2 = replace_pattern_in_structure(param1, uio66_linker, uio66_linker_params)
+param2.save("uio66-parameterized.lmpdat")
 ```
 
 In your shell:
