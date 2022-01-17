@@ -1,5 +1,6 @@
 import math
 import random
+from warnings import warn
 
 import numpy as np
 from scipy.spatial import distance
@@ -220,9 +221,8 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
             good_match_index_tuples.append(match_tuples[good_indices[0]])
             good_match_quats.append(quats[good_indices[0]])
         else:
-            print("""WARNING:
-                Search pattern was matched, but there is no possible way to rotate the search patttern to meet the match pattern.
-                This is likely due to finding a match of the opposite chirality.
+            warn("""Search pattern was matched, but there is no possible way to rotate the search patttern to meet the
+                match pattern. This is likely due to finding a match of the opposite chirality.
                 """)
 
     match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in good_match_index_tuples]
