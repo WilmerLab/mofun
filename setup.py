@@ -3,12 +3,12 @@
 from setuptools import setup, find_packages
 
 setup(name='mofun',
-      version='0.1.0',
+      version='0.1.1',
       description='Find and replace functional groups in any given periodic structure.',
-      author='Paul Boone and Meiirbek Islamov',
-      author_email='paulboone@pitt.edu mei12@pitt.edu',
+      author='Paul Boone',
+      author_email='narcissus.pong@gmail.com',
       url='https://github.com/wilmerlab/mofun.git',
-      packages=find_packages(include=['mofun']),
+      packages=find_packages(include=['mofun*']),
       install_requires=[
           'ase',
           'numpy',
