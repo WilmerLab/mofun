@@ -1,7 +1,6 @@
 # MOFUN
 
 [![MOFUN Refactor Branch Test Status](https://github.com/wilmerlab/mofun/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/wilmerlab/mofun/actions/workflows/python-app.yml)
-[![documentation](https://img.shields.io/badge/docs%20material-blue.svg?style=flat)](https://wilmerlab.github.io/mofun/)
 [![pypi version](https://img.shields.io/pypi/v/mofun.svg)](https://pypi.org/project/mofun/)
 
 MOFUN is a Python package that can find and replace patterns in a molecular structure, across periodic boundaries.
