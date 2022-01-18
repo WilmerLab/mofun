@@ -132,8 +132,10 @@ param2.save("uio66-parameterized.lmpdat")
 In your shell:
 
 ```shell
-mofun uio66.cif uio66-half-parameterized.lmpdat -f uio66-linker-w-Zr.cml -r uio66-linker-w-Zr-parameterized.lmpdat
-mofun uio66-half-parameterized.lmpdat uio66-fully-parameterized.lmpdat -f uio66-metal-center.cml -r uio66-metal-center-parameterized.lmpdat
+mofun uio66.cif uio66-param1.lmpdat -f uio66-metal-center.cml -r uio66-metal-center-parameterized.lmpdat
+mofun uio66-param1.lmpdat uio66-parameterized.lmpdat -f uio66-linker-w-Zr.cml -r uio66-linker-w-Zr-parameterized.lmpdat
+
+
 ```
 
 While we use separate files above for clarity, it is also possible to use the parameterized files for both the search
