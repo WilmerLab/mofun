@@ -2,7 +2,7 @@ import copy
 import io
 import os
 import pathlib
-from warnings import warn
+import sys
 import xml.etree.ElementTree as ET
 
 import ase
@@ -195,7 +195,7 @@ class Atoms:
         if len(atom_type_labels) > 0:
             self.atom_type_labels = atom_type_labels
         else:
-            warn("WARNING: using the atom elements as the atom_type_labels since labels were not supplied.")
+            print("WARNING: using the atom elements as the atom_type_labels since labels were not supplied.", file=sys.stderr)
             # use default atom types equal to the element; this may not be unique!
             self.atom_type_labels = self.atom_type_elements
 
@@ -454,7 +454,7 @@ class Atoms:
         try:
             atom_type_elements = guess_elements_from_masses(atom_type_masses, max_delta=guess_atol)
         except Exception:
-            warn("Warning: using type ids for elements since some masses do not correspond to periodic table elements within the set tolerance.")
+            print("WARNING: using type ids for elements since some masses do not correspond to periodic table elements within the set tolerance.", file=sys.stderr)
             atom_type_elements = [str(i + 1) for i in range(len(masses))]
 
         # infer the atom type labels
@@ -462,7 +462,7 @@ class Atoms:
             # then loading atom types from the labels worked
             pass
         else:
-            warn("Warning: using elements for atom type labels since there is not an atom type label comment for every atom type in the Masses section.")
+            print("WARNING: using elements for atom type labels since there is not an atom type label comment for every atom type in the Masses section.", file=sys.stderr)
             atom_type_labels = atom_type_elements.copy()
 
 
@@ -648,7 +648,7 @@ class Atoms:
         if has_all_tags(block, bond_tags):
             cifbonds = zip(*[block[lbl] for lbl in bond_tags])
             bonds = [(atom_name.index(a), atom_name.index(b)) for (a,b) in cifbonds]
-            warn("WARNING: cif read doesn't handle bond types at present; bonding info is discarded. Use LAMMPS data file format if you need bonds")
+            print("WARNING: cif read doesn't handle bond types at present; bonding info is discarded. Use LAMMPS data file format if you need bonds", file=sys.stderr)
             bonds = []
 
         cell=None

@@ -1,7 +1,7 @@
 from collections import Counter
 import itertools
 from math import sqrt, log, cos, sin, pi
-from warnings import warn
+import sys
 
 import networkx as nx
 import numpy as np
@@ -119,7 +119,7 @@ def calc_uff_atom_types(bonds, elements, override_rules=None):
         elif len(possible_uff_keys) >= 2:
             if uff_key in UFF4MOF:
                 atom_types.append(uff_key)
-                warn("multiple possible UFF keys: %s. Choosing the simplest one: %s" % (possible_uff_keys, uff_key))
+                print("WARNING: multiple possible UFF keys: %s. Choosing the simplest one: %s" % (possible_uff_keys, uff_key), file=sys.stderr)
                 continue
             else:
                 raise Exception("Error: too many possible UFF keys that starts with %s with no way of discerning which one: %s" % (uff_key, possible_uff_keys))
@@ -166,7 +166,7 @@ def guess_bond_order(a1, a2, rules=[]):
     elif len(bond_atom_types) == 1 and bond_atom_types <= {'C_R', 'N_R', 'O_R'}:
         return 1.5
     else:
-        warn('%s %s Bond order not explicitly assigned. Using default value of 1.' % (a1, a2), stacklevel=0)
+        print('%s %s Bond order not explicitly assigned. Using default value of 1.' % (a1, a2), file=sys.stderr)
         return 1
 
 def bond_params(a1, a2, bond_order=None, bond_order_rules=[]):
