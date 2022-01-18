@@ -1,5 +1,6 @@
 # Examples
 
+Supporting files for all examples can be found in the main repo at docs/examples/.
 
 ## Example 1: functionalizing a MOF
 
@@ -37,19 +38,19 @@ from mofun import Atoms, replace_pattern_in_structure
 
 structure = Atoms.load("uio66.cif")
 uio66_linker = Atoms.load("uio66-linker.cml")
-uio66_linker_oh = Atoms.load("uio66-linker-w-hydroxyl.cml")
+uio66_linker_oh = Atoms.load("uio66-linker-oh.cml")
 
 structure_oh = replace_pattern_in_structure(structure, uio66_linker, uio66_linker_oh)
-structure_oh.save("uio66-w-hydroxyl.lmpdat")
+structure_oh.save("uio66-oh.lmpdat")
 ```
 
 In your shell:
 
 ```shell
-mofun uio66.cif uio66-w-hydroxyl.cif -f uio66-linker.cml -r uio66-linker-w-hydroxyl.cml
+mofun uio66.cif uio66-oh.cif --find uio66-linker.cml --replace uio66-linker-oh.cml
 ```
 
-If you look in the output uio66-w-hydroxyl.cif file, you will see the hydroxyls on all the linkers.
+If you look in the output uio66-oh.cif file, you will see the hydroxyls on all the linkers.
 
 <figure markdown>
   ![UiO-66 with hydroxyl](img/examples/uio66-w-hydroxyl.png)
@@ -119,8 +120,8 @@ In Python:
 from mofun import Atoms, replace_pattern_in_structure
 
 structure = Atoms.load("uio66.cif")
-uio66_linker = Atoms.load("uio66-linker-w-Zr.cml")
-uio66_linker_params = Atoms.load("uio66-linker-parameterized-w-Zr.lmpdat")
+uio66_linker = Atoms.load("uio66-linker-Zr.cml")
+uio66_linker_params = Atoms.load("uio66-linker-Zr-parameterized.lmpdat")
 uio66_mc = Atoms.load("uio66-metal-center.cml")
 uio66_mc_params = Atoms.load("uio66-metal-center-parameterized.lmpdat")
 
@@ -132,18 +133,22 @@ param2.save("uio66-parameterized.lmpdat")
 In your shell:
 
 ```shell
-mofun uio66.cif uio66-param1.lmpdat -f uio66-metal-center.cml -r uio66-metal-center-parameterized.lmpdat
-mofun uio66-param1.lmpdat uio66-parameterized.lmpdat -f uio66-linker-w-Zr.cml -r uio66-linker-w-Zr-parameterized.lmpdat
+mofun uio66.cif uio66-param1.lmpdat --find uio66-metal-center.cml \
+  --replace uio66-metal-center-parameterized.lmpdat
 
-
+mofun uio66-param1.lmpdat uio66-parameterized.lmpdat --find uio66-linker-Zr.cml \
+  --replace uio66-linker-Zr-parameterized.lmpdat
 ```
 
 While we use separate files above for clarity, it is also possible to use the parameterized files for both the search
 and replace patterns, like this:
 
 ```shell
-mofun uio66.cif uio66-half-parameterized.lmpdat -f uio66-linker-w-Zr-parameterized.lmpdat -r uio66-linker-w-Zr-parameterized.lmpdat
-mofun uio66-half-parameterized.lmpdat uio66-fully-parameterized.lmpdat -f uio66-metal-center-parameterized.lmpdat -r uio66-metal-center-parameterized.lmpdat
+mofun uio66.cif uio66-param1.lmpdat --find uio66-metal-center-parameterized.lmpdat \
+--replace uio66-metal-center-parameterized.lmpdat
+
+mofun uio66-param1.lmpdat uio66-parameterized.lmpdat --find uio66-linker-Zr-parameterized.lmpdat \
+--replace uio66-linker-Zr-parameterized.lmpdat
 ```
 
 This may be confusing at first glance, since we are finding the same pattern that we are replacing it with. However, the

@@ -99,7 +99,7 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
         axisp2_idx (float): index in search_pattern of second point defining the directional axis of the search_pattern. May help with performance for large problems.
         opoint_idx (float): index in search_pattern of the orientation point that we will use to align the search pattern (the search pattern will be rotated so that the orientation point in the search pattern will have the same coordinates as the same point in the match pattern).
         return_positions_and_quats (bool): additionally returns the positions for each index and the quaternions that rotation the search pattern to the match pattern.
-        atol (float): the absolute tolerance (how close an atom must be in the structure to the position in pattern to be consdired a match).
+        atol (float): the absolute tolerance (how close an atom must be in the structure to the position in pattern to be considered a match).
         verbose (bool): print debugging info.
     Returns:
         List [tuple(len(pattern))],  {List [tuple(len(pattern))], List [scipy.spatial.transform.Rotation]} : returns a
