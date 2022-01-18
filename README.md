@@ -1,6 +1,6 @@
 # MOFUN
 
-[![MOFUN Refactor Branch Test Status](https://github.com/wilmerlab/mofun/actions/workflows/python-app.yml/badge.svg?branch=refactor2)](https://github.com/wilmerlab/mofun/actions/workflows/python-app.yml)
+[![MOFUN Refactor Branch Test Status](https://github.com/wilmerlab/mofun/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/wilmerlab/mofun/actions/workflows/python-app.yml)
 
 ## Installation
 
