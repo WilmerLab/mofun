@@ -15,15 +15,27 @@ def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
     return (uc_vectors * multipliers).sum(axis=1)
 
-def get_types_ss_map_limited_near_uc(structure, length):
-    """
-    structure:
-    length: the length of the longest dimension of the search pattern
+def _get_positions_from_all_adjacent_unit_cells(structure, distance):
+    """Calculates the atom positions for all atoms in the given unit cell and every adjacent unit cell, as determined by
+    the periodic boundaries.
 
-    creates master lists of indices, types and positions, for all atoms in the structure and all
-    atoms across the PBCs. Limits atoms across PBCs to those that are within a distance of the
-    boundary that is less than the length of the search pattern (i.e. atoms further away from the
-    boundary than this will never match the search pattern).
+    Limits this comprehensive list to only the atoms within a given distance from one of the borders of the unit cell.
+    There is a general version, which supports triclinic unit cells, and an optimized version for orthorhombic unit
+    cells.
+
+    Returns the list of all calculated positions `all_pos`, and a set of three lists for atoms within the distance
+    cutoff for the positions `near_pos`, the atom types `near_types`, and the nearby atoms index in the master
+    positions list `near_indices`.
+
+    Args:
+        structure (Atoms): periodic structure to calculate positions
+        distance: nearby atoms are defined as being either in the main unit cell, or within `distance` of the main unit cell's boundary.
+
+    Returns
+        List(): position of every nearby atom, aka `near_pos`
+        List(): atom type for every nearby atom, aka `near_types`
+        List(): index of nearby atom in master positions list for every nearby atom, aka `near_indices`
+        numpy.Array(): positions of all atoms across in all UCs, aka `all_pos`
     """
 
     cell = structure.cell
@@ -32,14 +44,14 @@ def get_types_ss_map_limited_near_uc(structure, length):
     uc_offsets[np.where(np.all(uc_offsets == (0,0,0), axis=1))[0][0]] = uc_offsets[0]
     uc_offsets[0] = (0.0, 0.0, 0.0)
 
-    s_positions = [structure.positions + uc_offset for uc_offset in uc_offsets]
-    s_positions = np.array([x for y in s_positions for x in y])
+    all_positions = [structure.positions + uc_offset for uc_offset in uc_offsets]
+    all_positions = np.array([x for y in all_positions for x in y])
 
     s_types = list(structure.elements) * len(uc_offsets)
 
-    index_mapper = []
-    s_pos_view = []
-    s_types_view = []
+    near_pos = []
+    near_types = []
+    near_indices = []
 
     is_triclinic = not (np.diag(cell) * np.identity(3) == cell).all()
     if is_triclinic:
@@ -58,28 +70,28 @@ def get_types_ss_map_limited_near_uc(structure, length):
         centerdist = np.dot(nvs, centerpos)
         nmults = -centerdist / np.abs(centerdist)
 
-        for i, pos in enumerate(s_positions):
-            if ((-planedists[0] - length <= nmults[0] * np.dot(nvs[0], pos) / nvnorms[0] <= length) and
-                (-planedists[1] - length <= nmults[1] * np.dot(nvs[1], pos) / nvnorms[1] <= length) and
-                (-planedists[2] - length <= nmults[2] * np.dot(nvs[2], pos) / nvnorms[2] <= length)):
+        for i, pos in enumerate(all_positions):
+            if ((-planedists[0] - distance <= nmults[0] * np.dot(nvs[0], pos) / nvnorms[0] <= distance) and
+                (-planedists[1] - distance <= nmults[1] * np.dot(nvs[1], pos) / nvnorms[1] <= distance) and
+                (-planedists[2] - distance <= nmults[2] * np.dot(nvs[2], pos) / nvnorms[2] <= distance)):
 
-                index_mapper.append(i)
-                s_pos_view.append(pos)
-                s_types_view.append(s_types[i])
+                near_indices.append(i)
+                near_pos.append(pos)
+                near_types.append(s_types[i])
 
     else: # orthorhombic
         cell = list(np.diag(cell))
 
-        for i, pos in enumerate(s_positions):
-            if (pos[0] >= -length and pos[0] < length + cell[0] and
-                pos[1] >= -length and pos[1] < length + cell[1] and
-                pos[2] >= -length and pos[2] < length + cell[2]):
+        for i, pos in enumerate(all_positions):
+            if (pos[0] >= -distance and pos[0] < distance + cell[0] and
+                pos[1] >= -distance and pos[1] < distance + cell[1] and
+                pos[2] >= -distance and pos[2] < distance + cell[2]):
 
-                index_mapper.append(i)
-                s_pos_view.append(pos)
-                s_types_view.append(s_types[i])
+                near_indices.append(i)
+                near_pos.append(pos)
+                near_types.append(s_types[i])
 
-    return s_types_view, index_mapper, s_pos_view, s_positions
+    return near_pos, near_types, near_indices, all_positions
 
 @suppress_warnings
 def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, opoint_idx=None,
@@ -113,29 +125,29 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
         print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
     pattern_length = p_ss.max() ** 0.5 + 2 * atol
-    s_types_view, index_mapper, s_pos_view, s_positions = get_types_ss_map_limited_near_uc(structure, pattern_length)
-    atoms_by_type = atoms_by_type_dict(s_types_view)
+    near_pos, near_types, near_indices, all_positions = _get_positions_from_all_adjacent_unit_cells(structure, pattern_length)
+    atoms_by_type = atoms_by_type_dict(near_types)
 
     # created sorted coords array for creating search subsets
-    p = np.array(sorted([(*r, i) for i, r in enumerate(s_pos_view)]))
+    p = np.array(sorted([(*r, i) for i, r in enumerate(near_pos)]))
 
     # Search instances of first atom in a search pattern
     # 0,0,0 uc atoms are always indexed first from 0 to # atoms in structure.
-    starting_atoms = [idx for idx in atoms_of_type(s_types_view[0: len(structure)], pattern.elements[0])]
+    starting_atoms = [idx for idx in atoms_of_type(near_types[0: len(structure)], pattern.elements[0])]
     if verbose:
         print("round %d (%d) [%s]: " % (0, len(starting_atoms), pattern.elements[0]), starting_atoms)
 
-    def get_nearby_atoms(p, s_pos_view, pattern_length, a):
-        p1 = p[(p[:, 0] <= s_pos_view[a][0] + pattern_length) & (p[:, 0] >= s_pos_view[a][0] - pattern_length)]
-        p2 = p1[(p1[:, 1] <= s_pos_view[a][1] + pattern_length) & (p1[:, 1] >= s_pos_view[a][1] - pattern_length)]
-        return (p2[(p2[:, 2] <= s_pos_view[a][2] + pattern_length) & (p2[:, 2] >= s_pos_view[a][2] - pattern_length)])
+    def get_nearby_atoms(p, near_pos, pattern_length, a):
+        p1 = p[(p[:, 0] <= near_pos[a][0] + pattern_length) & (p[:, 0] >= near_pos[a][0] - pattern_length)]
+        p2 = p1[(p1[:, 1] <= near_pos[a][1] + pattern_length) & (p1[:, 1] >= near_pos[a][1] - pattern_length)]
+        return (p2[(p2[:, 2] <= near_pos[a][2] + pattern_length) & (p2[:, 2] >= near_pos[a][2] - pattern_length)])
 
     pattern_elements = pattern.elements
     all_match_index_tuples = []
     for a_idx, a in enumerate(starting_atoms):
         match_index_tuples = [[a]]
 
-        nearby = get_nearby_atoms(p, s_pos_view, pattern_length, a)
+        nearby = get_nearby_atoms(p, near_pos, pattern_length, a)
         nearby_atom_indices = nearby[:,3].astype(np.int32)
         nearby_positions = nearby[:,0:3]
 
@@ -150,7 +162,7 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
             match_index_tuples = []
             for match in last_match_index_tuples:
                 for ss_idx, atom_idx in enumerate(nearby_atom_indices):
-                    if s_types_view[atom_idx]==pattern_elements[i]:
+                    if near_types[atom_idx]==pattern_elements[i]:
                         found_match = True
                         # check all distances to this new proposed atom
                         for j in range(0, i):
@@ -179,7 +191,7 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
         # there is an unnecessary final rotation to "align" that point.
         opoint_idx = position_index_farthest_from_axis(search_axis, pattern)
 
-    grouped_tuples = group_duplicates(all_match_index_tuples, key=lambda m: tuple(sorted([index_mapper[i] % len(structure) for i in m])))
+    grouped_tuples = group_duplicates(all_match_index_tuples, key=lambda m: tuple(sorted([near_indices[i] % len(structure) for i in m])))
     grouped_tuples2 = []
 
     good_match_index_tuples = []
@@ -188,7 +200,7 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
         quats = []
         good_indices = []
         for i, match_tuple in enumerate(match_tuples):
-            atom_positions = np.array([s_positions[index_mapper[m]] for m in match_tuple])
+            atom_positions = np.array([all_positions[near_indices[m]] for m in match_tuple])
             q = R.identity()
             if len(atom_positions) > 1:
                 # the first quaternion aligns the search pattern axis points with the axis points
@@ -225,9 +237,9 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
                 match pattern. This is likely due to finding a match of the opposite chirality.
                 """, file=sys.stderr)
 
-    match_index_tuples_in_uc = [tuple([index_mapper[m] % len(structure) for m in match]) for match in good_match_index_tuples]
+    match_index_tuples_in_uc = [tuple([near_indices[m] % len(structure) for m in match]) for match in good_match_index_tuples]
     if return_positions_and_quats:
-        match_index_tuple_positions = np.array([[s_positions[index_mapper[m]] for m in match] for match in good_match_index_tuples])
+        match_index_tuple_positions = np.array([[all_positions[near_indices[m]] for m in match] for match in good_match_index_tuples])
         return match_index_tuples_in_uc, match_index_tuple_positions, np.array(good_match_quats)
     else:
         return match_index_tuples_in_uc
