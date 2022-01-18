@@ -5,6 +5,7 @@ potentials and output to a working LAMMPS Data file.
 
 import pathlib
 
+import ase
 import click
 import numpy as np
 from mofun import Atoms, replace_pattern_in_structure, find_pattern_in_structure
