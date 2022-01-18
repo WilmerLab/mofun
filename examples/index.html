@@ -1,0 +1,587 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.0">
+    
+    
+      
+        <title>Examples - MOFUN</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.82f3c0b9.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.9204c3b2.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#examples" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="MOFUN" class="md-header__button md-logo" aria-label="MOFUN" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MOFUN
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Examples
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MOFUN" class="md-nav__button md-logo" aria-label="MOFUN" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    MOFUN
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        MOFUN
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Examples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Examples
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-1-functionalizing-a-mof" class="md-nav__link">
+    Example 1: functionalizing a MOF
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-2-introducing-defects-into-a-mof" class="md-nav__link">
+    Example 2: introducing defects into a MOF
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-3-parameterizing-a-replicated-mof-using-only-parameterized-linker-and-metal-centers" class="md-nav__link">
+    Example 3: parameterizing a replicated MOF using only parameterized linker and metal centers
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Reference" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/atoms/" class="md-nav__link">
+        Atoms
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/mofun/" class="md-nav__link">
+        Mofun
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-1-functionalizing-a-mof" class="md-nav__link">
+    Example 1: functionalizing a MOF
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-2-introducing-defects-into-a-mof" class="md-nav__link">
+    Example 2: introducing defects into a MOF
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-3-parameterizing-a-replicated-mof-using-only-parameterized-linker-and-metal-centers" class="md-nav__link">
+    Example 3: parameterizing a replicated MOF using only parameterized linker and metal centers
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+
+<h1 id="examples">Examples</h1>
+<p>Supporting files for all examples can be found in the main repo at docs/examples/.</p>
+<h2 id="example-1-functionalizing-a-mof">Example 1: functionalizing a MOF</h2>
+<p>For this example, we will take the UiO-66 MOF and functionalize its linker with a hydroxyl group. We have provided all
+the files for this example, but if you were do this procedure on your own structure, you would need to take the
+following steps:</p>
+<ul>
+<li>Prepare the structure file as a P1 CIF or a P1 LAMMPS data file.</li>
+<li>Prepare the search pattern. In this example, we are searching for the linker of UiO-66, which is a biphenyl linker. We
+  used Vesta to pick one linker in the structure, deleted all other atoms, then exported to a file format that Avogadro
+  can read. We opened the file in Avogadro and saved as CML.</li>
+<li>Prepare the replacement pattern. The replacement pattern needs to lie in the same coordinate system as the search
+  pattern. The easiest way to do this is to start with the search pattern and simply not move any of the atoms unless
+  you want to move them with the replacement operation. For this example, we took the search pattern CML, replaced one
+  of the hydrogens on the biphenyl group with an oxygen atom, and added the attached hydrogen to make the hydroxyl. We
+  used avogadro's "fix atoms" feature to fix all the atoms except for the newly added ones, then ran optimize structure
+  to let the OH group find a more appropriate position. (Note that if you do not fix ALL the atoms except for the
+  hydroxyls, many of the atoms will move when you optimize and the atoms of your replacement pattern may insert into an
+  odd position!)</li>
+</ul>
+<figure>
+<p><img alt="UiO-66 Linker" src="../img/examples/uio66-linker.png" />
+  </p>
+<figcaption>Search pattern: UiO-66 linker</figcaption>
+</figure>
+<figure>
+<p><img alt="UiO-66 Linker with Hydroxyl" src="../img/examples/uio66-linker-hydroxyl.png" />
+  </p>
+<figcaption>Replacement pattern: UiO-66 linker with hydroxyl functional group</figcaption>
+</figure>
+<p>Once you have the files prepared, the find / replace operation is very simple. In Python:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">mofun</span> <span class="kn">import</span> <span class="n">Atoms</span><span class="p">,</span> <span class="n">replace_pattern_in_structure</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="n">structure</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66.cif&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="n">uio66_linker</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-linker.cml&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="n">uio66_linker_oh</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-linker-oh.cml&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="n">structure_oh</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">uio66_linker</span><span class="p">,</span> <span class="n">uio66_linker_oh</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="n">structure_oh</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;uio66-oh.lmpdat&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>In your shell:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>mofun uio66.cif uio66-oh.cif --find uio66-linker.cml --replace uio66-linker-oh.cml
+</code></pre></div>
+<p>If you look in the output uio66-oh.cif file, you will see the hydroxyls on all the linkers.</p>
+<figure>
+<p><img alt="UiO-66 with hydroxyl" src="../img/examples/uio66-w-hydroxyl.png" />
+  </p>
+<figcaption>UiO-66 with hydroxyls</figcaption>
+</figure>
+<h2 id="example-2-introducing-defects-into-a-mof">Example 2: introducing defects into a MOF</h2>
+<p>For this example, we will introduce defects into UiO-66 by randomly removing linkers from the structure. We will first
+replicate the structure to a 2x2x2 so it fulfills minimum image conventions. We do this before adding defects, so that
+the defects aren't repeated in the structure. We will create defects for 10%, and 90% of all linkers. (Clearly, having
+90% of linkers be defective would create a non-viable structure, but it is easier to visualize).</p>
+<p>As in example 1, we will need to prepare the structure file, search pattern and replacement pattern. See above for
+discussion on how we typically do that. We can use the structure and search pattern files from example 1, but we will
+need a replacement pattern where the biphenyl ring is removed and there are formate caps where the linker would attach
+to the metal center.</p>
+<figure>
+<p><img alt="UiO-66 defective linker" src="../img/examples/uio66-linker-defective.png" />
+  </p>
+<figcaption>Replacement pattern: UiO-66 defective linker</figcaption>
+</figure>
+<p>In Python:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">mofun</span> <span class="kn">import</span> <span class="n">Atoms</span><span class="p">,</span> <span class="n">replace_pattern_in_structure</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="n">structure</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66.cif&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replicate</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="n">uio66_linker</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-linker.cml&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="n">uio66_linker_defective</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-linker-defective.cml&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7"></a><span class="n">defective10</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">uio66_linker</span><span class="p">,</span> <span class="n">uio66_linker_defective</span><span class="p">,</span> <span class="n">replace_fraction</span><span class="o">=</span><span class="mf">0.10</span><span class="p">)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="n">defective10</span><span class="o">.</span><span class="n">to_ase</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;uio66-defective-10.cif&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10"></a><span class="n">defective90</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">uio66_linker</span><span class="p">,</span> <span class="n">uio66_linker_defective</span><span class="p">,</span> <span class="n">replace_fraction</span><span class="o">=</span><span class="mf">0.90</span><span class="p">)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11"></a><span class="n">defective90</span><span class="o">.</span><span class="n">to_ase</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;uio66-defective-90.cif&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>In your shell:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>mofun uio66.cif uio66-defective-10.cif -f uio66-linker.cml -r uio66-linker-defective.cml --replicate <span class="m">2</span> <span class="m">2</span> <span class="m">2</span> --replace-fraction<span class="o">=</span><span class="m">0</span>.10
+<a id="__codelineno-3-2" name="__codelineno-3-2"></a>mofun uio66.cif uio66-defective-90.cif -f uio66-linker.cml -r uio66-linker-defective.cml --replicate <span class="m">2</span> <span class="m">2</span> <span class="m">2</span> --replace-fraction<span class="o">=</span><span class="m">0</span>.90
+</code></pre></div>
+<figure>
+<p><img alt="UiO-66 defective structure" src="../img/examples/uio66-90percent-defect.png" />
+  </p>
+<figcaption>Structure with 90% defects</figcaption>
+</figure>
+<h2 id="example-3-parameterizing-a-replicated-mof-using-only-parameterized-linker-and-metal-centers">Example 3: parameterizing a replicated MOF using only parameterized linker and metal centers</h2>
+<p>For this example, we start with an unparameterized CIF file, and then we find and replace both the linker and the metal
+center with parameterized versions, thus parameterizing the full structure across periodic boundaries. For this to
+work, you will need to have overlapping patterns; the parameterized linker and the parameterized metal center will
+share some atoms. This is necessary to define 3-body (angle) or 4-body (dihedral, improper) force field terms near the
+edge of the pattern. If you have only two-body terms (i.e. bond) then the patterns only need to share the atom that
+connects the metal center to the linker (so that all bonds are defined); if you have three-body terms, then an extra
+atom will need to be shared; for four-body terms, another extra atom will be shared between the patterns.</p>
+<ul>
+<li>Prepare parameterized linker and metal center LAMMPS data files.</li>
+</ul>
+<p>In Python:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">mofun</span> <span class="kn">import</span> <span class="n">Atoms</span><span class="p">,</span> <span class="n">replace_pattern_in_structure</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="n">structure</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66.cif&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="n">uio66_linker</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-linker-Zr.cml&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5"></a><span class="n">uio66_linker_params</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-linker-Zr-parameterized.lmpdat&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6"></a><span class="n">uio66_mc</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-metal-center.cml&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7"></a><span class="n">uio66_mc_params</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-metal-center-parameterized.lmpdat&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8"></a>
+<a id="__codelineno-4-9" name="__codelineno-4-9"></a><span class="n">param1</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">uio66_mc</span><span class="p">,</span> <span class="n">uio66_mc_params</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10"></a><span class="n">param2</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">param1</span><span class="p">,</span> <span class="n">uio66_linker</span><span class="p">,</span> <span class="n">uio66_linker_params</span><span class="p">)</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11"></a><span class="n">param2</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;uio66-parameterized.lmpdat&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>In your shell:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>mofun uio66.cif uio66-param1.lmpdat --find uio66-metal-center.cml <span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2"></a>  --replace uio66-metal-center-parameterized.lmpdat
+<a id="__codelineno-5-3" name="__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4"></a>mofun uio66-param1.lmpdat uio66-parameterized.lmpdat --find uio66-linker-Zr.cml <span class="se">\</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5"></a>  --replace uio66-linker-Zr-parameterized.lmpdat
+</code></pre></div>
+<p>While we use separate files above for clarity, it is also possible to use the parameterized files for both the search
+and replace patterns, like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a>mofun uio66.cif uio66-param1.lmpdat --find uio66-metal-center-parameterized.lmpdat <span class="se">\</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2"></a>--replace uio66-metal-center-parameterized.lmpdat
+<a id="__codelineno-6-3" name="__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4"></a>mofun uio66-param1.lmpdat uio66-parameterized.lmpdat --find uio66-linker-Zr-parameterized.lmpdat <span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5"></a>--replace uio66-linker-Zr-parameterized.lmpdat
+</code></pre></div>
+<p>This may be confusing at first glance, since we are finding the same pattern that we are replacing it with. However, the
+find operation only looks at the positions of the atoms (and does not require that the force field terms match); for
+the replace operation, all the atom positions stay the same but the appropriate force field terms are inserted.</p>
+<p>To evaluate whether the final structure is valid, you will need to look at the resulting LAMMPS data file and check the
+connectivity and the force field terms, since visually, the structure will look identical.</p>
+<!--
+## Example 4: searching the CoRE database for UIO-66 analogs
+
+TODO
+ -->
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: MOFUN" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              MOFUN
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../reference/atoms/" class="md-footer__link md-footer__link--next" aria-label="Next: Atoms" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Atoms
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.cefbb252.min.js"}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.17f42bbf.min.js"></script>
+      
+    
+  </body>
+</html>
