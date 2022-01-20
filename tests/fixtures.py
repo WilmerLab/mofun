@@ -72,7 +72,7 @@ def half_octane():
 @pytest.fixture
 def hkust1_cif():
     with Path("tests/hkust-1/hkust-1-with-bonds.cif") as path:
-        yield Atoms.load_cif(path)
+        yield Atoms.load_p1_cif(path)
 
 @pytest.fixture
 def hkust1_3x3x3_xyz():
@@ -84,7 +84,7 @@ def hkust1_3x3x3_xyz():
 @pytest.fixture
 def hkust1_3x3x3_cif():
     with Path("tests/hkust-1/hkust-1-3x3x3.cif") as path:
-        yield Atoms.load_cif(path)
+        yield Atoms.load_p1_cif(path)
 
 @pytest.fixture
 def benzene():

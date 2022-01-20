@@ -30,7 +30,6 @@ def test_atoms_load_lmpdat__has_arrays_of_right_size():
 
     check_uio66_arb_terms_arrays(atoms)
 
-
 def test_atoms_load_lmpdat__atomic_masses_are_guessed_correctly():
     with Path("tests/test_atoms_load_save/atomic-masses.lmpdat").open() as f:
         atoms = Atoms.load_lmpdat(f, atom_format="full")
@@ -95,11 +94,16 @@ def test_atoms_load_cml__w_file_loads_elements_bonds():
                            [8, 9], [4, 5], [4, 7], [7, 8], [8, 14], [6, 7], [13, 14], [14, 15]]).all()
 
 ###### load CIF format
-def test_atoms_load_cif__loads_elements():
+def test_atoms_load_p1_cif__loads_elements():
     with Path("tests/uio66/uio66-linker.cif").open() as fd:
-        atoms = Atoms.load_cif(fd)
+        atoms = Atoms.load_p1_cif(fd)
 
     assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
+
+def test_atoms_load_p1_cif__raises_exception_if_not_p1():
+    with pytest.raises(Exception):
+        with Path("tests/othermofs/SIFSIX-3-Cu-P4.cif").open() as fd:
+            atoms = Atoms.load_p1_cif(fd)
 
 ###### load method
 def test_atoms_load__loads_lmpdat_from_file_or_path():

@@ -2,6 +2,7 @@ import copy
 import io
 import os
 import pathlib
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -270,7 +271,7 @@ class Atoms:
             return cls.load_cml(fd or path, **kwargs)
         elif filetype == "cif":
             with use_or_open(fd, path) as fh:
-                return cls.load_cif(fh, **kwargs)
+                return cls.load_p1_cif(fh, **kwargs)
         else:
             raise Exception("Unsupported filetype")
 
@@ -599,8 +600,11 @@ class Atoms:
 
 
     @classmethod
-    def load_cif(cls, f):
-        """Loads a CIF file, including bonding information.
+    def load_p1_cif(cls, f):
+        """Loads a P1 CIF file, including bonding information.
+
+        This is a simple P1 CIF reader that ignores symmetry. For large files, this is significantly faster than the
+        symmetry-aware implementation in ASE.
 
         Args:
             f (File): File-like object to read from.
@@ -612,12 +616,19 @@ class Atoms:
         def has_all_tags(block, tags):
             return np.array([block.has_key(tag) for tag in tags]).all()
 
+        def tofloat(s):
+            return float(re.sub(r"\(\d+\)", "", s))
+
         # PyCifRw supports file descriptors and path strings, but doesn't not support PathLib paths.
         if isinstance(f, pathlib.PurePath):
             f = str(f)
 
         cf = read_cif(f)
         block = cf[cf.get_roots()[0][0]]
+
+        if block.has_key("_symmetry_space_group_name_H-M") and block["_symmetry_space_group_name_H-M"] not in ["P1", "P 1"]:
+            raise Exception("Atoms.load_p1_cif is optimized for and only supports P1 CIFs. Non-P1 CIFs can be loaded"
+                "using ASE or converted to P1 with another program")
 
         cart_coord_tags = ["_atom_site_Cartn_x", "_atom_site_Cartn_y", "_atom_site_Cartn_z", "_atom_site_label"]
         fract_coord_tags = ["_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z", "_atom_site_label"]
@@ -630,9 +641,9 @@ class Atoms:
         else:
             raise("no fractional or cartesian coords in CIF file")
 
-        x = [float(c) for c in coords[0]]
-        y = [float(c) for c in coords[1]]
-        z = [float(c) for c in coords[2]]
+        x = [tofloat(c) for c in coords[0]]
+        y = [tofloat(c) for c in coords[1]]
+        z = [tofloat(c) for c in coords[2]]
 
         atom_name = coords[3]
         positions = np.array([x,y,z], dtype=float).T
@@ -654,11 +665,10 @@ class Atoms:
         cell=None
         cell_tags = ['_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma']
         if has_all_tags(block, cell_tags):
-            a, b, c, alpha, beta, gamma = [float(block[tag]) for tag in cell_tags]
+            a, b, c, alpha, beta, gamma = [tofloat(block[tag]) for tag in cell_tags]
             # TODO: Fix for triclinic
             if alpha != 90. or beta != 90 or gamma != 90.:
                 raise Exception("No support for non orthorhombic UCs at the moment!")
-
             cell=np.identity(3) * (a, b, c)
             if use_fract_coords:
                 positions *= (a,b,c)
