@@ -77,6 +77,17 @@ def test_atoms_save_lmpdat__outputs_file_identical_to_input_file():
     sin.seek(0)
     assert sout.read() == sin.read()
 
+def test_atoms_save_lmpdat__triclinic_file_outputs_file_identical_to_input_file():
+    with Path("tests/uio66/uio66-triclinic.lmpdat").open() as f:
+        sin = StringIO(f.read())
+        uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full")
+
+    sout = io.StringIO("")
+    uio66_linker_ld.save_lmpdat(sout, file_comment="uio66-triclinic.lmpdat")
+    sout.seek(0)
+    sin.seek(0)
+    assert sout.read() == sin.read()
+
 ###### load CML format
 def test_atoms_load_cml__w_path_loads_elements_bonds():
     atoms = Atoms.load_cml("tests/uio66/uio66-linker.cml")

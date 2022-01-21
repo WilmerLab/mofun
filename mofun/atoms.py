@@ -368,6 +368,7 @@ class Atoms:
         atom_type_elements = []
 
         cellx = celly = cellz = 0.0
+        cellxy = cellxz = cellyz = 0.0
 
         sections_handled = ["Pair Coeffs", "Bond Coeffs", "Angle Coeffs", "Dihedral Coeffs",
                             "Improper Coeffs", "Atoms", "Bonds", "Angles", "Dihedrals", "Impropers",
@@ -427,10 +428,16 @@ class Atoms:
                     celly = float(tup[1]) - float(tup[0])
                 elif "zlo zhi" in line:
                     cellz = float(tup[1]) - float(tup[0])
+                elif "xy xz yz" in line:
+                    cellxy, cellxz, cellyz = [float(x) for x in tup[0:3]]
 
         cell = None
         if cellx > 0. and celly > 0. and cellz > 0.:
-            cell = np.identity(3) * (cellx, celly, cellz)
+            if cellxy != 0.0 or cellxz != 0.0 or cellyz != 0: # triclinic
+                cell = np.array([[cellx, 0, 0], [cellxy, celly, 0], [cellxz, cellyz, cellz]])
+            else: # orthorhombic
+                cell = np.identity(3) * (cellx, celly, cellz)
+
         atom_type_masses = np.array(masses, dtype=float)
         atoms = np.array(atoms, dtype=float)
         bonds = np.array(bonds, dtype=int)
@@ -519,6 +526,14 @@ class Atoms:
             f.write(" %10.6f %10.6f ylo yhi\n" % ylohi)
             f.write(" %10.6f %10.6f zlo zhi\n" % zlohi)
 
+            if not self.cell_is_orthorhombic():
+                if self.cell[0,1] != 0 or self.cell[0,2] != 0 or self.cell[1,2] != 0:
+                    raise Exception("To write a triclinic LAMMPS data file, the first vector must be aligned with the "
+                        "x-axis (i.e., both x and y must be zero) and the second vector must be in the XY plane (i.e. z "
+                        "must be 0. Please see https://docs.lammps.org/read_data.html for more info. This can be fulfilled"
+                        "by rotating the unit cell and the positions as this is not automated at present.")
+                f.write(" %10.6f %10.6f %10.6f xy xz yz\n" % (self.cell[1,0], self.cell[2,0], self.cell[2,1]))
+
         f.write("\nMasses\n\n")
         for i, m in enumerate(self.atom_type_masses):
             f.write(" %d %10.6f   # %s\n" % (i + 1, m, self.label_atoms(i)))
@@ -593,12 +608,15 @@ class Atoms:
                 self.elements[i], self.charges[i]))
 
         if self.cell is not None:
-            f.write("\n\n\n")
-            f.write("  Fundcell_Info: Listed\n")
-            f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
-            f.write("           90.0000          90.0000          90.0000\n")
-            f.write("           0.00000          0.00000          0.00000\n")
-            f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+            if self.cell_is_orthorhombic():
+                f.write("\n\n\n")
+                f.write("  Fundcell_Info: Listed\n")
+                f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+                f.write("           90.0000          90.0000          90.0000\n")
+                f.write("           0.00000          0.00000          0.00000\n")
+                f.write("        %10.4f       %10.4f       %10.4f\n" % tuple(np.diag(self.cell)))
+            else:
+                raise("output to raspa MOL file of a triclinic unit cell is not implemented yet")
 
 
     @classmethod
@@ -961,6 +979,10 @@ class Atoms:
                      atom_type_elements=self.atom_type_elements,
                      groups=np.take(self.groups, idx, axis=0),
                      cell=self.cell)
+
+    def cell_is_orthorhombic(self):
+        return (np.diag(self.cell) * np.identity(3) == self.cell).all()
+
 
     def to_ase(self):
         """Convert to ASE atoms object.

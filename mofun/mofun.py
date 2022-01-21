@@ -13,7 +13,7 @@ from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_fart
 
 def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
-    return (uc_vectors * multipliers).sum(axis=1)
+    return np.array([np.matmul(uc_vectors.T, mult[0]) for mult in multipliers])
 
 def _get_positions_from_all_adjacent_unit_cells(structure, distance):
     """Calculates the atom positions for all atoms in the given unit cell and every adjacent unit cell, as determined by
@@ -53,8 +53,7 @@ def _get_positions_from_all_adjacent_unit_cells(structure, distance):
     near_types = []
     near_indices = []
 
-    is_triclinic = not (np.diag(cell) * np.identity(3) == cell).all()
-    if is_triclinic:
+    if not structure.cell_is_orthorhombic():
         # search within triclinic space + buffer by looking at three planes that go through origin
 
         # normal vectors for planes: xy, xz, yz

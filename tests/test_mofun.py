@@ -184,6 +184,34 @@ def test_find_pattern_in_structure__hkust1_xyz_3x3x3_supercell_has_1296_Cu_metal
         pattern_found = hkust1_3x3x3_xyz[indices]
         assert list(pattern_found.elements) == ['Cu']
 
+def test_find_pattern_in_structure__triclinic_uio66_has_6_linkers():
+    uio66 = Atoms.load("tests/uio66/uio66-triclinic.lmpdat", atom_format="full")
+    linker = Atoms.load("tests/uio66/uio66-linker.cml")
+
+    # note linker is slightly different in triclinic file, so we need the atol
+    match_indices = find_pattern_in_structure(uio66, linker, atol=0.2)
+    assert len(match_indices) == 6
+
+@pytest.mark.slow
+def test_find_pattern_in_structure__triclinic_uio66_3x3x3_has_162_linkers():
+    uio66 = Atoms.load("tests/uio66/uio66-triclinic.lmpdat", atom_format="full").replicate(repldims=(3,3,3))
+    linker = Atoms.load("tests/uio66/uio66-linker.cml")
+
+    # note linker is slightly different in triclinic file, so we need the atol
+    match_indices = find_pattern_in_structure(uio66, linker, atol=0.2)
+    assert len(match_indices) == 162
+
+@pytest.mark.slow
+def test_replace_pattern_in_structure__triclinic_uio66_3x3x3_replace_linkers_with_linkers_give_same_positions():
+    uio66 = Atoms.load("tests/uio66/uio66-triclinic.lmpdat", atom_format="full").replicate(repldims=(3,3,3))
+    linker = Atoms.load("tests/uio66/uio66-linker.cml")
+
+    # test_find_pattern_in_structure__triclinic_uio66_3x3x3_has_162_linkers
+    final_structure, num_matches = replace_pattern_in_structure(uio66, linker, linker, atol=0.2, return_num_matches=True)
+    assert num_matches == 162
+    assert len(final_structure) == len(uio66)
+    assert_structure_positions_are_unchanged(uio66, final_structure)
+
 def test_replace_pattern_in_structure__replace_hydrogens_in_octane_with_nothing(octane):
     # CH3 CH2 CH2 CH2 CH2 CH2 CH2 CH3 #
     search_pattern = Atoms(elements='H', positions=[(0, 0, 0)])
@@ -415,7 +443,7 @@ def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_
                 final_structure.dihedral_types, uio66_linker_some_bonds.dihedral_types,
                 final_structure.dihedral_type_coeffs, uio66_linker_some_bonds.dihedral_type_coeffs)
 
-def test_get_types_ss_map_limited_near_uc__triclinic_cell_zero_length_gives_original_atoms():
+def test_get_positions_from_all_adjacent_unit_cells__triclinic_cell_zero_length_gives_original_atoms():
     one_axis_points = np.linspace(0.01,0.99,2)
     cell = np.array([[10, 0, 0], [10, 10, 0], [0, 0, 10]])
     relv = np.array(np.meshgrid(one_axis_points, one_axis_points, one_axis_points)).T.reshape(-1,3)
@@ -428,3 +456,28 @@ def test_get_types_ss_map_limited_near_uc__triclinic_cell_zero_length_gives_orig
     assert len(near_indices) == len(absv)
     assert len(near_pos) == len(absv)
     assert_positions_are_unchanged(np.array(near_pos), absv)
+
+def test_get_positions_from_all_adjacent_unit_cells__on_triclinic_0_distance_equals_unitcell():
+    with Path("tests/uio66/uio66-triclinic.lmpdat").open() as f:
+        uio66 = Atoms.load_lmpdat(f, atom_format="full")
+
+    nearpos, _, _, allpos = _get_positions_from_all_adjacent_unit_cells(uio66, 0.0001)
+
+    assert len(uio66.positions) * 27 == len(allpos)
+    assert len(uio66.positions) == len(nearpos)
+    assert_positions_are_unchanged(uio66.positions, np.array(nearpos))
+
+@pytest.mark.slow
+def test_get_positions_from_all_adjacent_unit_cells__on_triclinic_w_long_distance_equals_replicate():
+    with Path("tests/uio66/uio66-triclinic.lmpdat").open() as f:
+        uio66 = Atoms.load_lmpdat(f, atom_format="full")
+
+    uio66_3x3x3 = uio66.replicate(repldims=(3,3,3))
+    uio66_3x3x3.positions -= uio66.cell[0] + uio66.cell[1] + uio66.cell[2]
+    nearpos, _, _, allpos = _get_positions_from_all_adjacent_unit_cells(uio66, 500)
+
+    assert len(uio66_3x3x3.positions) == len(allpos)
+    assert len(uio66_3x3x3.positions) == len(nearpos)
+    assert_positions_are_unchanged(uio66_3x3x3.positions, allpos, max_delta=0.0001)
+    assert_positions_are_unchanged(np.array(nearpos), allpos, max_delta=0.0001)
+

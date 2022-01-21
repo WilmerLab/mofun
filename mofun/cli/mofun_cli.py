@@ -51,8 +51,11 @@ def mofun_cli(inputpath, outputpath,
 
     # replicate to meet minimum image convention, if necessary
     if mic is not None:
-        repls = np.array(np.ceil(2*mic / np.diag(atoms.cell)), dtype=int)
-        atoms = atoms.replicate(repls)
+        if atoms.cell_is_orthorhombic():
+            repls = np.array(np.ceil(2*mic / np.diag(atoms.cell)), dtype=int)
+            atoms = atoms.replicate(repls)
+        else:
+            print ("WARNING: Minimimum image convention is only implemented for orthorhombic structures, please use --replicate")
 
     if pp:
         assign_pair_params_to_structure(atoms)
