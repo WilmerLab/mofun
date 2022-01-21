@@ -310,7 +310,7 @@ class Atoms:
                 return atoms
         elif filetype == "mol":
             with use_or_open(fd, path, mode='w') as fh:
-                return self.save_mol(fh, **kwargs)
+                return self.save_raspa_mol(fh, **kwargs)
         else:
             raise Exception("Unsupported filetype")
 
@@ -578,8 +578,10 @@ class Atoms:
                 f.write(" %d %d %d %d %d %d   # %s\n" % (i + 1, self.improper_types[i] + 1, *(np.array(tup) + 1), self.label_atoms(tup, atom_indices=True)))
 
 
-    def save_mol(self, f, file_comment=""):
-        """Writes .mol file for structural information."""
+    def save_raspa_mol(self, f, file_comment=""):
+        """Writes raspa .mol file for structural information (this is a file format specific to RASPA, NOT the more
+        commonly used .mol file).
+        """
 
         f.write(" Molecule_name: %s\n" % file_comment)
         f.write("\n")
