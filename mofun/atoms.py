@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 
 import ase
 from ase.formula import Formula
+from ase.geometry import cellpar_to_cell
 from CifFile import ReadCif as read_cif
 
 import numpy as np
@@ -621,7 +622,7 @@ class Atoms:
 
     @classmethod
     def load_p1_cif(cls, f):
-        """Loads a P1 CIF file, including bonding information.
+        """Loads a P1 CIF file.
 
         This is a simple P1 CIF reader that ignores symmetry. For large files, this is significantly faster than the
         symmetry-aware implementation in ASE.
@@ -682,16 +683,15 @@ class Atoms:
             print("WARNING: cif read doesn't handle bond types at present; bonding info is discarded. Use LAMMPS data file format if you need bonds", file=sys.stderr)
             bonds = []
 
-        cell=None
+        cell = None
         cell_tags = ['_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma']
         if has_all_tags(block, cell_tags):
             a, b, c, alpha, beta, gamma = [tofloat(block[tag]) for tag in cell_tags]
-            # TODO: Fix for triclinic
-            if alpha != 90. or beta != 90 or gamma != 90.:
-                raise Exception("No support for non orthorhombic UCs at the moment!")
-            cell=np.identity(3) * (a, b, c)
+            cell = cellpar_to_cell([a, b, c, alpha, beta, gamma])
             if use_fract_coords:
-                positions *= (a,b,c)
+                # wrap fractional coords into unit cell
+                positions %= 1.0
+                positions = positions.dot(cell)
 
         return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
 

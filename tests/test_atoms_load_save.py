@@ -2,9 +2,12 @@ import io
 from io import StringIO
 from pathlib import Path
 
+import ase.io
+
 from tests.fixtures import *
 # import tests.test_atoms_load_save
 from mofun import Atoms
+from mofun.helpers import assert_structure_positions_are_unchanged
 
 
 ###### load/save LMPDAT format
@@ -76,6 +79,18 @@ def test_atoms_save_lmpdat__outputs_file_identical_to_input_file():
     sout.seek(0)
     sin.seek(0)
     assert sout.read() == sin.read()
+
+def test_atoms_load_cif__same_cell_and_pos_as_ase_io():
+    uio66cif = Atoms.load_p1_cif("tests/uio66/uio66-triclinic.cif")
+    uio66asecif = ase.io.read("tests/uio66/uio66-triclinic.cif")
+    assert np.allclose(uio66cif.cell, uio66asecif.cell)
+    assert np.allclose(uio66cif.positions, uio66asecif.positions)
+
+def test_atoms_load_p1_cif__same_cell_and_pos_as_load_lmpdat():
+    uio66cif = Atoms.load_p1_cif("tests/uio66/uio66-triclinic.cif")
+    uio66lmp = Atoms.load("tests/uio66/uio66-triclinic.lmpdat", atom_format="full")
+    assert np.allclose(uio66cif.cell, uio66lmp.cell)
+    assert_structure_positions_are_unchanged(uio66cif, uio66lmp)
 
 def test_atoms_save_lmpdat__triclinic_file_outputs_file_identical_to_input_file():
     with Path("tests/uio66/uio66-triclinic.lmpdat").open() as f:
