@@ -93,7 +93,7 @@ def _get_positions_from_all_adjacent_unit_cells(structure, distance):
     return near_pos, near_types, near_indices, all_positions
 
 @suppress_warnings
-def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, opoint_idx=None,
+def find_pattern_in_structure(structure, pattern, axisp1_idx=None, axisp2_idx=None, opoint_idx=None,
         return_positions_and_quats=False, atol=5e-2, verbose=False):
     """Looks for instances of `pattern` in `structure`, where a match in the structure has the same number of atoms, the
     same elements and the same relative coordinates as in `pattern`.
@@ -123,6 +123,14 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=0, axisp2_idx=-1, o
     if verbose:
         print("calculating point distances...")
     p_ss = distance.cdist(pattern.positions, pattern.positions, "sqeuclidean")
+    if axisp1_idx is None and axisp2_idx is None:
+        # pick the pair of points that are farthest away from each other
+        axisp1_idx, axisp2_idx = np.unravel_index(np.argmax(p_ss, axis=None), p_ss.shape)
+    elif axisp1_idx is None or axisp2_idx is None:
+        # if we are given one point, find the point that is farthest away from it
+        axisp1_idx = axisp1_idx or axisp2_idx # axisp1_idx is whichever point is not none
+        axisp2_idx = np.argmax(p_ss[axisps_idx, :])
+
     pattern_length = p_ss.max() ** 0.5 + 2 * atol
     near_pos, near_types, near_indices, all_positions = _get_positions_from_all_adjacent_unit_cells(structure, pattern_length)
     atoms_by_type = atoms_by_type_dict(near_types)
@@ -249,7 +257,7 @@ class AtomsShouldNotBeDeletedTwice(Exception):
 @suppress_warnings
 def replace_pattern_in_structure(
     structure, search_pattern, replace_pattern, replace_fraction=1.0, atol=5e-2,
-    axisp1_idx=0, axisp2_idx=-1, opoint_idx=None,
+    axisp1_idx=None, axisp2_idx=None, opoint_idx=None,
     return_num_matches=False, replace_all=False, verbose=False,
     positions_check_max_delta=0.1,
     ignore_atoms_should_not_be_deleted_twice=False):
@@ -282,8 +290,8 @@ def replace_pattern_in_structure(
     replace_pattern = replace_pattern.copy()
 
     # translate both search and replace patterns so that first atom of search pattern is at the origin
-    replace_pattern.translate(-search_pattern.positions[axisp1_idx])
-    search_pattern.translate(-search_pattern.positions[axisp1_idx])
+    replace_pattern.translate(-search_pattern.positions[0])
+    search_pattern.translate(-search_pattern.positions[0])
 
     match_indices, match_positions, quats = find_pattern_in_structure(structure, search_pattern, atol=atol,
         axisp1_idx=axisp1_idx, axisp2_idx=axisp2_idx, opoint_idx=opoint_idx, return_positions_and_quats=True,
@@ -310,7 +318,7 @@ def replace_pattern_in_structure(
             q = quats[m_i]
             new_atoms = replace_pattern.copy()
             new_atoms.positions = q.apply(new_atoms.positions)
-            new_atoms.translate(atom_positions[axisp1_idx])
+            new_atoms.translate(atom_positions[0])
             new_atoms.positions %= np.diag(new_structure.cell)
 
             if verbose:

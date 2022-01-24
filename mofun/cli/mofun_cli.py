@@ -19,8 +19,8 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('-r', '--replace', 'replace_path', type=click.Path(path_type=pathlib.Path))
 @click.option('-p', '--replace-fraction', type=float, default=1.0)
 @click.option('--atol', type=float, default=5e-2, help="absolute tolerance in Angstroms for atom posistions to be considered matching")
-@click.option('-ap1', '--axisp1-idx', type=int, default=0, help="index of first point on primary rotation axis")
-@click.option('-ap2', '--axisp2-idx', type=int, default=-1, help="index of second point on primary rotation axis")
+@click.option('-ap1', '--axisp1-idx', type=int, default=None, help="index of first point on primary rotation axis")
+@click.option('-ap2', '--axisp2-idx', type=int, default=None, help="index of second point on primary rotation axis")
 @click.option('-op', '--opoint-idx', type=int, default=None, help="index of point that makes up secondary rotation axis (between this point and the primary rotation axis)")
 @click.option('--dumppath', type=click.Path(path_type=pathlib.Path))
 @click.option('-q', '--chargefile', type=click.File('r'))
@@ -29,7 +29,7 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('--framework-element', type=str, help="convert all atoms that are in group 0, the framework group to a specific atom type to make vizualizing the structure easier")
 @click.option('--pp', is_flag=True, default=False, help="Assign UFF pair potentials to atoms (sufficient for fixed force-field calculations)")
 def mofun_cli(inputpath, outputpath,
-        find_path=None, replace_path=None, atol=5e-2, replace_fraction=1.0, axisp1_idx=0, axisp2_idx=-1, opoint_idx=None,
+        find_path=None, replace_path=None, atol=5e-2, replace_fraction=1.0, axisp1_idx=None, axisp2_idx=None, opoint_idx=None,
         dumppath=None, chargefile=None, replicate=None, mic=None, framework_element=None, pp=False):
     atoms = Atoms.load(inputpath)
 

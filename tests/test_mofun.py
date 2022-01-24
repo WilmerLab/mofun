@@ -368,7 +368,7 @@ def test_replace_pattern_in_structure__100_randomly_rotated_patterns_replaced_wi
         print(dp)
         structure.translate(dp)
         structure.positions = structure.positions % 15
-        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axisp1_idx=0, axisp2_idx=1)
+        final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
         assert_structure_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__special_rotated_pattern_replaced_with_itself_does_not_change_positions():
@@ -379,7 +379,7 @@ def test_replace_pattern_in_structure__special_rotated_pattern_replaced_with_its
     r = R.from_quat([-0.4480244,  -0.50992783,  0.03212454, -0.7336319 ])
     structure.positions = r.apply(structure.positions)
     structure.positions = structure.positions % 15
-    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axisp1_idx=0, axisp2_idx=1)
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert_structure_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_itself_does_not_change_positions():
@@ -390,7 +390,7 @@ def test_replace_pattern_in_structure__special2_rotated_pattern_replaced_with_it
     r = R.from_quat([ 0.02814096,  0.99766676,  0.03984918, -0.04776152])
     structure.positions = r.apply(structure.positions)
     structure.positions = structure.positions % 15
-    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern, axisp1_idx=0, axisp2_idx=1)
+    final_structure = replace_pattern_in_structure(structure, search_pattern, replace_pattern)
     assert_structure_positions_are_unchanged(structure, final_structure)
 
 def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
@@ -407,7 +407,7 @@ def test_replace_pattern_in_structure__two_points_at_angle_are_unchanged():
 
 @pytest.mark.slow
 def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
-    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axisp1_idx=0, axisp2_idx=7)
+    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene)
     assert Counter(final_structure.elements) == Counter(hkust1_cif.elements)
     assert_structure_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
 
@@ -415,7 +415,7 @@ def test_replace_pattern_in_structure__in_hkust1_replacing_benzene_with_benzene_
 def test_replace_pattern_in_structure__in_hkust1_offset_replacing_benzene_with_benzene_does_not_change_positions(hkust1_cif, benzene):
     hkust1_cif.translate((-4,-4,-4))
     hkust1_cif.positions = hkust1_cif.positions % np.diag(hkust1_cif.cell)
-    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene, axisp1_idx=0, axisp2_idx=7)
+    final_structure = replace_pattern_in_structure(hkust1_cif, benzene, benzene)
     assert Counter(final_structure.elements) == Counter(hkust1_cif.elements)
     assert_structure_positions_are_unchanged(hkust1_cif, final_structure, max_delta=0.1)
 
@@ -435,7 +435,7 @@ def test_replace_pattern_in_structure__in_uio66_replacing_linker_with_linker_doe
 def test_replace_pattern_in_structure__replace_no_bonds_linker_with_linker_with_bonds_angles_has_bonds_angles(uio66_linker_no_bonds, uio66_linker_some_bonds):
     structure = uio66_linker_no_bonds.copy()
     structure.cell = 100*np.identity(3)
-    final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_some_bonds, axisp1_idx=0, axisp2_idx=15)
+    final_structure = replace_pattern_in_structure(structure, uio66_linker_no_bonds, uio66_linker_some_bonds)
 
     assert Counter(final_structure.elements) == {'C': 8, 'O': 4, 'H': 4}
     assert_structure_positions_are_unchanged(structure, final_structure, max_delta=0.1)
