@@ -129,7 +129,7 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=None, axisp2_idx=No
     elif axisp1_idx is None or axisp2_idx is None:
         # if we are given one point, find the point that is farthest away from it
         axisp1_idx = axisp1_idx or axisp2_idx # axisp1_idx is whichever point is not none
-        axisp2_idx = np.argmax(p_ss[axisps_idx, :])
+        axisp2_idx = np.argmax(p_ss[axisp1_idx, :])
 
     pattern_length = p_ss.max() ** 0.5 + 2 * atol
     near_pos, near_types, near_indices, all_positions = _get_positions_from_all_adjacent_unit_cells(structure, pattern_length)
