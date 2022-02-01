@@ -9,10 +9,9 @@ import xml.etree.ElementTree as ET
 import ase
 from ase.formula import Formula
 from ase.geometry import cellpar_to_cell
-from CifFile import ReadCif as read_cif
-
+import CifFile
 import numpy as np
-from scipy.linalg import norm
+from numpy.linalg import norm
 from scipy.spatial.distance import cdist
 
 from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES, use_or_open
@@ -625,7 +624,7 @@ class Atoms:
         """Loads a P1 CIF file.
 
         This is a simple P1 CIF reader that ignores symmetry. For large files, this is significantly faster than the
-        symmetry-aware implementation in ASE.
+        symmetry-aware implementation in ASE. It will read bonds, angles, and torsions.
 
         Args:
             f (File): File-like object to read from.
@@ -644,7 +643,8 @@ class Atoms:
         if isinstance(f, pathlib.PurePath):
             f = str(f)
 
-        cf = read_cif(f)
+        cf = CifFile.ReadCif(f)
+
         block = cf[cf.get_roots()[0][0]]
 
         if block.has_key("_symmetry_space_group_name_H-M") and block["_symmetry_space_group_name_H-M"] not in ["P1", "P 1"]:
@@ -676,12 +676,30 @@ class Atoms:
             charges = block['_atom_site_charge']
 
         bonds = []
+        bond_types = []
         bond_tags = ["_geom_bond_atom_site_label_1", "_geom_bond_atom_site_label_2"]
         if has_all_tags(block, bond_tags):
-            cifbonds = zip(*[block[lbl] for lbl in bond_tags])
-            bonds = [(atom_name.index(a), atom_name.index(b)) for (a,b) in cifbonds]
-            print("WARNING: cif read doesn't handle bond types at present; bonding info is discarded. Use LAMMPS data file format if you need bonds", file=sys.stderr)
-            bonds = []
+            cif_bonds = zip(*[block[lbl] for lbl in bond_tags])
+            bonds = [(atom_name.index(a), atom_name.index(b)) for (a,b) in cif_bonds]
+            bond_types = range(len(bonds))
+
+        angles = []
+        angle_types = []
+        angle_tags = ["_geom_angle_atom_site_label_%d" % i for i in [1,2,3]]
+        if has_all_tags(block, angle_tags):
+            cif_angles = zip(*[block[lbl] for lbl in angle_tags])
+            angles = [(atom_name.index(a), atom_name.index(b), atom_name.index(c)) for (a,b,c) in cif_angles]
+            angle_types = range(len(angles))
+
+        # We are loading all torsions in as dihedrals, but jI think the concept of CIF torsion may be equivalent in
+        # LAMMPS to the set of dihedrals + impropers. I'm not sure if there is a good way of distinguising these.
+        dihedrals = []
+        dihedral_types = []
+        dihedral_tags = ["_geom_torsion_atom_site_label_%d" % i for i in [1,2,3,4]]
+        if has_all_tags(block, dihedral_tags):
+            cif_dihedrals = zip(*[block[lbl] for lbl in dihedral_tags])
+            dihedrals = [(atom_name.index(a), atom_name.index(b), atom_name.index(c), atom_name.index(d)) for (a,b,c,d) in cif_dihedrals]
+            dihedral_types = range(len(dihedrals))
 
         cell = None
         cell_tags = ['_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma']
@@ -693,7 +711,112 @@ class Atoms:
                 positions %= 1.0
                 positions = positions.dot(cell)
 
-        return cls(elements=atom_types, positions=positions, cell=cell, charges=charges)
+        return cls(elements=atom_types, positions=positions, cell=cell, charges=charges,
+                    bonds=bonds, bond_types=bond_types, angles=angles, angle_types=angle_types,
+                    dihedrals=dihedrals, dihedral_types=dihedral_types)
+
+    def save_p1_cif(self, f, structurename="structure", use_fract_coords=True):
+        """Saves a P1 CIF file.
+
+        This is a simple P1 CIF writer that does not handle symmetry, but does handle bonds, angles and torsions.
+
+        Args:
+            f (File): File-like object to write to.
+        """
+
+        cf = CifFile.CifFile()
+
+        block = CifFile.CifBlock()
+        cf[structurename] = block
+        block['_symmetry_space_group_name_H-M'] = "P 1"
+        block['_symmetry_Int_Tables_number'] = 1
+
+        if self.cell is not None:
+            c = self.cell
+            block['_cell_length_a'] = np.sqrt(np.dot(c[0], c[0]))
+            block['_cell_length_b'] = np.sqrt(np.dot(c[1], c[1]))
+            block['_cell_length_c'] = np.sqrt(np.dot(c[2], c[2]))
+            block['_cell_angle_alpha'] = "%.4f" % np.rad2deg(np.arccos(np.dot(c[1], c[2]) / (norm(c[1]) * norm(c[2]))))
+            block['_cell_angle_beta']  = "%.4f" % np.rad2deg(np.arccos(np.dot(c[0], c[2]) / (norm(c[0]) * norm(c[2]))))
+            block['_cell_angle_gamma'] = "%.4f" % np.rad2deg(np.arccos(np.dot(c[0], c[1]) / (norm(c[0]) * norm(c[1]))))
+
+        # get atom type labels
+        d = {e: 0 for e in self.atom_type_elements}
+        atom_labels = []
+        for e in self.elements:
+            d[e] += 1
+            atom_labels.append("%s%d" % (e, d[e]))
+
+        if use_fract_coords == True and self.cell is None:
+            print("WARNING: requested fractional coordinates, but there is no unit cell. Using cartesian coordinates")
+            use_fract_coords = False
+
+        if use_fract_coords == True:
+            coords_labels = ["_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z"]
+            cell_inv = np.linalg.inv(self.cell)
+            fractional_coords = self.positions.dot(cell_inv)
+            coords = [["%.4f" % s for s in fractional_coords[:,0]],
+                      ["%.4f" % s for s in fractional_coords[:,1]],
+                      ["%.4f" % s for s in fractional_coords[:,2]],]
+        else:
+            coords_labels = ["_atom_site_Cartn_x", "_atom_site_Cartn_y", "_atom_site_Cartn_z"]
+            coords = [["%.4f" % s for s in self.positions[:,0]],
+                      ["%.4f" % s for s in self.positions[:,1]],
+                      ["%.4f" % s for s in self.positions[:,2]],]
+
+        block.AddCifItem(([[
+                "_atom_site_label",
+                "_atom_site_type_symbol",
+                *coords_labels,
+                "_atom_site_charge"
+            ]],[[
+                atom_labels,
+                self.elements,
+                *coords,
+                self.charges
+            ]]))
+
+        if len(self.bonds) > 0:
+            block.AddCifItem(([[
+                    "_geom_bond_atom_site_label_1",
+                    "_geom_bond_atom_site_label_2",
+                ]],[[
+                    [atom_labels[i] for i in self.bonds[:,0]],
+                    [atom_labels[i] for i in self.bonds[:,1]],
+                ]]))
+
+        if len(self.angles) > 0:
+            block.AddCifItem(([[
+                    "_geom_angle_atom_site_label_1",
+                    "_geom_angle_atom_site_label_2",
+                    "_geom_angle_atom_site_label_3",
+                ]],[[
+                    [atom_labels[i] for i in self.angles[:,0]],
+                    [atom_labels[i] for i in self.angles[:,1]],
+                    [atom_labels[i] for i in self.angles[:,2]],
+                ]]))
+
+        print("DIYIMP: ", self.dihedrals, self.impropers)
+        if len(self.dihedrals) > 0 or len(self.impropers) > 0:
+            four_body_terms = []
+            four_body_terms.extend(self.dihedrals)
+            four_body_terms.extend(self.impropers)
+            four_body_terms = np.array(four_body_terms)
+            print("4bt: ", four_body_terms)
+
+            block.AddCifItem(([[
+                    "_geom_torsion_atom_site_label_1",
+                    "_geom_torsion_atom_site_label_2",
+                    "_geom_torsion_atom_site_label_3",
+                    "_geom_torsion_atom_site_label_4",
+                ]],[[
+                    [atom_labels[i] for i in four_body_terms[:,0]],
+                    [atom_labels[i] for i in four_body_terms[:,1]],
+                    [atom_labels[i] for i in four_body_terms[:,2]],
+                    [atom_labels[i] for i in four_body_terms[:,3]],
+                ]]))
+
+        f.write(cf.WriteOut(comment="# CIF file created by MOFUN using PyCifRW."))
 
     @classmethod
     def load_cml(cls, f, verbose=False):

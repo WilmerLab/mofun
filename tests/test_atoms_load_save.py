@@ -92,6 +92,23 @@ def test_atoms_load_p1_cif__same_cell_and_pos_as_load_lmpdat():
     assert np.allclose(uio66cif.cell, uio66lmp.cell)
     assert_structure_positions_are_unchanged(uio66cif, uio66lmp)
 
+def test_atoms_load_p1_cif__outputs_file_identical_to_input_file():
+    with Path("tests/uio66/uio66-linker-arb-terms.cif").open() as f:
+        sin = StringIO(f.read())
+        cif = Atoms.load_p1_cif(sin)
+
+    sout = io.StringIO("")
+    cif.save_p1_cif(sout)
+
+    # output file code, in case we need to update the lmpdat file because of new format changes
+    with open("test-01.cif", "w") as f:
+        sout.seek(0)
+        f.write(sout.read())
+
+    sout.seek(0)
+    sin.seek(0)
+    assert sout.read() == sin.read()
+
 def test_atoms_save_lmpdat__triclinic_file_outputs_file_identical_to_input_file():
     with Path("tests/uio66/uio66-triclinic.lmpdat").open() as f:
         sin = StringIO(f.read())
