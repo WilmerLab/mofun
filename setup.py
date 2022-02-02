@@ -22,6 +22,7 @@ setup(name='mofun',
           'PyCifRW',
           'networkx',
           'click',
+          'ordered-set'
       ],
       extras_require={
         'docs': ['mkdocs-material', 'mkdocstrings'],

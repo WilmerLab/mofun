@@ -2,6 +2,8 @@
 import io
 from io import StringIO
 
+from numpy.testing import assert_equal as np_assert_equal
+
 from tests.fixtures import *
 from mofun import Atoms
 from mofun.atoms import find_unchanged_atom_pairs
@@ -18,8 +20,8 @@ def test_atoms__masses_are_inferred_from_elements():
 
 def test__delete_and_reindex_atom_index_array():
     a = np.array([[1,2], [3,4], [5,6], [1,6]])
-    updated_atoms = Atoms()._delete_and_reindex_atom_index_array(a, [3])
-    assert(updated_atoms == np.array([[1,2],[4,5],[1,5]])).all()
+    updated_atoms, _ = Atoms()._delete_and_reindex_atom_index_array(a, [3])
+    np_assert_equal(updated_atoms, np.array([[1,2],[4,5],[1,5]]))
 
 def test_atoms_del__deletes_bonds_attached_to_atoms(linear_cnnc):
     del(linear_cnnc[[1]])
@@ -32,6 +34,7 @@ def test_atoms_del__deletes_types_with_all_topologies(linear_cnnc):
     linear_cnnc.angle_types = np.array([0, 1])
     linear_cnnc.dihedral_types = np.array([0])
     linear_cnnc.improper_types = np.array([0])
+    linear_cnnc.assert_arrays_are_consistent_sizes()
     del(linear_cnnc[[0]])
     assert (linear_cnnc.bond_types == (1, 2)).all()
     assert linear_cnnc.angle_types == (1)

@@ -5,6 +5,7 @@ from pathlib import Path
 import ase.io
 import numpy as np
 from numpy.linalg import norm
+from numpy.testing import assert_equal as np_assert_equal
 import pytest
 from pytest import approx
 
@@ -19,21 +20,20 @@ def random_positions(num):
     return np.random.rand(num, 3) * 100
 
 def assert_topo(topo, expected_topo, types=None, expected_types=None, coeffs=None, expected_coeffs=None):
-
     # check right atoms are part of the topo
     sorted_topo = sorted([typekey(t) for t in topo])
     sorted_expected_topo = sorted([typekey(t) for t in expected_topo])
-    assert np.array_equal(sorted_topo, sorted_expected_topo)
+    np_assert_equal(sorted_topo, sorted_expected_topo)
 
     # check types are mapped (assume coeffs are ordered the same!)
     if types is not None and expected_types is not None:
         sorted_topo_w_types = sorted([(*typekey(t), types[i]) for i, t in enumerate(topo)])
         sorted_expected_topo_w_types = sorted([(*typekey(t), expected_types[i]) for i, t in enumerate(expected_topo)])
-        assert np.array_equal(sorted_topo_w_types, sorted_expected_topo_w_types)
+        np_assert_equal(sorted_topo_w_types, sorted_expected_topo_w_types)
 
     # check coeffs for each type are equal
     if coeffs is not None and expected_coeffs is not None:
-        assert np.array_equal(coeffs, expected_coeffs)
+        np_assert_equal(coeffs, expected_coeffs)
 
 def assert_benzene(coords):
     # incomplete sample

@@ -80,6 +80,45 @@ def test_atoms_save_lmpdat__outputs_file_identical_to_input_file():
     sin.seek(0)
     assert sout.read() == sin.read()
 
+def test_atoms_save_lmpdat__triclinic_file_outputs_file_identical_to_input_file():
+    with Path("tests/uio66/uio66-triclinic.lmpdat").open() as f:
+        sin = StringIO(f.read())
+        uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full")
+
+    sout = io.StringIO("")
+    uio66_linker_ld.save_lmpdat(sout, file_comment="uio66-triclinic.lmpdat")
+    sout.seek(0)
+    sin.seek(0)
+    assert sout.read() == sin.read()
+
+###### load CML format
+def test_atoms_load_cml__w_path_loads_elements_bonds():
+    atoms = Atoms.load_cml("tests/uio66/uio66-linker.cml")
+
+    assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
+    assert (atoms.bonds == [[0, 1], [10, 11], [0, 2], [0, 3], [3, 10], [9, 10], [3, 4], [9, 12],
+                           [8, 9], [4, 5], [4, 7], [7, 8], [8, 14], [6, 7], [13, 14], [14, 15]]).all()
+
+def test_atoms_load_cml__w_file_loads_elements_bonds():
+    with open("tests/uio66/uio66-linker.cml", 'r') as f:
+        atoms = Atoms.load_cml(f)
+
+    assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
+    assert (atoms.bonds == [[0, 1], [10, 11], [0, 2], [0, 3], [3, 10], [9, 10], [3, 4], [9, 12],
+                           [8, 9], [4, 5], [4, 7], [7, 8], [8, 14], [6, 7], [13, 14], [14, 15]]).all()
+
+###### load / save CIF format
+def test_atoms_load_p1_cif__loads_elements():
+    with Path("tests/uio66/uio66-linker.cif").open() as fd:
+        atoms = Atoms.load_p1_cif(fd)
+
+    assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
+
+def test_atoms_load_p1_cif__raises_exception_if_not_p1():
+    with pytest.raises(Exception):
+        with Path("tests/othermofs/SIFSIX-3-Cu-P4.cif").open() as fd:
+            atoms = Atoms.load_p1_cif(fd)
+
 def test_atoms_load_cif__same_cell_and_pos_as_ase_io():
     uio66cif = Atoms.load_p1_cif("tests/uio66/uio66-triclinic.cif")
     uio66asecif = ase.io.read("tests/uio66/uio66-triclinic.cif")
@@ -109,44 +148,6 @@ def test_atoms_load_p1_cif__outputs_file_identical_to_input_file():
     sin.seek(0)
     assert sout.read() == sin.read()
 
-def test_atoms_save_lmpdat__triclinic_file_outputs_file_identical_to_input_file():
-    with Path("tests/uio66/uio66-triclinic.lmpdat").open() as f:
-        sin = StringIO(f.read())
-        uio66_linker_ld = Atoms.load_lmpdat(sin, atom_format="full")
-
-    sout = io.StringIO("")
-    uio66_linker_ld.save_lmpdat(sout, file_comment="uio66-triclinic.lmpdat")
-    sout.seek(0)
-    sin.seek(0)
-    assert sout.read() == sin.read()
-
-###### load CML format
-def test_atoms_load_cml__w_path_loads_elements_bonds():
-    atoms = Atoms.load_cml("tests/uio66/uio66-linker.cml")
-
-    assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
-    assert (atoms.bonds == [[0, 1], [10, 11], [0, 2], [0, 3], [3, 10], [9, 10], [3, 4], [9, 12],
-                           [8, 9], [4, 5], [4, 7], [7, 8], [8, 14], [6, 7], [13, 14], [14, 15]]).all()
-
-def test_atoms_load_cml__w_file_loads_elements_bonds():
-    with open("tests/uio66/uio66-linker.cml", 'r') as f:
-        atoms = Atoms.load_cml(f)
-
-    assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
-    assert (atoms.bonds == [[0, 1], [10, 11], [0, 2], [0, 3], [3, 10], [9, 10], [3, 4], [9, 12],
-                           [8, 9], [4, 5], [4, 7], [7, 8], [8, 14], [6, 7], [13, 14], [14, 15]]).all()
-
-###### load CIF format
-def test_atoms_load_p1_cif__loads_elements():
-    with Path("tests/uio66/uio66-linker.cif").open() as fd:
-        atoms = Atoms.load_p1_cif(fd)
-
-    assert atoms.elements == ["C", "O", "O", "C", "C", "H", "H", "C", "C", "C", "C", "H", "H", "O", "C", "O"]
-
-def test_atoms_load_p1_cif__raises_exception_if_not_p1():
-    with pytest.raises(Exception):
-        with Path("tests/othermofs/SIFSIX-3-Cu-P4.cif").open() as fd:
-            atoms = Atoms.load_p1_cif(fd)
 
 ###### load method
 def test_atoms_load__loads_lmpdat_from_file_or_path():

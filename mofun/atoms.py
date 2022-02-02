@@ -12,6 +12,7 @@ from ase.geometry import cellpar_to_cell
 import CifFile
 import numpy as np
 from numpy.linalg import norm
+from ordered_set import OrderedSet
 from scipy.spatial.distance import cdist
 
 from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES, use_or_open
@@ -65,7 +66,11 @@ class Atoms:
                     bonds=[], bond_types=[], angles=[], angle_types=[],
                     dihedrals=[], dihedral_types=[], impropers=[], improper_types=[],
                     pair_coeffs=[], bond_type_coeffs=[], angle_type_coeffs=[],
-                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=None):
+                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=None,
+                    extra_atom_labels=[], extra_atom_fields=[], extra_bond_labels=[], extra_bond_fields=[],
+                    extra_angle_labels=[], extra_angle_fields=[], extra_dihedral_labels=[], extra_dihedral_fields=[],
+                    extra_improper_labels=[], extra_improper_fields=[]):
+
         """Create an Atoms object.
 
         An Atoms object can be created without any atoms using `Atoms()`. For creating more
@@ -130,6 +135,16 @@ class Atoms:
             dihedral_type_coeffs (List[str]): dihedral coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per dihedral type.
             improper_type_coeffs (List[str]): improper coefficients definition string (anything supported by LAMMPS in a data file but without the type id). One per improper type.
             cell (Array(3x3)): 3x3 array of unit cell vectors.
+            extra_atom_labels (List[str]): labels for all extra atom fields.
+            extra_atom_fields (List[Tuple[*]]): list of extra data associate with each atom. Should have a length equal to the number of atoms, and a width equal to len(extra_atom_labels).
+            extra_bond_labels (List[str]): labels for all extra bond fields.
+            extra_bond_fields (List[Tuple[*]]): list of extra data associate with each bond. Should have a length equal to the number of bonds, and a width equal to len(extra_bond_labels).
+            extra_angle_labels (List[str]): labels for all extra angle fields.
+            extra_angle_fields (List[Tuple[*]]): list of extra data associate with each angle. Should have a length equal to the number of angles, and a width equal to len(extra_angle_labels).
+            extra_dihedral_labels (List[str]): labels for all extra dihedral fields.
+            extra_dihedral_fields (List[Tuple[*]]): list of extra data associate with each dihedral. Should have a length equal to the number of dihedrals, and a width equal to len(extra_dihedral_labels).
+            extra_improper_labels (List[str]): labels for all extra improper fields.
+            extra_improper_fields (List[Tuple[*]]): list of extra data associate with each improper. Should have a length equal to the number of impropers, and a width equal to len(extra_improper_labels).
 
         Returns:
             Atoms: the atoms object.
@@ -200,6 +215,26 @@ class Atoms:
             # use default atom types equal to the element; this may not be unique!
             self.atom_type_labels = self.atom_type_elements
 
+        self.extra_atom_labels = OrderedSet(extra_atom_labels)
+        self.extra_bond_labels = OrderedSet(extra_bond_labels)
+        self.extra_angle_labels = OrderedSet(extra_angle_labels)
+        self.extra_dihedral_labels = OrderedSet(extra_dihedral_labels)
+        self.extra_improper_labels = OrderedSet(extra_improper_labels)
+
+        def shaped_fields(fields, shape):
+            if len(fields) == 0:
+                return np.full(shape, ".")
+            else:
+                return np.array(fields)
+
+        # all extra_*_fields will be appended to and deleted from, even when empty, so, e.g. there may be a numpy array
+        # of shape (26,0) where there are 26 bonds and 0 columns
+        self.extra_atom_fields = shaped_fields(extra_atom_fields, (len(self.atom_types), len(extra_atom_labels)))
+        self.extra_bond_fields = shaped_fields(extra_bond_fields, (len(self.bond_types), len(extra_angle_labels)))
+        self.extra_angle_fields = shaped_fields(extra_angle_fields, (len(self.angle_types), len(extra_angle_labels)))
+        self.extra_dihedral_fields = shaped_fields(extra_dihedral_fields, (len(self.dihedral_types), len(extra_dihedral_labels)))
+        self.extra_improper_fields = shaped_fields(extra_improper_fields, (len(self.improper_types), len(extra_improper_labels)))
+
         self.assert_arrays_are_consistent_sizes()
 
     def assert_arrays_are_consistent_sizes(self):
@@ -231,6 +266,47 @@ class Atoms:
             raise Exception("len of atom_type_elements (%d) must be >= num_atom_types (%d)" % (len(self.atom_type_elements), self.num_atom_types))
         if len(self.atom_type_masses) < self.num_atom_types:
             raise Exception("len of atom_type_masses (%d) must be >= num_atom_types (%d)" % (len(self.atom_type_masses), self.num_atom_types))
+
+        # the extra* variables are technically optional, but we keep them at the length of their corresponding arrays,
+        # even when there are no columns. (It is possible to have an array with shape (5,0) for example). If there are
+        # NO labels (no columns), then we don't want to error. We can correct any empty column array, instead.
+        def fix_extra_fields(labels, fields, check_array, fields_varname, check_varname):
+            if len(labels) == 0 and len(fields) != len(check_array):
+                print("WARNING: automatically resetting extra field %s to correct size of (%d, 0) to match %s (%d).  \
+                      Possibly %s was manually modified?" % (fields_varname, len(check_array), check_varname, len(check_array), check_varname))
+                return np.full((len(check_array), 0), ".", dtype="object")
+            else:
+                return fields
+
+        self.extra_atom_fields = fix_extra_fields(self.extra_atom_labels, self.extra_atom_fields, self.atom_types,
+            "extra_atom_fields", "atom_types")
+        self.extra_bond_fields = fix_extra_fields(self.extra_bond_labels, self.extra_bond_fields, self.bond_types,
+            "extra_bond_fields", "bond_types")
+        self.extra_angle_fields = fix_extra_fields(self.extra_angle_labels, self.extra_angle_fields, self.angle_types,
+            "extra_angle_fields", "angle_types")
+        self.extra_dihedral_fields = fix_extra_fields(self.extra_dihedral_labels, self.extra_dihedral_fields, self.dihedral_types,
+            "extra_dihedral_fields", "dihedral_types")
+        self.extra_improper_fields = fix_extra_fields(self.extra_improper_labels, self.extra_improper_fields, self.improper_types,
+            "extra_improper_fields", "improper_types")
+
+        def check_extra_fields(labels, fields, check_array, labels_varname, fields_varname, check_varname):
+            if len(fields) != len(check_array):
+                raise Exception("len of %s (%d) and %s (%d) must match" %
+                    (fields_varname, len(fields), check_varname, len(check_array)))
+            if len(labels) != fields.shape[1]:
+                raise Exception("len of %s (%d) and the width of %s (%d) must match" %
+                    (labels_varname, len(labels), fields_varname, fields.shape[1]))
+
+        check_extra_fields(self.extra_atom_labels, self.extra_atom_fields, self.atom_types,
+            "extra_atom_labels", "extra_atom_fields", "atom_types")
+        check_extra_fields(self.extra_bond_labels, self.extra_bond_fields, self.bond_types,
+            "extra_bond_labels", "extra_bond_fields", "bond_types")
+        check_extra_fields(self.extra_angle_labels, self.extra_angle_fields, self.angle_types,
+            "extra_angle_labels", "extra_angle_fields", "angle_types")
+        check_extra_fields(self.extra_dihedral_labels, self.extra_dihedral_fields, self.dihedral_types,
+            "extra_dihedral_labels", "extra_dihedral_fields", "dihedral_types")
+        check_extra_fields(self.extra_improper_labels, self.extra_improper_fields, self.improper_types,
+            "extra_improper_labels", "extra_improper_fields", "improper_types")
 
     @classmethod
     def load(cls, f, filetype=None, **kwargs):
@@ -311,6 +387,9 @@ class Atoms:
         elif filetype == "mol":
             with use_or_open(fd, path, mode='w') as fh:
                 return self.save_raspa_mol(fh, **kwargs)
+        elif filetype == "cif":
+            with use_or_open(fd, path) as fh:
+                return self.save_p1_cif(fh, **kwargs)
         else:
             raise Exception("Unsupported filetype")
 
@@ -651,8 +730,9 @@ class Atoms:
             raise Exception("Atoms.load_p1_cif is optimized for and only supports P1 CIFs. Non-P1 CIFs can be loaded"
                 "using ASE or converted to P1 with another program")
 
-        cart_coord_tags = ["_atom_site_Cartn_x", "_atom_site_Cartn_y", "_atom_site_Cartn_z", "_atom_site_label"]
+        cart_coord_tags = ["_atom_site_cartn_x", "_atom_site_cartn_y", "_atom_site_cartn_z", "_atom_site_label"]
         fract_coord_tags = ["_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z", "_atom_site_label"]
+
         use_fract_coords = False
         if has_all_tags(block, cart_coord_tags):
             coords = [block[lbl] for lbl in cart_coord_tags]
@@ -675,31 +755,51 @@ class Atoms:
         if block.has_key('_atom_site_charge'):
             charges = block['_atom_site_charge']
 
+        all_handled_atom_tags = OrderedSet(cart_coord_tags + fract_coord_tags +
+                                    ["_atom_site_type_symbol", "_atom_site_charge", "_atom_site_label"])
+        cif_atom_tags = OrderedSet(block.GetLoop("_atom_site_type_symbol").keys()) - all_handled_atom_tags
+        cif_atom_fields = list(zip(*[block[lbl] for lbl in cif_atom_tags]))
+
         bonds = []
         bond_types = []
         bond_tags = ["_geom_bond_atom_site_label_1", "_geom_bond_atom_site_label_2"]
+        cif_bond_tags = []
+        cif_bond_fields = []
         if has_all_tags(block, bond_tags):
             cif_bonds = zip(*[block[lbl] for lbl in bond_tags])
             bonds = [(atom_name.index(a), atom_name.index(b)) for (a,b) in cif_bonds]
-            bond_types = range(len(bonds))
+            bond_types = range(len(bonds)) # for CIFs, bond_types is a placeholder and it is unused
+
+            cif_bond_tags = OrderedSet(block.GetLoop("_geom_bond_atom_site_label_1").keys()) - set(bond_tags)
+            cif_bond_fields = list(zip(*[block[lbl] for lbl in cif_bond_tags]))
 
         angles = []
         angle_types = []
         angle_tags = ["_geom_angle_atom_site_label_%d" % i for i in [1,2,3]]
+        cif_angle_tags = []
+        cif_angle_fields = []
         if has_all_tags(block, angle_tags):
             cif_angles = zip(*[block[lbl] for lbl in angle_tags])
             angles = [(atom_name.index(a), atom_name.index(b), atom_name.index(c)) for (a,b,c) in cif_angles]
-            angle_types = range(len(angles))
+            angle_types = range(len(angles)) # for CIFs, angle_types is a placeholder and it is unused
+
+            cif_angle_tags = OrderedSet(block.GetLoop("_geom_angle_atom_site_label_1").keys()) - set(angle_tags)
+            cif_angle_fields = list(zip(*[block[lbl] for lbl in cif_angle_tags]))
 
         # We are loading all torsions in as dihedrals, but jI think the concept of CIF torsion may be equivalent in
         # LAMMPS to the set of dihedrals + impropers. I'm not sure if there is a good way of distinguising these.
         dihedrals = []
         dihedral_types = []
         dihedral_tags = ["_geom_torsion_atom_site_label_%d" % i for i in [1,2,3,4]]
+        cif_dihedral_tags = []
+        cif_dihedral_fields = []
         if has_all_tags(block, dihedral_tags):
             cif_dihedrals = zip(*[block[lbl] for lbl in dihedral_tags])
             dihedrals = [(atom_name.index(a), atom_name.index(b), atom_name.index(c), atom_name.index(d)) for (a,b,c,d) in cif_dihedrals]
-            dihedral_types = range(len(dihedrals))
+            dihedral_types = range(len(dihedrals)) # for CIFs, dihedral_types is a placeholder and it is unused
+
+            cif_dihedral_tags = OrderedSet(block.GetLoop("_geom_torsion_atom_site_label_1").keys()) - set(dihedral_tags)
+            cif_dihedral_fields = list(zip(*[block[lbl] for lbl in cif_dihedral_tags]))
 
         cell = None
         cell_tags = ['_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma']
@@ -712,8 +812,13 @@ class Atoms:
                 positions = positions.dot(cell)
 
         return cls(elements=atom_types, positions=positions, cell=cell, charges=charges,
-                    bonds=bonds, bond_types=bond_types, angles=angles, angle_types=angle_types,
-                    dihedrals=dihedrals, dihedral_types=dihedral_types)
+                    bonds=bonds, bond_types=bond_types,
+                    angles=angles, angle_types=angle_types,
+                    dihedrals=dihedrals, dihedral_types=dihedral_types,
+                    extra_atom_labels=cif_atom_tags, extra_atom_fields=cif_atom_fields,
+                    extra_bond_labels=cif_bond_tags, extra_bond_fields=cif_bond_fields,
+                    extra_angle_labels=cif_angle_tags, extra_angle_fields=cif_angle_fields,
+                    extra_dihedral_labels=cif_dihedral_tags, extra_dihedral_fields=cif_dihedral_fields)
 
     def save_p1_cif(self, f, structurename="structure", use_fract_coords=True):
         """Saves a P1 CIF file.
@@ -768,21 +873,25 @@ class Atoms:
                 "_atom_site_label",
                 "_atom_site_type_symbol",
                 *coords_labels,
-                "_atom_site_charge"
+                "_atom_site_charge",
+                *self.extra_atom_labels,
             ]],[[
                 atom_labels,
                 self.elements,
                 *coords,
-                self.charges
+                self.charges,
+                *self.extra_atom_fields.T,
             ]]))
 
         if len(self.bonds) > 0:
             block.AddCifItem(([[
                     "_geom_bond_atom_site_label_1",
                     "_geom_bond_atom_site_label_2",
+                    *self.extra_bond_labels,
                 ]],[[
                     [atom_labels[i] for i in self.bonds[:,0]],
                     [atom_labels[i] for i in self.bonds[:,1]],
+                    *self.extra_bond_fields.T,
                 ]]))
 
         if len(self.angles) > 0:
@@ -790,30 +899,32 @@ class Atoms:
                     "_geom_angle_atom_site_label_1",
                     "_geom_angle_atom_site_label_2",
                     "_geom_angle_atom_site_label_3",
+                    *self.extra_angle_labels,
                 ]],[[
                     [atom_labels[i] for i in self.angles[:,0]],
                     [atom_labels[i] for i in self.angles[:,1]],
                     [atom_labels[i] for i in self.angles[:,2]],
+                    *self.extra_angle_fields.T,
                 ]]))
 
-        print("DIYIMP: ", self.dihedrals, self.impropers)
         if len(self.dihedrals) > 0 or len(self.impropers) > 0:
             four_body_terms = []
             four_body_terms.extend(self.dihedrals)
             four_body_terms.extend(self.impropers)
             four_body_terms = np.array(four_body_terms)
-            print("4bt: ", four_body_terms)
 
             block.AddCifItem(([[
                     "_geom_torsion_atom_site_label_1",
                     "_geom_torsion_atom_site_label_2",
                     "_geom_torsion_atom_site_label_3",
                     "_geom_torsion_atom_site_label_4",
+                    *self.extra_dihedral_labels,
                 ]],[[
                     [atom_labels[i] for i in four_body_terms[:,0]],
                     [atom_labels[i] for i in four_body_terms[:,1]],
                     [atom_labels[i] for i in four_body_terms[:,2]],
                     [atom_labels[i] for i in four_body_terms[:,3]],
+                    *self.extra_dihedral_fields.T,
                 ]]))
 
         f.write(cf.WriteOut(comment="# CIF file created by MOFUN using PyCifRW."))
@@ -940,6 +1051,53 @@ class Atoms:
 
         return offsets
 
+    def update_fields(fields, new_fields, labels, new_labels):
+        for label in new_labels:
+            pass
+
+    def _extend_extra_fields(self, other):
+        def _pad_fields(data, w, h=None):
+            if h is None:
+                h = len(data)
+            new_data = np.full((h, w), ".", dtype='object')
+            if data.size > 0:
+                new_data[0:data.shape[0], 0:data.shape[1]] = data
+            return new_data
+
+        def _match_fields(labels, new_fields, new_labels, min_height):
+            # labels is assumed to be a superset of new_labels
+            if len(new_fields) > 0:
+                fields = np.full((len(new_fields), len(labels)), ".", dtype='object')
+                for new_idx, new_label in enumerate(new_labels):
+                    idx = labels.index(new_label)
+                    fields[:,idx] = new_fields[:,new_idx]
+                return fields
+            else:
+                return np.full((min_height, len(labels)), ".", dtype='object')
+
+        # labels that are in other but not in self are added to the end of the label list
+        self.extra_atom_labels |= other.extra_atom_labels
+        self.extra_bond_labels |= other.extra_bond_labels
+        self.extra_angle_labels |= other.extra_angle_labels
+        self.extra_dihedral_labels |= other.extra_dihedral_labels
+        self.extra_improper_labels |= other.extra_improper_labels
+
+        # all fields in self get padded with empty items (".") for any new labels
+        self.extra_atom_fields      = _pad_fields(self.extra_atom_fields,     len(self.extra_atom_labels),     len(self.atom_types))
+        self.extra_bond_fields      = _pad_fields(self.extra_bond_fields,     len(self.extra_bond_labels),     len(self.bond_types))
+        self.extra_angle_fields     = _pad_fields(self.extra_angle_fields,    len(self.extra_angle_labels),    len(self.angle_types))
+        self.extra_dihedral_fields  = _pad_fields(self.extra_dihedral_fields, len(self.extra_dihedral_labels), len(self.dihedral_types))
+        self.extra_improper_fields  = _pad_fields(self.extra_improper_fields, len(self.extra_improper_labels), len(self.improper_types))
+
+        # all fields in other get expanded so that there are empty items for any labels not in other
+        # and the labels are ordered according to the labels in self, and returned
+        return (
+            _match_fields(self.extra_atom_labels, other.extra_atom_fields, other.extra_atom_labels, len(other.atom_types)),
+            _match_fields(self.extra_bond_labels, other.extra_bond_fields, other.extra_bond_labels, len(other.bond_types)),
+            _match_fields(self.extra_angle_labels, other.extra_angle_fields, other.extra_angle_labels, len(other.angle_types)),
+            _match_fields(self.extra_dihedral_labels, other.extra_dihedral_fields, other.extra_dihedral_labels, len(other.dihedral_types)),
+            _match_fields(self.extra_improper_labels, other.extra_improper_fields, other.extra_improper_labels, len(other.improper_types))
+        )
 
     def extend(self, other, offsets=None, structure_index_map={}, verbose=False):
         """Adds other Atoms object's arrays to its own.
@@ -968,16 +1126,22 @@ class Atoms:
                 print("auto offset: extending types")
             offsets = self.extend_types(other)
 
+        xf_atoms, xf_bonds, xf_angles, xf_dihedrals, xf_impropers = self._extend_extra_fields(other)
+
         # update atom types for atoms that are already part of self Atoms object
         for other_index, self_index in structure_index_map.items():
             self.atom_types[self_index] = other.atom_types[other_index] + offsets[0]
+            if self.extra_atom_fields.size > 0:
+                self.extra_atom_fields[self_index, :] = xf_atoms[other_index, :]
 
         # add atoms that are not part of self Atoms object
         atoms_to_add = [i for i in range(len(other)) if i not in structure_index_map.keys()]
+
         self.positions = np.append(self.positions, other.positions[atoms_to_add], axis=0)
         self.atom_types = np.append(self.atom_types, other.atom_types[atoms_to_add] + offsets[0])
         self.charges = np.append(self.charges, other.charges[atoms_to_add])
-        self.groups = np.append(self.groups, other.groups[atoms_to_add])
+        self.groups = np.append(self.groups, other.groups[atoms_to_add], axis=0)
+        self.extra_atom_fields = np.append(self.extra_atom_fields, xf_atoms[atoms_to_add,:], axis=0)
 
         # update structure index map
         structure_index_map2 = {a:i + atom_idx_offset for i,a in enumerate(atoms_to_add)}
@@ -1000,6 +1164,8 @@ class Atoms:
             self.bond_types = np.append(self.bond_types, other.bond_types + offsets[1])
             self.bonds = np.delete(self.bonds, existing_bond_indices, axis=0)
             self.bond_types = np.delete(self.bond_types, existing_bond_indices)
+            self.extra_bond_fields = np.append(self.extra_bond_fields, xf_bonds, axis=0)
+            self.extra_bond_fields = np.delete(self.extra_bond_fields, existing_bond_indices, axis=0)
 
         if len(other.angles) > 0:
             new_angles = convert2structureindex(other.angles)
@@ -1008,6 +1174,8 @@ class Atoms:
             self.angle_types = np.append(self.angle_types, other.angle_types + offsets[2])
             self.angles = np.delete(self.angles, existing_angle_indices, axis=0)
             self.angle_types = np.delete(self.angle_types, existing_angle_indices)
+            self.extra_angle_fields = np.append(self.extra_angle_fields, xf_angles, axis=0)
+            self.extra_angle_fields = np.delete(self.extra_angle_fields, existing_angle_indices, axis=0)
 
         if len(other.dihedrals) > 0:
             new_dihedrals = convert2structureindex(other.dihedrals)
@@ -1016,6 +1184,8 @@ class Atoms:
             self.dihedral_types = np.append(self.dihedral_types, other.dihedral_types + offsets[3])
             self.dihedrals = np.delete(self.dihedrals, existing_dihedral_indices, axis=0)
             self.dihedral_types = np.delete(self.dihedral_types, existing_dihedral_indices)
+            self.extra_dihedral_fields = np.append(self.extra_dihedral_fields, xf_dihedrals, axis=0)
+            self.extra_dihedral_fields = np.delete(self.extra_dihedral_fields, existing_dihedral_indices, axis=0)
 
         if len(other.impropers) > 0:
             new_impropers = convert2structureindex(other.impropers)
@@ -1024,6 +1194,8 @@ class Atoms:
             self.improper_types = np.append(self.improper_types, other.improper_types + offsets[4])
             self.impropers = np.delete(self.impropers, existing_improper_indices, axis=0)
             self.improper_types = np.delete(self.improper_types, existing_improper_indices)
+            self.extra_improper_fields = np.append(self.extra_improper_fields, xf_impropers, axis=0)
+            self.extra_improper_fields = np.delete(self.extra_improper_fields, existing_improper_indices, axis=0)
 
         self.assert_arrays_are_consistent_sizes()
 
@@ -1053,7 +1225,7 @@ class Atoms:
         repl_atoms.cell = self.cell * repldims
         return repl_atoms
 
-    def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices, secondary_arr=None):
+    def _delete_and_reindex_atom_index_array(self, arr, sorted_deleted_indices):
         updated_arr = arr.copy()
         arr_idx_to_delete = []
         for i, atom_idx_tuple in enumerate(arr):
@@ -1065,28 +1237,33 @@ class Atoms:
         for i in sorted_deleted_indices:
             np.subtract(updated_arr, 1, out=updated_arr, where=updated_arr>i)
 
-        if secondary_arr is not None:
-            # remove same indices from secondary array; this is used for types arrays
-            secondary_arr = np.delete(secondary_arr, arr_idx_to_delete, axis=0)
-            return (updated_arr, secondary_arr)
-        else:
-            return updated_arr
+        return updated_arr, arr_idx_to_delete
+
 
     def __delitem__(self, indices):
         self.positions = np.delete(self.positions, indices, axis=0)
         self.atom_types = np.delete(self.atom_types, indices, axis=0)
         self.charges = np.delete(self.charges, indices, axis=0)
         self.groups = np.delete(self.groups, indices, axis=0)
+        self.extra_atom_fields = np.delete(self.extra_atom_fields, indices, axis=0)
 
         sorted_indices = sorted(indices, reverse=True)
         if len(self.bonds) > 0:
-            self.bonds, self.bond_types = self._delete_and_reindex_atom_index_array(self.bonds, sorted_indices, self.bond_types)
+            self.bonds, arr_idx_to_delete = self._delete_and_reindex_atom_index_array(self.bonds, sorted_indices)
+            self.bond_types = np.delete(self.bond_types, arr_idx_to_delete, axis=0)
+            self.extra_bond_fields = np.delete(self.extra_bond_fields, arr_idx_to_delete, axis=0)
         if len(self.angles) > 0:
-            self.angles, self.angle_types = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices, self.angle_types)
+            self.angles, arr_idx_to_delete = self._delete_and_reindex_atom_index_array(self.angles, sorted_indices)
+            self.angle_types = np.delete(self.angle_types, arr_idx_to_delete, axis=0)
+            self.extra_angle_fields = np.delete(self.extra_angle_fields, arr_idx_to_delete, axis=0)
         if len(self.dihedrals) > 0:
-            self.dihedrals, self.dihedral_types = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices, self.dihedral_types)
+            self.dihedrals, arr_idx_to_delete = self._delete_and_reindex_atom_index_array(self.dihedrals, sorted_indices)
+            self.dihedral_types = np.delete(self.dihedral_types, arr_idx_to_delete, axis=0)
+            self.extra_dihedral_fields = np.delete(self.extra_dihedral_fields, arr_idx_to_delete, axis=0)
         if len(self.impropers) > 0:
-            self.impropers, self.improper_types = self._delete_and_reindex_atom_index_array(self.impropers, sorted_indices, self.improper_types)
+            self.impropers, arr_idx_to_delete = self._delete_and_reindex_atom_index_array(self.impropers, sorted_indices)
+            self.improper_types = np.delete(self.improper_types, arr_idx_to_delete, axis=0)
+            self.extra_improper_fields = np.delete(self.extra_improper_fields, arr_idx_to_delete, axis=0)
 
         self.assert_arrays_are_consistent_sizes()
 

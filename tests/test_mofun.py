@@ -5,6 +5,7 @@ from math import sqrt
 import ase
 from ase.visualize import view
 import numpy as np
+from numpy.testing import assert_equal as np_assert_equal
 import pytest
 from pytest import approx
 from scipy.spatial.transform import Rotation as R
@@ -14,7 +15,6 @@ from mofun.helpers import assert_positions_are_unchanged, assert_structure_posit
 from mofun.mofun import _get_positions_from_all_adjacent_unit_cells
 
 from tests.fixtures import *
-
 
 def test_find_pattern_in_structure__octane_has_8_carbons(octane):
     pattern = Atoms(elements='C', positions=[(0, 0, 0)])
@@ -481,3 +481,19 @@ def test_get_positions_from_all_adjacent_unit_cells__on_triclinic_w_long_distanc
     assert_positions_are_unchanged(uio66_3x3x3.positions, allpos, max_delta=0.0001)
     assert_positions_are_unchanged(np.array(nearpos), allpos, max_delta=0.0001)
 
+def test_replace_pattern_in_structure__on_linker_w_cif_inserts_all_fields():
+    cif_linker = Atoms.load("tests/uio66/uio66-linker-arb-terms.cif")
+    linker = Atoms(positions=cif_linker.positions, cell=np.identity(3) * 10, elements=cif_linker.elements)
+    final_structure = replace_pattern_in_structure(linker, linker, cif_linker, replace_all=True)
+
+    assert_structure_positions_are_unchanged(linker, cif_linker, max_delta=0.0001)
+    assert_topo(final_structure.bonds, cif_linker.bonds)
+    assert_topo(final_structure.angles, cif_linker.angles)
+    assert len(final_structure.dihedrals) == len(cif_linker.dihedrals)
+    assert_topo(final_structure.dihedrals, cif_linker.dihedrals)
+    np_assert_equal(final_structure.extra_atom_fields, cif_linker.extra_atom_fields)
+    np_assert_equal(final_structure.extra_bond_fields, cif_linker.extra_bond_fields)
+    np_assert_equal(final_structure.extra_angle_fields, cif_linker.extra_angle_fields)
+    np_assert_equal(final_structure.extra_dihedral_fields, cif_linker.extra_dihedral_fields)
+    assert final_structure.extra_improper_fields.size == 0
+    final_structure.assert_arrays_are_consistent_sizes()
