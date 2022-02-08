@@ -19,39 +19,36 @@ from mofun.helpers import guess_elements_from_masses, ATOMIC_MASSES, use_or_open
 
 class Atoms:
     """
-    An Atoms object is a container for all the information required to keep track of a structure and
-    the structure's force field.
+    An Atoms object is a container for all the information required to keep track of a structure and the structure's
+    force field.
 
     See the documentation on `__init__` or `load` to see how to create an Atoms object.
 
     An Atoms object is made up primarily of numpy arrays and a couple normal lists.
 
-    Some arrays are per-atom (one entry per atom): `atom_types`, `positions`, `charges`, and
-    `groups`.
+    Some arrays are per-atom (one entry per atom): `atom_types`, `positions`, `charges`, and `groups`.
 
-    Some arrays are per-atom-type (one entry per atom type): `atom_type_masses`, `atom_type_elements`, and
-    `atom_type_labels`.
+    Some arrays are per-atom-type (one entry per atom type): `atom_type_masses`, `atom_type_elements`,
+    `atom_type_labels`, and `extra_atom_fields`.
 
-    Some arrays are per-bond (one entry per bond): `bonds`, and `bond_types`.
+    Some arrays are per-bond (one entry per bond): `bonds`, `bond_types`, and `extra_bond_fields`.
 
-    Some arrays are per-angle (one entry per angle): `angles`, and `angle_types`.
+    Some arrays are per-angle (one entry per angle): `angles`, `angle_types` and `extra_angle_fields`.
 
-    Some arrays are per-dihedral (one entry per dihedral): `dihedrals`, and `dihedral_types`.
+    Some arrays are per-dihedral (one entry per dihedral): `dihedrals`, `dihedral_types` and `extra_dihedral_fields`.
 
-    Some arrays are per-improper (one entry per improper): `impropers`, and `improper_types`.
+    Some arrays are per-improper (one entry per improper): `impropers`, `improper_types` and `extra_improper_fields`.
 
-    Atoms also stores information on the coefficients needed to define each force field term:
-    `pair_coeffs`, `bond_type_coeffs`, `angle_type_coeffs`, `dihedral_type_coeffs`, and
-    `improper_type_coeffs`. The \\*\\_coeffs variables are lists of strings, where the item index
-    corresponds to the \\*\\_type, and the string is the full LAMMPS coeffs definition string. we do
-    not interpret any of the LAMMPS coefficient specifics, we just store it in its original form,
-    i.e. this Angle Coeffs section:
+    Atoms also stores information on the coefficients needed to define each force field term: `pair_coeffs`,
+    `bond_type_coeffs`, `angle_type_coeffs`, `dihedral_type_coeffs`, and `improper_type_coeffs`. The \\*\\_coeffs
+    variables are lists of strings, where the item index corresponds to the \\*\\_type, and the string is the full
+    LAMMPS coeffs definition string. we do not interpret any of the LAMMPS coefficient specifics, we just store it in
+    its original form, i.e. this Angle Coeffs section:
 
     ```
     Angle Coeffs
 
-    1 cosine/periodic  72.500283  -1  1   # C_R O_1 H_
-    2 cosine/periodic  277.164705  -1  3   # C_R C_R O_1
+    1 cosine/periodic  72.500283  -1  1   # C_R O_1 H_ 2 cosine/periodic  277.164705  -1  3   # C_R C_R O_1
     ```
 
     would be interpreted like this:
@@ -59,7 +56,35 @@ class Atoms:
     ```
     angle_type_coeffs= ["cosine/periodic  72.500283  -1  1   # C_R O_1 H_",
                         "cosine/periodic  277.164705  -1  3   # C_R C_R O_1"]
-    ```"""
+    ```
+
+    For CIF files, which can have arbitrary fields of data per each atom, bond, angle, and torsion, we keep a set of
+    extra_*_fields variables: `extra_atom_fields`, `extra_bond_fields`, `extra_angle_fields`, and
+    `extra_torsion_fields`. Each extra_*_fields is NxM array, where N is the number of atoms/bonds/angles/torsions and
+    M is the number of additional custom fields. Any field that is not explicitly handled by us is added to one of
+    these arrays, and the values will be associated with the atoms/bonds/angles/torsions through any find and replace
+    operation, and be output again if a CIF is saved.
+
+    There are corresponding arrays for the labels of each field: `extra_atom_labels`, `extra_bond_labels`,
+    `extra_angle_labels`, and `extra_torsion_labels`.
+
+    For example, if the _atom_site CIF loop looks like this:
+
+    ```
+    loop_
+      _atom_site_type_symbol
+      _atom_site_label
+      _atom_site_symmetry_multiplicity
+      _atom_site_fract_x
+      _atom_site_fract_y
+      _atom_site_fract_z
+      _atom_site_occupancy
+    ```
+
+    MOFUN explicitly handles the fields `_atom_site_type_symbol`, `_atom_site_label`,  and `_atom_site_fract_*` and will
+    add the rest of the fields to the extra_atom_fields array: `_atom_site_symmetry_multiplicity`,
+    `_atom_site_occupancy`.
+    """
 
     def __init__(self, atom_types=[], positions=[], charges=[], groups=[],
                     elements=[], atom_type_masses=[], atom_type_elements=[], atom_type_labels=[],
@@ -73,34 +98,34 @@ class Atoms:
 
         """Create an Atoms object.
 
-        An Atoms object can be created without any atoms using `Atoms()`. For creating more
-        interesting Atoms objects, there are a few rules to keep in mind. The parameters
-        `atom_types`, `positions`, `charges`, and `groups`  are all lists that should have a
-        size equal to the number of atoms in the system. `positions` is mandatory; `charges`, and
-        `groups` are optional (both default to 0 for each atom) and there are two ways to
-        specify atom types: 1) specify the atom_types and atom_type_elements explicitly, which is
-        how the `load_lmpdat` method loads Atoms objects from a LAMMPS data file, or 2) specify
-        per-atom elements and and have MOFUN auto-number the atom types for you, which is more
-        convenient when specifying small molecules in code or when loading from other file formats
-        such as CML or CIF which may store element information but not type information.
+        An Atoms object can be created without any atoms using `Atoms()`. For creating more interesting Atoms objects,
+        there are a few rules to keep in mind. The parameters `atom_types`, `positions`, `charges`, and `groups`  are
+        all lists that should have a size equal to the number of atoms in the system. `positions` is mandatory;
+        `charges`, and `groups` are optional (both default to 0 for each atom) and there are two ways to specify atom
+        types: 1) specify the atom_types and atom_type_elements explicitly, which is how the `load_lmpdat` method loads
+        Atoms objects from a LAMMPS data file, or 2) specify per-atom elements and and have MOFUN auto-number the atom
+        types for you, which is more convenient when specifying small molecules in code or when loading from other file
+        formats such as CML or CIF which may store element information but not type information.
 
-        When explicitly setting the types, you must pass `atom_types` and `atom_type_elements`.
-        `atom_types` is a list of int type ids >= 0, one for each atom in the system.
-        `atom_type_elements` is a list of element names (e.g. "C", "N", "Zr") per _atom type_. For
-        example, if your system is propane, your atom_types list could be [0, 1, 1, 1] and your
-        atom_type_elements list would then be ["C", "H"].
+        When explicitly setting the types, you must pass `atom_types` and `atom_type_elements`. `atom_types` is a list
+        of int type ids >= 0, one for each atom in the system. `atom_type_elements` is a list of element names
+        (e.g. "C", "N", "Zr") per _atom type_. For example, if your system is propane, your atom_types list could be
+        [0, 1, 1, 1] and your atom_type_elements list would then be ["C", "H"].
 
-        To specify per-atom elements, you must pass `elements` with either a list of elements, such
-        as `Atoms(elements=["C", "C"], ...)` or with a string `Atoms(elements="CC", ...)`. If you
-        use the `elements` parameter, then type ids are automatically generated.
+        To specify per-atom elements, you must pass `elements` with either a list of elements, such as `Atoms(elements=
+        ["C", "C"], ...)` or with a string `Atoms(elements="CC", ...)`. If you use the `elements` parameter, then type
+        ids are automatically generated.
 
-        Passing `atom_type_masses` is optional, and masses will be inferred from the elements if
-        missing. If you are using atom types with masses that do not correspond to periodic table
-        elements, then you will need to specify the masses explicitly.
+        Passing `atom_type_masses` is optional, and masses will be inferred from the elements if missing. If you are
+        using atom types with masses that do not correspond to periodic table elements, then you will need to specify
+        the masses explicitly.
 
-        Passing force field term information for `bonds`, `angles`, `dihedrals`, and `impropers` is optional, as well
-        as passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_type_coeffs`,
-        `angle_type_coeffs`, `dihedral_type_coeffs`, and `improper_type_coeffs`.
+        Passing force field term information for `bonds`, `angles`, `dihedrals`, and `impropers` is optional, as well as
+        passing force field coefficients for LAMMPS with `pair_coeffs`, `bond_type_coeffs`, `angle_type_coeffs`,
+        `dihedral_type_coeffs`, and `improper_type_coeffs`.
+
+        Extra data can be associated with any of the topoloogy terms by using the extra_*_fields arguments. This is
+        primarily used for CIFS.
 
         Examples:
 
@@ -314,13 +339,13 @@ class Atoms:
 
         Can load any of the supported types:
 
-        - lammps data file: "lmpdat"
-        - cif
-        - cml
+        - lammps data file .lmpdat
+        - P1 .cif
+        - avogadro .cml
 
         Args:
-            f (Str or Path or File): either a path to a file or an open File to load from
-            filetype (Str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
+            f (str or Path or File): either a path to a file or an open File to load from
+            filetype (str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
                 explicit filetype to override default filetype implied from file extension.
             kwargs: keyword args passed on to individual load functions.
         """
@@ -356,12 +381,13 @@ class Atoms:
 
         Can save any of the supported types:
 
-        - lammps data file: "lmpdat"
-        - mol
+        - lammps data file .lmpdat
+        - P1 .cif
+        - RASPA .mol
 
         Args:
-            f (Str or Path or File): either a path to a file or an open File to save to
-            filetype (Str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
+            f (str or Path or File): either a path to a file or an open File to save to
+            filetype (str): filetype ('lmpdat', 'cif', or 'cml') of passed f File object, or
                 explicit filetype to override default filetype implied from file extension.
             kwargs: keyword args passed on to individual save functions.
         """
@@ -703,7 +729,7 @@ class Atoms:
         """Loads a P1 CIF file.
 
         This is a simple P1 CIF reader that ignores symmetry. For large files, this is significantly faster than the
-        symmetry-aware implementation in ASE. It will read bonds, angles, and torsions.
+        symmetry-aware implementation in ASE. It will read bonds, angles, and torsions, and all associated fields.
 
         Args:
             f (File): File-like object to read from.
@@ -827,6 +853,8 @@ class Atoms:
 
         Args:
             f (File): File-like object to write to.
+            structurename (str): name of structure to use as the main CIF data block.
+            use_fract_coords (bool): output using fractional coords instead of cartesian coordinates.
         """
 
         cf = CifFile.CifFile()
@@ -938,6 +966,7 @@ class Atoms:
 
         Returns:
             Atoms: loaded Atoms object
+            verbose (bool): print debugging info.
         """
 
         tree = ET.parse(f)
@@ -1282,7 +1311,6 @@ class Atoms:
 
     def cell_is_orthorhombic(self):
         return (np.diag(self.cell) * np.identity(3) == self.cell).all()
-
 
     def to_ase(self):
         """Convert to ASE atoms object.
