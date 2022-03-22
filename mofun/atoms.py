@@ -1182,9 +1182,13 @@ class Atoms:
 
             Used to allow an override of an existing force field term by finding old terms between
             the same atoms to delete"""
+
             if len(topo) == 0:
                 return []
-            return list(np.nonzero(cdist(topo, new_topo, 'cityblock') == 0)[0])
+            forward_dir = list(np.nonzero(cdist(topo, new_topo, 'cityblock') == 0)[0])
+            # we have to search both backwards and forwards since the topo lists are symmetrical
+            reverse_dir = list(np.nonzero(cdist(topo, np.flip(new_topo, axis=1), 'cityblock') == 0)[0])
+            return forward_dir + reverse_dir
 
         if len(other.bonds) > 0:
             new_bonds = convert2structureindex(other.bonds)

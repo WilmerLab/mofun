@@ -118,6 +118,17 @@ def test_atoms_extend__reindexes_new_impropers_to_proper_atoms(linear_cnnc):
     double_cnnc.extend(linear_cnnc)
     assert (double_cnnc.impropers == [(0,1,2,3), (4,5,6,7)]).all()
 
+def test_atoms_extend__uses_bonds_regardless_of_atom_order():
+    atoms = Atoms(atom_type_elements=["C", "N"], atom_types=[1, 0, 0, 1],
+        positions=[[0,0,1], [0,0,2], [0,0,3], [0,0,4]],
+        bonds=[[0,1],[1,2],[2,3]], bond_types=[0,0,0]
+    )
+    atoms2 = atoms.copy()
+    atoms2.bonds = np.array([[1,0], [2,1], [3,2]])
+
+    atoms.extend(atoms2, structure_index_map={0:0, 1:1, 2:2, 3:3})
+
+    assert len(atoms.bonds) == 3
 
 def test_find_unchanged_atom_pairs__same_structure_is_unchanged(linear_cnnc):
     assert find_unchanged_atom_pairs(linear_cnnc, linear_cnnc) == [(0,0), (1,1), (2,2), (3,3)]
