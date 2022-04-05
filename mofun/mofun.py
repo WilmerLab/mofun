@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation as R
 from mofun.atoms import find_unchanged_atom_pairs
 from mofun.helpers import atoms_of_type, atoms_by_type_dict, position_index_farthest_from_axis, \
                           quaternion_from_two_vectors, quaternion_from_two_vectors_around_axis, \
-                          remove_duplicates, assert_positions_are_unchanged, suppress_warnings, group_duplicates, positions_are_unchanged
+                          remove_duplicates, suppress_warnings, group_duplicates
 
 def uc_neighbor_offsets(uc_vectors):
     multipliers = np.array(np.meshgrid([-1, 0, 1],[-1, 0, 1],[-1, 0, 1])).T.reshape(-1, 1, 3)
@@ -169,7 +169,7 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=None, axisp2_idx=No
             match_index_tuples = []
             for match in last_match_index_tuples:
                 for ss_idx, atom_idx in enumerate(nearby_atom_indices):
-                    if near_types[atom_idx]==pattern_elements[i]:
+                    if near_types[atom_idx] == pattern_elements[i]:
                         found_match = True
                         # check all distances to this new proposed atom
                         for j in range(0, i):
@@ -226,7 +226,10 @@ def find_pattern_in_structure(structure, pattern, axisp1_idx=None, axisp2_idx=No
             chk_pattern = pattern.copy()
             chk_pattern.positions = q.apply(chk_pattern.positions)
             chk_pattern.translate(atom_positions[axisp1_idx])
-            if positions_are_unchanged(atom_positions, chk_pattern.positions, max_delta=atol, verbose=verbose):
+
+            # note that we can use positions are unchanged here, which does not handle periodic boundaries, because all
+            # our coordinates are unwrapped.
+            if np.allclose(atom_positions, chk_pattern.positions, atol=atol):
                 good_indices.append(i)
 
         if len(good_indices) > 1:

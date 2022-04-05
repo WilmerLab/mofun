@@ -1,6 +1,7 @@
 from collections import Counter
 
 from math import sqrt
+import random
 
 import ase
 from ase.visualize import view
@@ -8,6 +9,7 @@ import numpy as np
 from numpy.testing import assert_equal as np_assert_equal
 import pytest
 from pytest import approx
+from scipy.linalg import norm
 from scipy.spatial.transform import Rotation as R
 
 from mofun import find_pattern_in_structure, replace_pattern_in_structure, Atoms, AtomsShouldNotBeDeletedTwice
@@ -497,3 +499,17 @@ def test_replace_pattern_in_structure__on_linker_w_cif_inserts_all_fields():
     np_assert_equal(final_structure.extra_dihedral_fields, cif_linker.extra_dihedral_fields)
     assert final_structure.extra_improper_fields.size == 0
     final_structure.assert_arrays_are_consistent_sizes()
+
+def test_replace_pattern_in_structure__does_not_mess_up_bonds():
+    def check_bonds(structure, pos):
+        assert len(structure.bonds) == 4
+        for i, (b1, b2) in enumerate(structure.bonds):
+            assert norm(pos[b1] - pos[b2]) < 1.
+
+    cube_ox = Atoms.load("tests/uio66-mc-bad-bonds-bug/uio66-mc-crystest.lmpdat", atom_format="full")
+    ohx = Atoms.load("tests/uio66-mc-bad-bonds-bug/uio66-mc-only-OH.lmpdat", atom_format="full")
+    check_bonds(ohx, (ohx.positions + 14) % 20.700400)
+
+    random.seed(2)
+    final_structure = replace_pattern_in_structure(cube_ox, cube_ox, ohx)
+    check_bonds(final_structure, (final_structure.positions + 14) % 20.700400)
