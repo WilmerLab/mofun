@@ -414,7 +414,7 @@ class Atoms:
             with use_or_open(fd, path, mode='w') as fh:
                 return self.save_raspa_mol(fh, **kwargs)
         elif filetype == "cif":
-            with use_or_open(fd, path) as fh:
+            with use_or_open(fd, path, mode='w') as fh:
                 return self.save_p1_cif(fh, **kwargs)
         else:
             raise Exception("Unsupported filetype")
@@ -1148,7 +1148,6 @@ class Atoms:
                 identical and can be considered to be the same atom.
             verbose (bool): print debugging info.
         """
-
         atom_idx_offset = len(self.positions)
         if offsets is None:
             if verbose:

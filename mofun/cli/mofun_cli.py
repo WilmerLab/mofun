@@ -77,7 +77,7 @@ def mofun_cli(inputpath, outputpath,
     if framework_element is not None:
         atoms.symbols[atoms.atom_groups == 0] = framework_element
 
-    if outputpath.suffix in ['.lmpdat', '.mol']:
+    if outputpath.suffix in ['.lmpdat', '.mol', '.cif']:
         atoms.save(outputpath)
     else:
         print("INFO: Trying output using ASE")
