@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='mofun',
-      version='0.9',
+      version='1.0',
       description='Find and replace functional groups in any given periodic structure.',
       long_description = long_description,
       long_description_content_type = "text/markdown",
