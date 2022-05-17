@@ -44,7 +44,7 @@ Options:
   --help                        Show this message and exit.
 ```
 
-## Pyrhon documentation:
+## Python documentation:
 
 See [Atoms](reference/atoms.md) for info on Atoms objects and how to use them.
 
