@@ -13,9 +13,12 @@ def max_bond_length(el1, el2):
 def detect_bonds(structure):
     elements = structure.elements
     if structure.cell is not None:
+        # look at all 27-1 neighbors
         uc_offsets = uc_neighbor_offsets(structure.cell)
     else:
+        # look at only central cell since no boundaries
         uc_offsets = np.array([[0., 0., 0.]])
+
     bonds = []
     for idx1, atom1 in enumerate(structure.positions):
         # calculate all possible positions of atom1 in main and neighboring unit cells
@@ -23,7 +26,7 @@ def detect_bonds(structure):
 
         for i, atom2 in enumerate(structure.positions[idx1+1:]):
             idx2 = i + idx1 + 1
-            # calculate distances between all images of atom1 and  atom2
+            # calculate distances between all images of atom1 and atom2
             ss = distance.cdist(atom1_positions, [atom2], "euclidean")
             if np.any(ss < max_bond_length(elements[idx1], elements[idx2])):
                 bonds.append([idx1, idx2])
