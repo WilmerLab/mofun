@@ -140,7 +140,7 @@ def pair_coeffs(a1):
     lj_epsilon = UFF4MOF[a1][3]
     return [lj_epsilon, lj_sigma]
 
-def guess_bond_order(a1, a2, rules=[]):
+def guess_bond_order(a1, a2, rules=None):
     """
     Args:
         a1 (str): UFF atom type of atom 1 in bond 1-2, e.g. "C_R"
@@ -155,9 +155,10 @@ def guess_bond_order(a1, a2, rules=[]):
     """
     bond_atom_types = {a1, a2}
 
-    for rule_atom_types, bo in rules:
-        if bond_atom_types == rule_atom_types:
-            return bo
+    if rules is not None:
+        for rule_atom_types, bo in rules:
+            if bond_atom_types == rule_atom_types:
+                return bo
 
     if len({'H_', 'F_', 'Cl', 'Br', 'I_', 'C_3', 'N_3', 'O_3'} & bond_atom_types) > 0:
         return 1
@@ -169,7 +170,7 @@ def guess_bond_order(a1, a2, rules=[]):
         print('%s %s Bond order not explicitly assigned. Using default value of 1.' % (a1, a2), file=sys.stderr)
         return 1
 
-def bond_params(a1, a2, bond_order=None, bond_order_rules=[]):
+def bond_params(a1, a2, bond_order=None, bond_order_rules=None):
     """calculate the UFF bond parameters in a form suitable for calculations in LAMMPS.
 
     Args:
@@ -196,7 +197,7 @@ def bond_params(a1, a2, bond_order=None, bond_order_rules=[]):
 
     return (kij / 2, rij)
 
-def angle_params(a1, a2, a3, bond_orders=[None, None], bond_order_rules=[]):
+def angle_params(a1, a2, a3, bond_orders=[None, None], bond_order_rules=None):
     """calculate the UFF angle parameters in a form suitable for calculations in LAMMPS.
 
     Args:
@@ -261,7 +262,7 @@ def angle_params(a1, a2, a3, bond_orders=[None, None], bond_order_rules=[]):
         c0 = c2 * (2 * cos(theta0rad)**2 + 1)
         return ('fourier', kijk, c0, c1, c2)
 
-def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None, bond_order_rules=[]):
+def dihedral_params(a1, a2, a3, a4, num_dihedrals_about_bond=1, bond_order=None, bond_order_rules=None):
     """Use a small cosine Fourier expansion
 
     E_phi = 1/2*V_phi * [1 - cos(n*phi0)*cos(n*phi)]
@@ -392,9 +393,9 @@ def assign_pair_coeffs(atoms, assign_atom_type_labels_from_elements=False):
 
     atoms.pair_coeffs = ['%10.6f %10.6f # %s' % (*pair_coeffs(a1), a1) for a1 in atoms.atom_type_labels]
 
-def assign_bond_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
-    if len(exclude) >= 2:
-        atoms.bonds = delete_if_all_in_set(atoms.bonds, exclude)
+def assign_bond_types(atoms, uff_atom_types, bond_order_rules=None, exclude=None):
+    if exclude is not None and len(exclude) >= 2:
+            atoms.bonds = delete_if_all_in_set(atoms.bonds, exclude)
 
     # get an ordered list of bond types for every bond, e.g. [(1,2), (4,5)]
     bond_types = [typekey([uff_atom_types[a] for a in atup]) for atup in atoms.bonds]
@@ -414,8 +415,8 @@ def angle2lammpsdat(params):
     else:
         raise Exception("Unhandled angle style '%s'" % params[0])
 
-def assign_angle_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
-    if len(exclude) >= 3:
+def assign_angle_types(atoms, uff_atom_types, bond_order_rules=None, exclude=None):
+    if exclude is not None and len(exclude) >= 3:
         atoms.angles = delete_if_all_in_set(atoms.angles, exclude)
 
     angle_types = [typekey([uff_atom_types[a] for a in atup]) for atup in atoms.angles]
@@ -424,7 +425,7 @@ def assign_angle_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
     params = [(*angle_params(*a_ids, bond_order_rules=bond_order_rules), "%s %s %s" % a_ids) for a_ids in unique_angle_types]
     atoms.angle_type_coeffs = [angle2lammpsdat(a) for a in params]
 
-def assign_dihedral_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]):
+def assign_dihedral_types(atoms, uff_atom_types, bond_order_rules=None, exclude=None):
     """
 
     Args:
@@ -432,7 +433,7 @@ def assign_dihedral_types(atoms, uff_atom_types, bond_order_rules=[], exclude=[]
             indices are ALL contained within exclude.
     """
     num_dihedrals_per_bond = Counter([typekey([a2, a3]) for _, a2, a3, _ in atoms.dihedrals])
-    if len(exclude) >= 4:
+    if exclude is not None and len(exclude) >= 4:
         atoms.dihedrals = delete_if_all_in_set(atoms.dihedrals, exclude)
 
     # dihedral type is a tuple of four atom indices, and the number of dihedrals about the center bond

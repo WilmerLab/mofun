@@ -86,15 +86,15 @@ class Atoms:
     `_atom_site_occupancy`.
     """
 
-    def __init__(self, atom_types=[], positions=[], charges=[], groups=[],
-                    elements=[], atom_type_masses=[], atom_type_elements=[], atom_type_labels=[],
-                    bonds=[], bond_types=[], angles=[], angle_types=[],
-                    dihedrals=[], dihedral_types=[], impropers=[], improper_types=[],
-                    pair_coeffs=[], bond_type_coeffs=[], angle_type_coeffs=[],
-                    dihedral_type_coeffs=[], improper_type_coeffs=[], cell=None,
-                    extra_atom_labels=[], extra_atom_fields=[], extra_bond_labels=[], extra_bond_fields=[],
-                    extra_angle_labels=[], extra_angle_fields=[], extra_dihedral_labels=[], extra_dihedral_fields=[],
-                    extra_improper_labels=[], extra_improper_fields=[]):
+    def __init__(self, atom_types=None, positions=None, charges=None, groups=None,
+                    elements=None, atom_type_masses=None, atom_type_elements=None, atom_type_labels=None,
+                    bonds=None, bond_types=None, angles=None, angle_types=None,
+                    dihedrals=None, dihedral_types=None, impropers=None, improper_types=None,
+                    pair_coeffs=None, bond_type_coeffs=None, angle_type_coeffs=None,
+                    dihedral_type_coeffs=None, improper_type_coeffs=None, cell=None,
+                    extra_atom_labels=None, extra_atom_fields=None, extra_bond_labels=None, extra_bond_fields=None,
+                    extra_angle_labels=None, extra_angle_fields=None, extra_dihedral_labels=None, extra_dihedral_fields=None,
+                    extra_improper_labels=None, extra_improper_fields=None):
 
         """Create an Atoms object.
 
@@ -174,6 +174,54 @@ class Atoms:
         Returns:
             Atoms: the atoms object.
         """
+
+        def listdefault(v):
+            if v is None:
+                return []
+            else:
+                return v
+
+        atom_types = listdefault(atom_types)
+        positions = listdefault(positions)
+        charges = listdefault(charges)
+        groups = listdefault(groups)
+
+        elements = listdefault(elements)
+        atom_type_masses = listdefault(atom_type_masses)
+        atom_type_elements = listdefault(atom_type_elements)
+        atom_type_labels = listdefault(atom_type_labels)
+
+        bonds = listdefault(bonds)
+        bond_types = listdefault(bond_types)
+        angles = listdefault(angles)
+        angle_types = listdefault(angle_types)
+
+        dihedrals = listdefault(dihedrals)
+        dihedral_types = listdefault(dihedral_types)
+        impropers = listdefault(impropers)
+        improper_types = listdefault(improper_types)
+
+        pair_coeffs = listdefault(pair_coeffs)
+        bond_type_coeffs = listdefault(bond_type_coeffs)
+        angle_type_coeffs = listdefault(angle_type_coeffs)
+
+        dihedral_type_coeffs = listdefault(dihedral_type_coeffs)
+        improper_type_coeffs = listdefault(improper_type_coeffs)
+        # cell = listdefault(cell) # cell is purposely handled differently below
+
+        extra_atom_labels = listdefault(extra_atom_labels)
+        extra_atom_fields = listdefault(extra_atom_fields)
+        extra_bond_labels = listdefault(extra_bond_labels)
+        extra_bond_fields = listdefault(extra_bond_fields)
+
+        extra_angle_labels = listdefault(extra_angle_labels)
+        extra_angle_fields = listdefault(extra_angle_fields)
+        extra_dihedral_labels = listdefault(extra_dihedral_labels)
+        extra_dihedral_fields = listdefault(extra_dihedral_fields)
+
+        extra_improper_labels = listdefault(extra_improper_labels)
+        extra_improper_fields = listdefault(extra_improper_fields)
+
 
         self.atom_type_masses = np.array(atom_type_masses, ndmin=1)
         self.positions = np.array(positions, dtype=float, ndmin=1)
