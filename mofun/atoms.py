@@ -1128,10 +1128,6 @@ class Atoms:
 
         return offsets
 
-    def update_fields(fields, new_fields, labels, new_labels):
-        for label in new_labels:
-            pass
-
     def _extend_extra_fields(self, other):
         def _pad_fields(data, w, h=None):
             if h is None:
