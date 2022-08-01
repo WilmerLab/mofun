@@ -20,3 +20,11 @@ mofun {input-structure} {output-structure} -f {find-pattern} -r {replace-pattern
 ```
 
 See [Documentation](https://wilmerlab.github.io/mofun/)
+
+## Citation:
+
+This software is described in an upcomining paper, which will be listed here once it is published.
+
+The exact version of the software desribed in the paper is here:
+
+[![DOI](https://zenodo.org/badge/447734373.svg)](https://zenodo.org/badge/latestdoi/447734373)
