@@ -272,6 +272,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#example-4-replacing-a-metal-center-with-alternate-metals" class="md-nav__link">
+    Example 4: replacing a metal center with alternate metals
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -385,6 +392,13 @@
         <li class="md-nav__item">
   <a href="#example-3-parameterizing-a-replicated-mof-using-only-parameterized-linker-and-metal-centers" class="md-nav__link">
     Example 3: parameterizing a replicated MOF using only parameterized linker and metal centers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-4-replacing-a-metal-center-with-alternate-metals" class="md-nav__link">
+    Example 4: replacing a metal center with alternate metals
   </a>
   
 </li>
@@ -535,11 +549,50 @@ find operation only looks at the positions of the atoms (and does not require th
 the replace operation, all the atom positions stay the same but the appropriate force field terms are inserted.</p>
 <p>To evaluate whether the final structure is valid, you will need to look at the resulting LAMMPS data file and check the
 connectivity and the force field terms, since visually, the structure will look identical.</p>
-<!--
-## Example 4: searching the CoRE database for UIO-66 analogs
-
-TODO
- -->
+<h2 id="example-4-replacing-a-metal-center-with-alternate-metals">Example 4: replacing a metal center with alternate metals</h2>
+<p>In this paper, https://doi.org/10.1021/acsmaterialslett.0c00042, the authors discuss replacing Zr in UiO-66 metal
+centers with the alternate metals Hafnium and Cerium in different concentrations. We can look at creating a UiO-66
+crystal with 50% Zr and 50% Hafnium. There are multiple ways to create this structure depending on the objective of the
+experiment, and we'll look at two methods here:</p>
+<p><strong>1: Replace 50% of all Zr atoms in the entire structure with Hafnium.</strong></p>
+<p>This is the simplest method and will give a variety of clusters, some entirely composed of Zr, some entirely composed of
+Hf, and most a mix of the two elements. This is a very easy replacement.</p>
+<p>In Python:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">mofun</span> <span class="kn">import</span> <span class="n">Atoms</span><span class="p">,</span> <span class="n">replace_pattern_in_structure</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3"></a><span class="n">structure</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66.cif&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replicate</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4"></a><span class="n">zr</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">elements</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Zr&quot;</span><span class="p">],</span> <span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5"></a><span class="n">hf</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">elements</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Hf&quot;</span><span class="p">],</span> <span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6"></a>
+<a id="__codelineno-7-7" name="__codelineno-7-7"></a><span class="n">uio66_ZrHf</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">zr</span><span class="p">,</span> <span class="n">hf</span><span class="p">,</span> <span class="n">replace_fraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8"></a><span class="n">uio66_ZrHf</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;uio66-50perc-zr-hf-by-structure.cif&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>2. Replace each cluster so that each cluster has 3 Zr and 3 Hf.</strong></p>
+<figure>
+<p><img alt="UiO-66 Zr / Hf metal centers" src="../img/examples/uio66-hf-mc.png" />
+  </p>
+<figcaption>(A) All Zr metal center, (B) type 1 of 50% Hf, (C) type 2 of 50% Hf</figcaption>
+</figure>
+<p>If you wanted each cluster to have an even division of 3 Zr and 3 Hf, then you can do a find and replace on the entire
+cluster. For a 50/50% split, since the cluster is symmetrical, there are only two possible arrangements that the
+replacing Hf can be in (see Figure 1 of https://doi.org/10.1021/acsmaterialslett.0c00042): (1) where the Hf are two
+metals across from one another and one other Hf, and (2) where the Hf are three neighboring metals forming an
+equilateral triangle. There are 12 possible permutations of (1) and 8 possible permutations of (2). So we need to create
+two metal center files, one for each case, and then we can do a find / replace on 40% (8/20) of the metal centers with
+the first case, and then replace the rest with the second case:</p>
+<p>In the shell:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1"></a>mofun uio66.cif uio66-zrhf1.cif --replicate <span class="m">2</span> <span class="m">2</span> <span class="m">2</span> --find uio66-metal-center-simple.cml --replace uio66-metal-center-hf1.cml --replace-fraction<span class="o">=</span><span class="m">0</span>.4
+<a id="__codelineno-8-2" name="__codelineno-8-2"></a>mofun uio66-zrhf1.cif uio66-50perc-zr-hf-by-cluster.cif --find uio66-metal-center-simple.cml --replace uio66-metal-center-hf2.cml
+</code></pre></div>
+<p>To verify the result is correct, it may be helpful to remove everything but the cluster:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="kn">from</span> <span class="nn">mofun</span> <span class="kn">import</span> <span class="n">Atoms</span><span class="p">,</span> <span class="n">replace_pattern_in_structure</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="n">structure</span> <span class="o">=</span> <span class="n">Atoms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;uio66-50perc-zr-hf-by-cluster.cif&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="n">result</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">elements</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;H&quot;</span><span class="p">],</span> <span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span> <span class="n">Atoms</span><span class="p">())</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5"></a><span class="n">result</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">elements</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span> <span class="n">Atoms</span><span class="p">())</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">replace_pattern_in_structure</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">elements</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">],</span> <span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span> <span class="n">Atoms</span><span class="p">())</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7"></a><span class="n">result</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;uio66-50perc-zr-hf-by-cluster-metals-only.cif&quot;</span><span class="p">)</span>
+</code></pre></div>
 
               
             </article>
