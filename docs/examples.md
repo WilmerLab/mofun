@@ -158,9 +158,62 @@ the replace operation, all the atom positions stay the same but the appropriate 
 To evaluate whether the final structure is valid, you will need to look at the resulting LAMMPS data file and check the
 connectivity and the force field terms, since visually, the structure will look identical.
 
-<!--
-## Example 4: searching the CoRE database for UIO-66 analogs
 
-TODO
- -->
+## Example 4: replacing a metal center with alternate metals
 
+In this paper, https://doi.org/10.1021/acsmaterialslett.0c00042, the authors discuss replacing Zr in UiO-66 metal
+centers with the alternate metals Hafnium and Cerium in different concentrations. We can look at creating a UiO-66
+crystal with 50% Zr and 50% Hafnium. There are multiple ways to create this structure depending on the objective of the
+experiment, and we'll look at two methods here:
+
+**1: Replace 50% of all Zr atoms in the entire structure with Hafnium.**
+
+This is the simplest method and will give a variety of clusters, some entirely composed of Zr, some entirely composed of
+Hf, and most a mix of the two elements. This is a very easy replacement.
+
+In Python:
+
+```python
+from mofun import Atoms, replace_pattern_in_structure
+
+structure = Atoms.load("uio66.cif").replicate((2,2,2))
+zr = Atoms(elements=["Zr"], positions=[[0,0,0]])
+hf = Atoms(elements=["Hf"], positions=[[0,0,0]])
+
+uio66_ZrHf = replace_pattern_in_structure(structure, zr, hf, replace_fraction=0.5)
+uio66_ZrHf.save("uio66-50perc-zr-hf-by-structure.cif")
+```
+
+**2. Replace each cluster so that each cluster has 3 Zr and 3 Hf.**
+
+<figure markdown>
+  ![UiO-66 Zr / Hf metal centers](img/examples/uio66-hf-mc.png)
+  <figcaption>(A) All Zr metal center, (B) type 1 of 50% Hf, (C) type 2 of 50% Hf</figcaption>
+</figure>
+
+If you wanted each cluster to have an even division of 3 Zr and 3 Hf, then you can do a find and replace on the entire
+cluster. For a 50/50% split, since the cluster is symmetrical, there are only two possible arrangements that the
+replacing Hf can be in (see Figure 1 of https://doi.org/10.1021/acsmaterialslett.0c00042): (1) where the Hf are two
+metals across from one another and one other Hf, and (2) where the Hf are three neighboring metals forming an
+equilateral triangle. There are 12 possible permutations of (1) and 8 possible permutations of (2). So we need to create
+two metal center files, one for each case, and then we can do a find / replace on 40% (8/20) of the metal centers with
+the first case, and then replace the rest with the second case:
+
+In the shell:
+
+```shell
+mofun uio66.cif uio66-zrhf1.cif --replicate 2 2 2 --find uio66-metal-center-simple.cml --replace uio66-metal-center-hf1.cml --replace-fraction=0.4
+mofun uio66-zrhf1.cif uio66-50perc-zr-hf-by-cluster.cif --find uio66-metal-center-simple.cml --replace uio66-metal-center-hf2.cml
+```
+
+To verify the result is correct, it may be helpful to remove everything but the cluster:
+
+```python
+from mofun import Atoms, replace_pattern_in_structure
+
+structure = Atoms.load("uio66-50perc-zr-hf-by-cluster.cif")
+result = replace_pattern_in_structure(structure, Atoms(elements=["H"], positions=[[0,0,0]]), Atoms())
+result = replace_pattern_in_structure(result, Atoms(elements=["C"], positions=[[0,0,0]]), Atoms())
+result = replace_pattern_in_structure(result, Atoms(elements=["O"], positions=[[0,0,0]]), Atoms())
+result.save("uio66-50perc-zr-hf-by-cluster-metals-only.cif")
+```
