@@ -1004,7 +1004,12 @@ class Atoms:
         Returns:
             Atoms: atoms loaded from an ASE Atoms object.
         """
-        return cls(elements=atoms.symbols, positions=atoms.positions, cell=atoms.cell)
+
+        cell = atoms.cell
+        if (cell == 0).all():
+            cell = None
+
+        return cls(elements=atoms.symbols, positions=atoms.positions, cell=cell)
 
 
     def label_atoms(self, atoms, atom_indices=False):
