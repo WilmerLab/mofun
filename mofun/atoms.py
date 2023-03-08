@@ -865,13 +865,13 @@ class Atoms:
         block['_symmetry_Int_Tables_number'] = 1
 
         if self.cell is not None:
-            c = self.cell
-            block['_cell_length_a'] = np.sqrt(np.dot(c[0], c[0]))
-            block['_cell_length_b'] = np.sqrt(np.dot(c[1], c[1]))
-            block['_cell_length_c'] = np.sqrt(np.dot(c[2], c[2]))
-            block['_cell_angle_alpha'] = "%.4f" % np.rad2deg(np.arccos(np.dot(c[1], c[2]) / (norm(c[1]) * norm(c[2]))))
-            block['_cell_angle_beta']  = "%.4f" % np.rad2deg(np.arccos(np.dot(c[0], c[2]) / (norm(c[0]) * norm(c[2]))))
-            block['_cell_angle_gamma'] = "%.4f" % np.rad2deg(np.arccos(np.dot(c[0], c[1]) / (norm(c[0]) * norm(c[1]))))
+            a, b, c, alpha, beta, gamma = self.cell_abc_alpha_beta_gamma()
+            block['_cell_length_a'] = a
+            block['_cell_length_b'] = b
+            block['_cell_length_c'] = c
+            block['_cell_angle_alpha'] = "%.4f" % alpha
+            block['_cell_angle_beta']  = "%.4f" % beta
+            block['_cell_angle_gamma'] = "%.4f" % gamma
 
         # get atom type labels
         d = {e: 0 for e in self.atom_type_elements}
@@ -1314,6 +1314,17 @@ class Atoms:
 
     def cell_is_orthorhombic(self):
         return (np.diag(self.cell) * np.identity(3) == self.cell).all()
+
+    def cell_abc_alpha_beta_gamma(self):
+        c = self.cell
+        return (
+            np.sqrt(np.dot(c[0], c[0])),
+            np.sqrt(np.dot(c[1], c[1])),
+            np.sqrt(np.dot(c[2], c[2])),
+            np.rad2deg(np.arccos(np.dot(c[1], c[2]) / (norm(c[1]) * norm(c[2])))),
+            np.rad2deg(np.arccos(np.dot(c[0], c[2]) / (norm(c[0]) * norm(c[2])))),
+            np.rad2deg(np.arccos(np.dot(c[0], c[1]) / (norm(c[0]) * norm(c[1])))),
+        )
 
     def to_ase(self):
         """Convert to ASE atoms object.
