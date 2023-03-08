@@ -127,7 +127,8 @@ def calc_uff_atom_types(bonds, elements, override_rules=None):
         # 2: try element w/o hybridization
         # Note that UFF4MOF adds some fancy types, i.e. Li3f2, and if the hybridization doesn't match
         # above, then this will still default to the original UFF Li term.
-        if (el := uff_key[0:2]) in UFF4MOF:
+        el = uff_key[0:2]
+        if el in UFF4MOF:
             atom_types.append(el)
             continue
 
