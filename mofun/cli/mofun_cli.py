@@ -6,6 +6,7 @@ potentials and output to a working LAMMPS Data file.
 import pathlib
 
 import ase
+import ase.io
 import click
 import numpy as np
 from mofun import Atoms, replace_pattern_in_structure, find_pattern_in_structure
@@ -23,6 +24,7 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('-ap2', '--axisp2-idx', type=int, default=None, help="index of second point on primary rotation axis")
 @click.option('-op', '--opoint-idx', type=int, default=None, help="index of point that makes up secondary rotation axis (between this point and the primary rotation axis)")
 @click.option('--dumppath', type=click.Path(path_type=pathlib.Path))
+@click.option('--extract-uc', 'extract_uc_path', type=click.Path(path_type=pathlib.Path))
 @click.option('-q', '--chargefile', type=click.File('r'))
 @click.option('--replicate', nargs=3, type=int, help="replicate structure across x, y, and z dimensions")
 @click.option('--mic', type=float, help="enforce minimum image convention using a cutoff of mic")
@@ -30,8 +32,17 @@ from mofun.uff4mof import uff_key_starts_with
 @click.option('--pp', is_flag=True, default=False, help="Assign UFF pair potentials to atoms (sufficient for fixed force-field calculations)")
 def mofun_cli(inputpath, outputpath,
         find_path=None, replace_path=None, atol=5e-2, replace_fraction=1.0, axisp1_idx=None, axisp2_idx=None, opoint_idx=None,
-        dumppath=None, chargefile=None, replicate=None, mic=None, framework_element=None, pp=False):
-    atoms = Atoms.load(inputpath)
+        dumppath=None, extract_uc_path=None, chargefile=None, replicate=None, mic=None, framework_element=None, pp=False):
+
+    if inputpath.suffix in ['.lmpdat', '.cml', '.cif']:
+        atoms = Atoms.load(inputpath)
+    else:
+        print("INFO: Trying input using ASE: %s" % inputpath)
+        atoms = Atoms.from_ase_atoms(ase.io.read(inputpath))
+
+    # add cell from other file; sometimes needed for adding unit cell when converting from xyz to cif
+    if extract_uc_path is not None:
+        atoms.cell = Atoms.load(extract_uc_path).cell
 
     # upate positions from lammps dump file
     if dumppath is not None:
