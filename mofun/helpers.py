@@ -150,13 +150,15 @@ def positions_are_unchanged(p, new_p, max_delta=1e-5, verbose=True):
             # print(p2, p1, norm(np.array(p2) - p1))
             if p2[2] - p1[2] > 1:
                 break
-            elif (np21 := norm(np.array(p2) - p1)) < max_delta:
-                found_match = True
-                p_corresponding.append(new_p_ordered[j, :])
-                new_p_ordered = np.delete(new_p_ordered, j, axis=0)
-                p_matched.append(i)
-                distances[i] = np21
-                break
+            else:
+                np21 = norm(np.array(p2) - p1)
+                if np21 < max_delta:
+                    found_match = True
+                    p_corresponding.append(new_p_ordered[j, :])
+                    new_p_ordered = np.delete(new_p_ordered, j, axis=0)
+                    p_matched.append(i)
+                    distances[i] = np21
+                    break
         if not found_match:
             p_corresponding.append([])
 
